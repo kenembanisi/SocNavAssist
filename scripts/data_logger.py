@@ -20,22 +20,24 @@ data_logger.py
 
 class DataLogger():
 
-    def __init__(self):
+    def __init__(self, model_ids):
         # define objects to track
         # self.stage = args[1]
         # self.method = args[2]
 
-        self.object_id = ['trina2']
+        # self.object_id = ['trina2']
+        self.model_ids = model_ids
+        self.n_models = len(self.model_ids)
             
         # variables
-        self.x = [[],[],[]]
-        self.y = [[],[],[]]
-        self.theta = [[],[],[]]
-        self.v = [[],[],[]]  
-        self.omega = [[],[],[]] 
-        self.min_dist = []
-        self.v_opt = [[],[],[]]
-        self.v_suitable = [[],[],[]]
+        self.x = [[] for i in range(self.n_models)]
+        self.y = [[] for i in range(self.n_models)]
+        self.theta = [[] for i in range(self.n_models)]
+        # self.v = [[],[],[]]  
+        # self.omega = [[],[],[]] 
+        # self.min_dist = []
+        self.v_opt = []
+        self.v_suitable = []
 
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
@@ -51,9 +53,9 @@ class DataLogger():
             except:
                 pass
         
-        for i in range(len(self.object_id)):
-            # Find the index of this object_id in the name list:
-            idx = data.name.index(self.object_id[i])
+        for i in range(len(self.model_ids)):
+            # Find the index of this model_ids in the name list:
+            idx = data.name.index(self.model_ids[i])
 
             # Retrieve states from data
             self.x[i].append(data.pose[idx].position.x)
@@ -63,10 +65,12 @@ class DataLogger():
                  data.pose[idx].orientation.y,
                  data.pose[idx].orientation.z,
                  data.pose[idx].orientation.w])[2])
-            self.v[i].append(data.twist[idx].linear.x)
-            self.omega[i].append(data.twist[idx].angular.z)
-            self.v_opt[i].append(v_opt_)
-            self.v_suitable[i].append(v_suitable_)
+            # self.v[i].append(data.twist[idx].linear.x)
+            # self.omega[i].append(data.twist[idx].angular.z)
+
+            if self.model_ids[i] == 'trina2':
+                self.v_opt.append(v_opt_)
+                self.v_suitable.append(v_suitable_)
 
         # # obtain min obstacle distance
         # scan_range = []
@@ -80,28 +84,32 @@ class DataLogger():
 
         # self.min_dist.append(round(min(scan_range), 2))
 
-    def clear_data(self):
-        self.x = [[],[],[]]
-        self.y = [[],[],[]]
-        self.theta = [[],[],[]]
-        self.v = [[],[],[]]  
-        self.omega = [[],[],[]] 
-        self.min_dist = []
+    # def clear_data(self):
+    #     self.x = [[],[],[]]
+    #     self.y = [[],[],[]]
+    #     self.theta = [[],[],[]]
+    #     self.v = [[],[],[]]  
+    #     self.omega = [[],[],[]] 
+    #     self.min_dist = []
 
 
     def save_data(self):
         # save state data
-        for i in range(len(self.object_id)):
-            data = np.array([self.x[i], self.y[i], self.theta[i], self.v[i], self.omega[i], self.v_opt, self.v_suitable])
-           
-            time_struct = time.localtime(time.time())
-            time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
-                        str(time_struct.tm_hour) + str(time_struct.tm_min) + ']'
-            filename = self.object_id[i]+'_'+time_now
+        # for i in range(len(self.model_ids)):
+        #     data = np.array([self.x[i], self.y[i], self.theta[i], self.v[i], self.omega[i], self.v_opt, self.v_suitable])
 
-            if os.path.isdir(self.directory):
-                np.save(self.directory+filename+".npy", data)
-            else:
-                os.makedirs(self.directory)
-                np.save(self.directory+filename+".npy", data)
+        # data = np.array([self.model_ids, self.x, self.y, self.theta, self.v, self.omega, self.v_opt, self.v_suitable])
+        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable])
+           
+        time_struct = time.localtime(time.time())
+        time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
+                    str(time_struct.tm_hour) + str(time_struct.tm_min) + ']'
+        # filename = self.model_ids[i]+'_'+time_now
+        filename = 'data_'+time_now
+
+        if os.path.isdir(self.directory):
+            np.save(self.directory+filename+".npy", data)
+        else:
+            os.makedirs(self.directory)
+            np.save(self.directory+filename+".npy", data)
 

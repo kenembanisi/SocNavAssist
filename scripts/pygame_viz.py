@@ -4,24 +4,8 @@ import pygame
 import numpy as np
 import math
 import os
+import argparse
 
-# initialize pygame
-pygame.init()
-
-# set the display window dimensions
-SCREEN_HEIGHT = 800
-SCREEN_WIDTH = 600
-
-# set pygame screen
-screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT)) # set width and height
-pygame.display.set_caption("Simulation") # set the window caption
-run = True
-
-# load agent data
-log_directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
-data = np.load(log_directory+"trina2_[118_1647]" + ".npy", 
-                allow_pickle=True, encoding='latin1') # included encoding to allow loading py2 generated pickled files in py3
-n_frames = len(data[1])
 
 
 # Define circle obstacle class
@@ -58,16 +42,16 @@ def transform_y(y):
 
 
 # define data drawing function
-def draw_window(idx):
+def draw_window(idx, data):
 
     # set the background color to white
     screen.fill((249,250,248)) 
     
     # set agent
-    agent_x = transform_x(data[0][idx])
-    agent_y = transform_y(data[1][idx])
+    agent_x = transform_x(data[1][0][idx])
+    agent_y = transform_y(data[2][0][idx])
 
-    # set obstacles
+    ### set static obstacles --------------------------------------------------------------------
         # 1
     obs_radius = 35 * 1.68
     color = (150,150,140)
@@ -80,6 +64,21 @@ def draw_window(idx):
     obs2_x = transform_x(4.74); obs2_y = transform_y(4.39)
     pygame.draw.circle(screen, color, (round(obs2_x), round(obs2_y)), round(obs_radius))
 
+    ### set active obstacles (pedestrians) ------------------------------------------------------
+    num_pedestrians = len(data[0]) - 1 # to remove the agent count
+    ped_radius = 35 * 0.4
+    color = (180,180,120)
+    for i in range(num_pedestrians):
+        ped_x = data[1][i+1][idx]; ped_y = data[2][i+1][idx]
+        ped_x_transformed = transform_x(ped_x); ped_y_transformed = transform_y(ped_y)
+        pygame.draw.circle(screen, color, (round(ped_x_transformed), round(ped_y_transformed)), round(ped_radius))
+
+        # draw velocity vector for pedestrians
+        # pygame.draw.line(screen, (100,100,230), (ped_x_transformed, ped_y_transformed), 
+        #                 (ped_x_transformed + data[5][0][idx][i][0]*scaling, 
+        #                     agent_y - data[5][0][idx][i][1]*scaling))
+
+
     # draw the rays of suitable headings
     show_rays = True
     scaling = 40
@@ -90,66 +89,108 @@ def draw_window(idx):
         #         pygame.draw.line(screen, (100,100,230), (augmented_pos[0], augmented_pos[1]), 
         #                         (augmented_pos[0] + self.V_suitable[i][0]*scaling, augmented_pos[1] + self.V_suitable[i][1]*scaling))
         # else:
-        for i in range(len(data[6][0][idx])):
-            pygame.draw.line(screen, (100,100,230), (agent_x, agent_y), (agent_x + data[6][0][idx][i][0]*scaling, 
-                            agent_y - data[6][0][idx][i][1]*scaling))
+        for i in range(len(data[5][idx])):
+            pygame.draw.line(screen, (100,100,230), (agent_x, agent_y), (agent_x + data[5][idx][i][0]*scaling, 
+                            agent_y - data[5][idx][i][1]*scaling))
 
 
     # draw agent
-    radius = 10
-    color = (20,40,240)
-    pygame.draw.circle(screen, color, (round(agent_x), round(agent_y)), radius)
+    radius = 35 * 0.5
+    color = (60,40,240)
+    pygame.draw.circle(screen, color, (round(agent_x), round(agent_y)), round(radius))
 
 
     # draw agent heading
-    pygame.draw.line(screen, (255,0,0), (agent_x, agent_y), (agent_x + np.cos(data[2][idx])*scaling, 
-                            agent_y - np.sin(data[2][idx])*scaling), 2)
+    pygame.draw.line(screen, (255,0,0), (agent_x, agent_y), (agent_x + np.cos(data[3][0][idx])*scaling, 
+                            agent_y - np.sin(data[3][0][idx])*scaling), 2)
 
     # win.blit(rot_image, origin)
     pygame.display.update()
 
 
-# control loop
-idx = 0 # initialize counter
-while run:
-    pygame.time.delay(25) # This will delay the game the given amount of milliseconds.
 
-    for event in pygame.event.get():  # This will loop through a list of any keyboard or mouse events.
-        if event.type == pygame.QUIT: # Checks if the red button in the corner of the window is clicked
+############################################################################################################
+# MAIN FUNCTION
+############################################################################################################
+
+def main(args):
+
+    # initialize pygame
+    pygame.init()
+
+    # set some variables to global for convenience. TODO: May need to write a class for this later
+    global SCREEN_HEIGHT, SCREEN_WIDTH, screen
+
+    # set the display window dimensions
+    SCREEN_HEIGHT = 800
+    SCREEN_WIDTH = 600
+
+    # set pygame screen
+    screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT)) # set width and height
+    pygame.display.set_caption("Simulation") # set the window caption
+    run = True
+
+    # load agent data
+    data_filename = args.data
+    log_directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
+    # data = np.load(log_directory+"data_[119_1030]" + ".npy", 
+    #                 allow_pickle=True, encoding='latin1') # included encoding to allow loading py2 generated pickled files in py3
+    data = np.load(log_directory+data_filename, allow_pickle=True, encoding='latin1')
+    n_frames = len(data[1])
+
+
+    # control loop
+    idx = 0 # initialize counter
+    while run:
+        pygame.time.delay(25) # This will delay the game the given amount of milliseconds.
+
+        for event in pygame.event.get():  # This will loop through a list of any keyboard or mouse events.
+            if event.type == pygame.QUIT: # Checks if the red button in the corner of the window is clicked
+                run = False  # Ends the game loop
+
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_SPACE]:
             run = False  # Ends the game loop
 
-    keys = pygame.key.get_pressed()
+        if keys[pygame.K_RIGHT]:
+            idx = idx + 1
 
-    if keys[pygame.K_SPACE]:
-        run = False  # Ends the game loop
+            if idx < n_frames-1:
+                # call window drawing function
+                draw_window(idx, data)
 
-    if keys[pygame.K_RIGHT]:
-        idx = idx + 1
+        if keys[pygame.K_LEFT]:
+            idx = idx - 1
 
-        if idx < n_frames-1:
+            if idx < n_frames-1:
+                # call window drawing function
+                draw_window(idx, data)
+
+        else:
             # call window drawing function
-            draw_window(idx)
+            draw_window(idx, data)
+        
+        # # increment counter
+        # idx = idx + 1
 
-    if keys[pygame.K_LEFT]:
-        idx = idx - 1
+        # # check run condition
+        # if idx < n_frames-1:
+        #     # run = False
 
-        if idx < n_frames-1:
-            # call window drawing function
-            draw_window(idx)
+        #     # call window drawing function
+        #     draw_window(idx)
 
-    else:
-        # call window drawing function
-        draw_window(idx)
-    
-    # # increment counter
-    # idx = idx + 1
+    # If we exit the loop this will execute and close our game
+    pygame.quit()
 
-    # # check run condition
-    # if idx < n_frames-1:
-    #     # run = False
 
-    #     # call window drawing function
-    #     draw_window(idx)
 
-# If we exit the loop this will execute and close our game
-pygame.quit()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Visualizer")
+    parser.add_argument('--data', default='data_[119_1030].npy', help='logged data filename')
+                
+    args = parser.parse_args()
+
+    main(args)
