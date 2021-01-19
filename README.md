@@ -23,5 +23,9 @@ python pygame_viz.py --data <filename>
 
 ## TODOs
 
-1. Be able to pass data filename via commandline argument to `pygame_viz.py`
-2. Store data of obstacles in `data_logger.py` and enable way to easy visualize 
+1. ~~Be able to pass data filename via commandline argument to `pygame_viz.py`~~
+2. ~~Store data of obstacles in `data_logger.py` and enable way to easy visualize~~ 
+3. Explore another way to compare velocity vectors (using L2 norm is probably not the best)
+4. Reread paper on RVO to consider how time horizon affects performance
+5. How can we incorporate social constraints to RVO? 
+6. How to deal with arbitrarily shaped static features? Using a preprocess to filter velocities using static map.
