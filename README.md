@@ -17,7 +17,7 @@ roslaunch rvo_ros example.launch
 2. To visualize the recorded data, run the following
 ```
 cd ~/catkin_ws/src/<navigate to package>/rvo_ros/scripts
-python pygame_viz.py
+python pygame_viz.py --data <filename>
 ```
 
 
