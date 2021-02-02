@@ -5,7 +5,7 @@ import numpy as np
 import math
 import os
 import argparse
-
+import matplotlib.pyplot as plt
 
 
 # Define circle obstacle class
@@ -44,12 +44,21 @@ def transform_y(y):
 # define data drawing function
 def draw_window(idx, data):
 
+    # define the data
+    actor_list = data[0]
+    actors_x = data[1][1:]; actors_y = data[2][1:]
+    actors_theta = data[3][1:]
+    v_opt = data[4]
+    v_suitable = data[5]
+    v_desired = data[6]
+
     # set the background color to white
     screen.fill((249,250,248)) 
     
     # set agent
     agent_x = transform_x(data[1][0][idx])
     agent_y = transform_y(data[2][0][idx])
+    agent_theta = data[3][0]
 
     ### set static obstacles --------------------------------------------------------------------
         # 1
@@ -65,11 +74,12 @@ def draw_window(idx, data):
     pygame.draw.circle(screen, color, (round(obs2_x), round(obs2_y)), round(obs_radius))
 
     ### set active obstacles (pedestrians) ------------------------------------------------------
-    num_pedestrians = len(data[0]) - 1 # to remove the agent count
+    num_pedestrians = len(actor_list) - 1 # to remove the agent count
     ped_radius = 35 * 0.4
     color = (180,180,120)
     for i in range(num_pedestrians):
-        ped_x = data[1][i+1][idx]; ped_y = data[2][i+1][idx]
+        # ped_x = data[1][i+1][idx]; ped_y = data[2][i+1][idx]
+        ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
         ped_x_transformed = transform_x(ped_x); ped_y_transformed = transform_y(ped_y)
         pygame.draw.circle(screen, color, (round(ped_x_transformed), round(ped_y_transformed)), round(ped_radius))
 
@@ -79,7 +89,7 @@ def draw_window(idx, data):
         #                     agent_y - data[5][0][idx][i][1]*scaling))
 
 
-    # draw the rays of suitable headings
+    # draw the rays of suitable headings & v_opt & v_desired heading
     show_rays = True
     scaling = 40
     if show_rays:
@@ -89,22 +99,34 @@ def draw_window(idx, data):
         #         pygame.draw.line(screen, (100,100,230), (augmented_pos[0], augmented_pos[1]), 
         #                         (augmented_pos[0] + self.V_suitable[i][0]*scaling, augmented_pos[1] + self.V_suitable[i][1]*scaling))
         # else:
-        for i in range(len(data[5][idx])):
-            pygame.draw.line(screen, (100,100,230), (agent_x, agent_y), (agent_x + data[5][idx][i][0]*scaling, 
-                            agent_y - data[5][idx][i][1]*scaling))
+        # for i in range(len(data[5][idx])):
+            # pygame.draw.line(screen, (100,100,230), (agent_x, agent_y), (agent_x + data[5][idx][i][0]*scaling, 
+            #                 agent_y - data[5][idx][i][1]*scaling))
+        for i in range(len(v_suitable[idx])):
+            pygame.draw.line(screen, (100,100,230), (agent_x, agent_y), (agent_x + v_suitable[idx][i][0]*scaling, 
+                            agent_y - v_suitable[idx][i][1]*scaling))
 
+        # v_desired heading
+        pygame.draw.line(screen, (180,100,100), (agent_x, agent_y), (agent_x + v_desired[idx][0]*scaling, 
+                            agent_y - v_desired[idx][1]*scaling))
+
+        # v_opt heading
+        pygame.draw.line(screen, (255,0,0), (agent_x, agent_y), (agent_x + v_opt[idx][0][0]*scaling, 
+                            agent_y - v_opt[idx][0][1]*scaling))
 
     # draw agent
     radius = 35 * 0.5
     color = (60,40,240)
-    pygame.draw.circle(screen, color, (round(agent_x), round(agent_y)), round(radius))
+    # pygame.draw.circle(screen, color, (round(agent_x), round(agent_y)), round(radius))
 
 
     # draw agent heading
-    pygame.draw.line(screen, (255,0,0), (agent_x, agent_y), (agent_x + np.cos(data[3][0][idx])*scaling, 
-                            agent_y - np.sin(data[3][0][idx])*scaling), 2)
+    # pygame.draw.line(screen, (0,0,0), (agent_x, agent_y), (agent_x + np.cos(data[3][0][idx])*scaling, 
+    #                         agent_y - np.sin(data[3][0][idx])*scaling), 2)
+    pygame.draw.line(screen, (0,0,0), (agent_x, agent_y), (agent_x + np.cos(agent_theta[idx])*scaling, 
+                            agent_y - np.sin(agent_theta[idx])*scaling), 2)
 
-    # win.blit(rot_image, origin)
+
     pygame.display.update()
 
 
@@ -133,10 +155,29 @@ def main(args):
     # load agent data
     data_filename = args.data
     log_directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
-    # data = np.load(log_directory+"data_[119_1030]" + ".npy", 
-    #                 allow_pickle=True, encoding='latin1') # included encoding to allow loading py2 generated pickled files in py3
     data = np.load(log_directory+data_filename, allow_pickle=True, encoding='latin1')
     n_frames = len(data[1])
+
+    # print data
+        # instantiate figure and axes object
+    fig, (ax1, ax2) = plt.subplots(2, 1)
+        # v_opt
+    v_opt = data[4]
+    v_opt_linear = [v_opt[i][1][0] for i in range(len(v_opt))]
+    v_opt_angular = [v_opt[i][1][1] for i in range(len(v_opt))]
+
+        # v_actual
+    v_actual_linear = data[7][0]
+    v_actual_angular = data[8][0]
+
+    ax1.plot(v_opt_linear)
+    ax1.plot(v_actual_linear)
+
+    ax2.plot(v_opt_angular)
+    ax2.plot(v_actual_angular)
+    
+    plt.legend(fontsize=10)
+    plt.show()
 
 
     # control loop
@@ -170,16 +211,6 @@ def main(args):
         else:
             # call window drawing function
             draw_window(idx, data)
-        
-        # # increment counter
-        # idx = idx + 1
-
-        # # check run condition
-        # if idx < n_frames-1:
-        #     # run = False
-
-        #     # call window drawing function
-        #     draw_window(idx)
 
     # If we exit the loop this will execute and close our game
     pygame.quit()
@@ -189,7 +220,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualizer")
-    parser.add_argument('--data', default='data_[119_1030].npy', help='logged data filename')
+    parser.add_argument('--data', default='data_[22_163].npy', help='logged data filename')
                 
     args = parser.parse_args()
 

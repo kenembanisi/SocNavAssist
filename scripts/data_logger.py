@@ -33,16 +33,17 @@ class DataLogger():
         self.x = [[] for i in range(self.n_models)]
         self.y = [[] for i in range(self.n_models)]
         self.theta = [[] for i in range(self.n_models)]
-        # self.v = [[],[],[]]  
-        # self.omega = [[],[],[]] 
+        self.v = [[] for i in range(self.n_models)]
+        self.omega = [[] for i in range(self.n_models)]
         # self.min_dist = []
         self.v_opt = []
         self.v_suitable = []
+        self.v_desired = []
 
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
 
-    def store_data(self, v_opt_, v_suitable_):
+    def store_data(self, v_opt_, v_suitable_, v_desired_):
         # get one instance of message
         data = None
         while data is None:
@@ -65,12 +66,13 @@ class DataLogger():
                  data.pose[idx].orientation.y,
                  data.pose[idx].orientation.z,
                  data.pose[idx].orientation.w])[2])
-            # self.v[i].append(data.twist[idx].linear.x)
-            # self.omega[i].append(data.twist[idx].angular.z)
+            self.v[i].append(data.twist[idx].linear.x)
+            self.omega[i].append(data.twist[idx].angular.z)
 
             if self.model_ids[i] == 'trina2':
                 self.v_opt.append(v_opt_)
                 self.v_suitable.append(v_suitable_)
+                self.v_desired.append(v_desired_)
 
         # # obtain min obstacle distance
         # scan_range = []
@@ -99,7 +101,7 @@ class DataLogger():
         #     data = np.array([self.x[i], self.y[i], self.theta[i], self.v[i], self.omega[i], self.v_opt, self.v_suitable])
 
         # data = np.array([self.model_ids, self.x, self.y, self.theta, self.v, self.omega, self.v_opt, self.v_suitable])
-        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable])
+        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, self.v_desired, self.v, self.omega])
            
         time_struct = time.localtime(time.time())
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \

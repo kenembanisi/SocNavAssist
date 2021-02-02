@@ -1,0 +1,60 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/home/kenembanisi/test_ws/devel/include/**",
+        "/home/kenembanisi/robotis_ml_ws/devel/include/**",
+        "/home/kenembanisi/pedsim_ws/devel/include/**",
+        "/home/kenembanisi/catkin_ws/devel/include/**",
+        "/opt/ros/melodic/include/**",
+        "/home/kenembanisi/pedsim_ws/src/gym_ped_sim/actor_plugin/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/amcl/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/base_local_planner/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/carrot_planner/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/clear_costmap_recovery/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/costmap_2d/include/**",
+        "/home/kenembanisi/pedsim_ws/src/gym_ped_sim/data_collection/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/dwa_local_planner/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry/eigen_conversions/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/global_planner/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry/kdl_conversions/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/map_server/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/move_base/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/move_slow_and_clear/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/nav_core/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/navfn/include/**",
+        "/home/kenembanisi/test_ws/src/DynamicObstacleAvoidance/orca/include/**",
+        "/home/kenembanisi/pedsim_ws/src/pedsim_ros/3rdparty/libpedsim/include/**",
+        "/home/kenembanisi/pedsim_ws/src/pedsim_ros/pedsim_sensors/include/**",
+        "/home/kenembanisi/pedsim_ws/src/pedsim_ros/pedsim_simulator/include/**",
+        "/home/kenembanisi/pedsim_ws/src/pedsim_ros/pedsim_utils/include/**",
+        "/home/kenembanisi/pedsim_ws/src/pedsim_ros/pedsim_visualizer/include/**",
+        "/home/kenembanisi/catkin_ws/src/TRINA-WPI-2.0/trina2_plugin/realsense_gazebo_plugin/include/**",
+        "/home/kenembanisi/test_ws/src/cpp_course_repo/rosbot_control/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/rotate_recovery/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry/tf/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry2/tf2/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry2/tf2_bullet/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry2/tf2_eigen/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry2/tf2_geometry_msgs/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry2/tf2_kdl/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry2/tf2_msgs/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry2/tf2_ros/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry2/tf2_sensor_msgs/include/**",
+        "/home/kenembanisi/robotis_ml_ws/src/geometry/tf_conversions/include/**",
+        "/home/kenembanisi/catkin_ws/src/TRINA-WPI-2.0/trina2_control/include/**",
+        "/home/kenembanisi/catkin_ws/src/TRINA-WPI-2.0/trina2_navigation_gui/include/**",
+        "/home/kenembanisi/pedsim_ws/src/turtlebot3_simulations/turtlebot3_fake/include/**",
+        "/home/kenembanisi/pedsim_ws/src/turtlebot3_simulations/turtlebot3_gazebo/include/**",
+        "/home/kenembanisi/pedsim_ws/src/turtlebot3/turtlebot3_slam/include/**",
+        "/home/kenembanisi/catkin_ws/src/navigation/voxel_grid/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ]
+}

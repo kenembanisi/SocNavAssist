@@ -45,7 +45,7 @@ if __name__ == "__main__":
                                  {'radius': 0.4, 'pref_velocity': [0.75, -0.1]},
                                  {'radius': 0.4, 'pref_velocity': [0.0, -0.7]},
                                  {'radius': 0.4, 'pref_velocity': [-0.2, -0.7]}]
-        # pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, -0.8]},
+        # pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, -0.0]},
         #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
         #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
         #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]}]
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
         ### Instantiate rvo_control class
         D = 0.2
-        rvo_agent = RvoControl(agent, obstacles, D=D, tau=1.5)
+        rvo_agent = RvoControl(agent, obstacles, D=D, tau=0.5)
 
         ### set goal position. TODO: This should be set from launch file
         goal = [4.63, 8.05]
@@ -94,11 +94,16 @@ if __name__ == "__main__":
             # t_start = time.time()
             # -------------------------------------------------------------------------
 
+            # handle static features by velocity filtering
+            
             # Update simulation:
             v_opt, v_suitable = rvo_agent.compute_V_opt(goal, alpha=1)
 
+            # get agent's desired velocity
+            v_desired = rvo_agent.get_desired_velocity()
+
             # store states
-            logger.store_data(v_opt[1], v_suitable)
+            logger.store_data(v_opt, v_suitable, v_desired)
 
             # update agent's state
             agent.update_controls(v_opt[1], v_suitable)

@@ -50,6 +50,7 @@ class RvoControl():
 
         # extract agent's parameters
         self.agent_pos = [self.agent.x, self.agent.y]
+        self.agent_heading = self.agent.theta
         #self.agent_vel
         self.agent_radius = self.agent.bounding_radius
         # state of motion
@@ -80,6 +81,7 @@ class RvoControl():
             self.obstacle_pos[i] = [self.active_obstacle_dict[i].x, self.active_obstacle_dict[i].y]
             self.obstacle_vel[i] = self.active_obstacle_dict[i].v_pref
         self.agent_pos = [self.agent.x, self.agent.y]
+        self.agent_heading = self.agent.theta
 
         # for DD scenario, compute effective radius and center
         if self.D > 0:
@@ -87,12 +89,15 @@ class RvoControl():
 
         # compute agent velocity
         self.agent_vel = self.compute_V_desired(goal)
-        # self.agent_vel = self.compute_operator_goal()
+        # self.desired_agent_vel = self.compute_V_desired(goal)
+        # self.desired_agent_vel = self.compute_operator_goal()
+        self.current_agent_vel = self.agent.v
 
         # compute RVOs for all obstacles:
         RVO_all = []
         pA = self.agent_pos
         vA = self.agent_vel
+        # vA = self.desired_agent_vel
         for i in range(self.num_obstacles):
         # for each obstacle
             pB = self.obstacle_pos[i]
@@ -165,12 +170,24 @@ class RvoControl():
         # Velocity search: velocity vectors all around the agent 
         #   (assumes a point agent or holonomic robot)
         # --------------------------------------------------------------------------------------------------
-            # N.B. We should be interested in searching within admissible velocities, 
-            #   not the whole velocity space (though this isn't searching the whole space)
+
+        # compute range of admissible velocity headings
+        theta_min = self.agent_heading - self.agent.max_angular_acceleration
+        theta_max = self.agent_heading + self.agent.max_angular_acceleration
+
+        # compute range of admissible velocity magnitudes
+        linear_vel_min = self.current_agent_vel - self.agent.max_linear_acceleration
+        linear_vel_max = self.current_agent_vel + self.agent.max_linear_acceleration
+        if linear_vel_max > self.agent.max_linear_velocity:
+            linear_vel_max = self.agent.max_linear_velocity
+        linear_vel_range = abs(linear_vel_max - linear_vel_min)
 
         for theta in np.arange(0, 2*math.pi, 0.1): # <---- Search from 1 to 2pi ~ direction of motion
-            for rad in np.arange(0.02, norm_v+0.02, norm_v/10.0): # <-- Search from 0.02 (avoid zero) to agent desired velocity
-                candidate_v = [rad*math.cos(theta), rad*math.sin(theta)] # <-- candidate velocity
+            for mag in np.arange(0.02, norm_v+0.02, norm_v/10.0): # <-- Search from 0.02 (avoid zero) to agent desired velocity
+        
+        # for theta in np.arange(theta_min, theta_max, 0.1): 
+            # for mag in np.arange(linear_vel_min, linear_vel_max, linear_vel_range/10.0): 
+                candidate_v = [mag*math.cos(theta), mag*math.sin(theta)] # <-- candidate velocity
                 suitable = True
                 for RVO in RVO_all: # <---- Check for all the RVOs
                     RVO_apex_pos = RVO[0]
@@ -218,6 +235,7 @@ class RvoControl():
             Adapted from Meng's code - https://github.com/MengGuo/RVO_Py_MAS
         """
         pA = self.agent_pos
+        # vA = self.desired_agent_vel
         vA = self.agent_vel
 
         if V_suitable:
@@ -444,3 +462,14 @@ class RvoControl():
         
         return transformed_v_opt
 
+    def get_desired_velocity(self):
+        """
+        Gets the agent desired velocity, i.e. velocity towards the agent goal.
+
+        Arguments: None
+
+        Returns: self.desired_agent_vel (list)
+
+        """
+        # return self.desired_agent_vel
+        return self.agent_vel
