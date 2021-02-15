@@ -57,13 +57,14 @@
     <!-- Other models -->
 
     <include>
-      <uri>model://narrow_corridor</uri>
-      <pose>-0.02 4.95 0 0 0</pose>
+      <!-- <uri>model://narrow_corridor</uri> -->
+      <uri>model://corridor_world/corridor</uri>
+      <pose>0.0 0.10 0 0 0 0</pose>
     </include>
 
     <include>
-      <uri>model://dynamic_obstacle_1</uri>
-      <pose>-0.8 3.40 0.219 0 0 0</pose>
+      <uri>model://dynamic_obstacle</uri>
+      <pose>-7.2 4.4 0.219 0 0 0</pose>
     </include>
 
     <include>
@@ -75,6 +76,7 @@
       <uri>model://goal_location</uri>
       <pose>0.03 12.96 0.7 0 0 0</pose>
     </include>
+
 
     <!-- Physics -->
     <physics type='ode'>

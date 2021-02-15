@@ -1,22 +1,22 @@
 <launch>
     <!-- initial robot pose -->
-    <arg name="robot_x" default="0.95" />
+    <!-- <arg name="robot_x" default="0.95" />
     <arg name="robot_y" default="-11.19" />
     <arg name="robot_z" default="0.0" />
-    <arg name="robot_yaw" default="1.55" />
-
-    <!-- <arg name="robot_x" default="0.07" />
-    <arg name="robot_y" default="-2.15" />
-    <arg name="robot_z" default="0.0" />
     <arg name="robot_yaw" default="1.55" /> -->
+
+    <arg name="robot_x" default="-6.43" />
+    <arg name="robot_y" default="-11.41" />
+    <arg name="robot_z" default="0.0" />
+    <arg name="robot_yaw" default="1.55" />
 
     <!-- goal location -->
     <!-- <arg name="goal_x" default="-12.28" />
     <arg name="goal_y" default="10.9" />
     <arg name="goal_z" default="0.7" /> -->
 
-    <!-- <arg name="world_name" default="$(find rvo_ros)worlds/corridor.world" /> -->
-    <arg name="world_name" default="$(find rvo_ros)worlds/example.world" />
+    <arg name="world_name" default="$(find rvo_ros)worlds/corridor.world" />
+    <!-- <arg name="world_name" default="$(find rvo_ros)worlds/example.world" /> -->
 
     <!-- Load the description for the robot -->
     <arg name="robot_name" default="trina2"/>
