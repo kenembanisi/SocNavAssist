@@ -9,6 +9,7 @@ import time
 import argparse
 import sys
 import os
+import math
 from datetime import datetime
 from tf.transformations import euler_from_quaternion
 
@@ -33,11 +34,12 @@ class DataLogger():
         self.x = [[] for i in range(self.n_models)]
         self.y = [[] for i in range(self.n_models)]
         self.theta = [[] for i in range(self.n_models)]
-        # self.v = [[],[],[]]  
-        # self.omega = [[],[],[]] 
+        self.v = [[] for i in range(self.n_models)]
+        self.omega = [[] for i in range(self.n_models)]
         # self.min_dist = []
         self.v_opt = []
         self.v_suitable = []
+        self.v_desired = []
 
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
@@ -65,41 +67,24 @@ class DataLogger():
                  data.pose[idx].orientation.y,
                  data.pose[idx].orientation.z,
                  data.pose[idx].orientation.w])[2])
+
+                # transform velocity from world frame to robot frame
+            v_world = [data.twist[idx].linear.x, data.twist[idx].linear.y]
+            v_robot = self.world2robot_transform(v_world, self.theta[i][-1])
+
             # self.v[i].append(data.twist[idx].linear.x)
-            # self.omega[i].append(data.twist[idx].angular.z)
+            self.v[i].append(v_robot[0])
+            self.omega[i].append(data.twist[idx].angular.z)
 
             if self.model_ids[i] == 'trina2':
                 self.v_opt.append(v_opt_)
                 self.v_suitable.append(v_suitable_)
 
-        # # obtain min obstacle distance
-        # scan_range = []
-        # for i in range(len(scan_data.ranges)):
-        #     if scan_data.ranges[i] == float('Inf'):
-        #         scan_range.append(3.5)
-        #     elif np.isnan(scan_data.ranges[i]):
-        #         scan_range.append(0)
-        #     else:
-        #         scan_range.append(scan_data.ranges[i])
-
-        # self.min_dist.append(round(min(scan_range), 2))
-
-    # def clear_data(self):
-    #     self.x = [[],[],[]]
-    #     self.y = [[],[],[]]
-    #     self.theta = [[],[],[]]
-    #     self.v = [[],[],[]]  
-    #     self.omega = [[],[],[]] 
-    #     self.min_dist = []
-
-
+        
     def save_data(self):
-        # save state data
-        # for i in range(len(self.model_ids)):
-        #     data = np.array([self.x[i], self.y[i], self.theta[i], self.v[i], self.omega[i], self.v_opt, self.v_suitable])
-
+        
         # data = np.array([self.model_ids, self.x, self.y, self.theta, self.v, self.omega, self.v_opt, self.v_suitable])
-        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable])
+        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, self.v_desired, self.v, self.omega])
            
         time_struct = time.localtime(time.time())
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
@@ -113,3 +98,23 @@ class DataLogger():
             os.makedirs(self.directory)
             np.save(self.directory+filename+".npy", data)
 
+    def world2robot_transform(self, v, theta):
+        """
+        Converts vector from world frame to robot frame
+        
+        Arguments: v
+        Returns: v_transformed
+        """
+        # 
+        # Minv = [cos(theta)  sin(theta)
+        #         -sin(theta) cos(theta)]
+        # theta_rad = math.radians(self.agent.theta)
+        Minv = np.array([[math.cos(theta), math.sin(theta)],
+                        [-math.sin(theta), math.cos(theta)]])
+        v_transformed = Minv.dot(np.array([v[0], v[1]]))
+        
+        # for V[1], convert rad/s to degrees/s
+        # transformed_v_opt = [trans_v_opt[0], math.degrees(trans_v_opt[1])] # make a list for consistency sake
+        # transformed_v_opt = [trans_v_opt[0], trans_v_opt[1]] # make a list for consistency sake
+        
+        return v_transformed

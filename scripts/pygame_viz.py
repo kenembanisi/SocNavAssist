@@ -40,6 +40,15 @@ def transform_y(y):
     y_pixel = SCREEN_HEIGHT - ((12 + y)/24) * SCREEN_HEIGHT
     return y_pixel
 
+# draws the time/frame
+def drawTime(idx):
+    black = (0,0,0)
+    my_font = pygame.font.SysFont("Times New Roman", 16)
+    textlabel = my_font.render("Time Frame: ", 1, black)
+    vallabel = my_font.render(str(idx), 1, black)
+
+    screen.blit(textlabel, (20,10))
+    screen.blit(vallabel, (120,10))
 
 # define data drawing function
 def draw_window(idx, data):
@@ -104,6 +113,8 @@ def draw_window(idx, data):
     pygame.draw.line(screen, (255,0,0), (agent_x, agent_y), (agent_x + np.cos(data[3][0][idx])*scaling, 
                             agent_y - np.sin(data[3][0][idx])*scaling), 2)
 
+    drawTime(idx)
+
     # win.blit(rot_image, origin)
     pygame.display.update()
 
@@ -159,6 +170,7 @@ def main(args):
             if idx < n_frames-1:
                 # call window drawing function
                 draw_window(idx, data)
+                drawTime(idx)
 
         if keys[pygame.K_LEFT]:
             idx = idx - 1
@@ -166,10 +178,12 @@ def main(args):
             if idx < n_frames-1:
                 # call window drawing function
                 draw_window(idx, data)
+                drawTime(idx)
 
         else:
             # call window drawing function
             draw_window(idx, data)
+            
         
         # # increment counter
         # idx = idx + 1
