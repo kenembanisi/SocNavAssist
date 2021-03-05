@@ -43,7 +43,8 @@ class DataLogger():
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
 
-    def store_data(self, v_opt_, v_suitable_, v_desired_):
+    # def store_data(self, v_opt_, v_suitable_, v_desired_):
+    def store_data(self, v_opt_, v_suitable_):
         # get one instance of message
         data = None
         while data is None:
@@ -72,34 +73,11 @@ class DataLogger():
             if self.model_ids[i] == 'trina2':
                 self.v_opt.append(v_opt_)
                 self.v_suitable.append(v_suitable_)
-                self.v_desired.append(v_desired_)
-
-        # # obtain min obstacle distance
-        # scan_range = []
-        # for i in range(len(scan_data.ranges)):
-        #     if scan_data.ranges[i] == float('Inf'):
-        #         scan_range.append(3.5)
-        #     elif np.isnan(scan_data.ranges[i]):
-        #         scan_range.append(0)
-        #     else:
-        #         scan_range.append(scan_data.ranges[i])
-
-        # self.min_dist.append(round(min(scan_range), 2))
-
-    # def clear_data(self):
-    #     self.x = [[],[],[]]
-    #     self.y = [[],[],[]]
-    #     self.theta = [[],[],[]]
-    #     self.v = [[],[],[]]  
-    #     self.omega = [[],[],[]] 
-    #     self.min_dist = []
+                # self.v_desired.append(v_desired_)
 
 
     def save_data(self):
-        # save state data
-        # for i in range(len(self.model_ids)):
-        #     data = np.array([self.x[i], self.y[i], self.theta[i], self.v[i], self.omega[i], self.v_opt, self.v_suitable])
-
+ 
         # data = np.array([self.model_ids, self.x, self.y, self.theta, self.v, self.omega, self.v_opt, self.v_suitable])
         data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, self.v_desired, self.v, self.omega])
            

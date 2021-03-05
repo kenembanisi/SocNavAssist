@@ -15,8 +15,8 @@
     <arg name="goal_y" default="10.9" />
     <arg name="goal_z" default="0.7" /> -->
 
-    <arg name="world_name" default="$(find rvo_ros)worlds/corridor.world" />
-    <!-- <arg name="world_name" default="$(find rvo_ros)worlds/example.world" /> -->
+    <!-- <arg name="world_name" default="$(find rvo_ros)worlds/corridor.world" /> -->
+    <arg name="world_name" default="$(find rvo_ros)worlds/example.world" />
 
     <!-- Load the description for the robot -->
     <arg name="robot_name" default="trina2"/>
