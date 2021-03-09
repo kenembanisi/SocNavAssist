@@ -13,6 +13,7 @@ Describes the reciprocal velocity obstacle implementation class.
 
 import math
 import numpy as np
+import rospy
 
 
 class RvoControl():
@@ -50,7 +51,7 @@ class RvoControl():
 
         # extract agent's parameters
         self.agent_pos = [self.agent.x, self.agent.y]
-        self.agent_heading = self.agent.theta
+        self.agent_theta = self.agent.theta
         #self.agent_vel
         self.agent_radius = self.agent.bounding_radius
         # state of motion
@@ -81,7 +82,7 @@ class RvoControl():
             self.obstacle_pos[i] = [self.active_obstacle_dict[i].x, self.active_obstacle_dict[i].y]
             self.obstacle_vel[i] = self.active_obstacle_dict[i].v_pref
         self.agent_pos = [self.agent.x, self.agent.y]
-        self.agent_heading = self.agent.theta
+        self.agent_theta = self.agent.theta
 
         # for DD scenario, compute effective radius and center
         if self.D > 0:
@@ -171,50 +172,76 @@ class RvoControl():
         #   (assumes a point agent or holonomic robot)
         # --------------------------------------------------------------------------------------------------
 
-        # compute range of admissible velocity headings
-        theta_min = self.agent_heading - self.agent.max_angular_acceleration
-        theta_max = self.agent_heading + self.agent.max_angular_acceleration
+        # # compute range of admissible velocity headings
+        # phi_min = self.agent_theta - self.agent.max_angular_acceleration
+        # phi_max = self.agent_theta + self.agent.max_angular_acceleration
 
-        # compute range of admissible velocity magnitudes
-        linear_vel_min = self.current_agent_vel - self.agent.max_linear_acceleration
-        linear_vel_max = self.current_agent_vel + self.agent.max_linear_acceleration
-        if linear_vel_max > self.agent.max_linear_velocity:
-            linear_vel_max = self.agent.max_linear_velocity
-        linear_vel_range = abs(linear_vel_max - linear_vel_min)
+        # # compute range of admissible velocity magnitudes 
+        # linear_vel_min = self.current_agent_vel - self.agent.max_linear_acceleration
+        # linear_vel_max = self.current_agent_vel + self.agent.max_linear_acceleration
+        # if linear_vel_max > self.agent.max_linear_velocity:
+        #     linear_vel_max = self.agent.max_linear_velocity
+        # linear_vel_range = abs(linear_vel_max - linear_vel_min)
 
-        for theta in np.arange(0, 2*math.pi, 0.1): # <---- Search from 1 to 2pi ~ direction of motion
-            for mag in np.arange(0.02, norm_v+0.02, norm_v/10.0): # <-- Search from 0.02 (avoid zero) to agent desired velocity
-        
-        # for theta in np.arange(theta_min, theta_max, 0.1): 
-            # for mag in np.arange(linear_vel_min, linear_vel_max, linear_vel_range/10.0): 
-                candidate_v = [mag*math.cos(theta), mag*math.sin(theta)] # <-- candidate velocity
-                suitable = True
-                for RVO in RVO_all: # <---- Check for all the RVOs
-                    RVO_apex_pos = RVO[0]
-                    lambda_left = RVO[1]
-                    lambda_right = RVO[2]
-                    dist_BA = RVO[3]
-                    eff_obs_radius = RVO[4]
-                    # ---
-                    vAB = [candidate_v[0] + pA[0] - RVO_apex_pos[0], 
-                           candidate_v[1] + pA[1] - RVO_apex_pos[1]]
-                    # find the angles the RVO boundaries make with the global X and then check if 
-                    # the angle vAB makes with the global X is within that
-                    theta_vAB = math.atan2(vAB[1], vAB[0])
-                    theta_right = math.atan2(lambda_right[1], lambda_right[0])
-                    theta_left = math.atan2(lambda_left[1], lambda_left[0])
-                    # check if the velocity vector is suitable by:
-                    #   (1) checking if theta_vAB falls between theta_right and theta_left
-                    if self.in_between(theta_right, theta_vAB, theta_left):
-                    #   (2) checking if |vAB| is greater than the minimum imminent collision velocity
-                        if self.imminent_collision(vAB, dist_BA, eff_obs_radius):
-                            suitable = False
-                            break
-                if suitable:
-                    V_suitable.append(candidate_v)
-                else:
-                    V_unsuitable.append(candidate_v)      
-        # --------------------------------------------------------------------------------------------------          
+        v_a, v_b, v_c, v_d = self.compute_velocity_limits()
+
+        self.v_x_min = min(v_a[0], v_b[0], v_c[0], v_d[0])
+        self.v_x_max = max(v_a[0], v_b[0], v_c[0], v_d[0])
+
+        self.v_y_min = min(v_a[1], v_b[1], v_c[1], v_d[1])
+        self.v_y_max = max(v_a[1], v_b[1], v_c[1], v_d[1])
+
+        # agent_vel = self.agent.get_agent_velocities() # agent_vel = [v, omega]
+
+        # rospy.loginfo("actual: [%s, %s] || velocity bounds: x: [%s, %s], y: [%s, %s]", str(round(agent_vel[0], 3)), str(round(agent_vel[1], 3)), str(round(v_x_min, 3)), str(v_x_max), str(v_y_min), str(v_y_max))
+
+        n_admissible = 0
+        n_total = 0
+        norm_v = 1.5
+        # for phi in np.arange(0, 2*math.pi, 0.1): # <---- Search from 1 to 2pi ~ direction of motion
+        #     for mag in np.arange(0.02, norm_v+0.02, norm_v/10.0): # <-- Search from 0.02 (avoid zero) to agent desired velocity
+        for phi in np.linspace(0, 2*math.pi, 60):
+            for mag in np.linspace(0.02, norm_v+0.02, 10):
+                
+                n_total += 1
+
+        # for phi in np.arange(phi_min, phi_max, 0.1): 
+        #     for mag in np.arange(linear_vel_min, linear_vel_max, linear_vel_range/10.0): 
+                candidate_v = [mag*math.cos(phi), mag*math.sin(phi)] # <-- candidate velocity
+                admissible = self.admissibility_check(candidate_v) # <-- is the candidate velocity admissible?
+
+                if admissible: # if not admissible, skip the candidate velocity
+                    n_admissible += 1
+                    # break
+
+                    suitable = True
+                    for RVO in RVO_all: # <---- Check for all the RVOs
+                        RVO_apex_pos = RVO[0]
+                        lambda_left = RVO[1]
+                        lambda_right = RVO[2]
+                        dist_BA = RVO[3]
+                        eff_obs_radius = RVO[4]
+                        # ---
+                        vAB = [candidate_v[0] + pA[0] - RVO_apex_pos[0], 
+                                candidate_v[1] + pA[1] - RVO_apex_pos[1]]
+                        # find the angles the RVO boundaries make with the global X and then check if 
+                        # the angle vAB makes with the global X is within that
+                        theta_vAB = math.atan2(vAB[1], vAB[0])
+                        theta_right = math.atan2(lambda_right[1], lambda_right[0])
+                        theta_left = math.atan2(lambda_left[1], lambda_left[0])
+                        # check if the velocity vector is suitable by:
+                        #   (1) checking if theta_vAB falls between theta_right and theta_left
+                        if self.in_between(theta_right, theta_vAB, theta_left):
+                        #   (2) checking if |vAB| is greater than the minimum imminent collision velocity
+                            if self.imminent_collision(vAB, dist_BA, eff_obs_radius):
+                                suitable = False
+                                break
+                    if suitable:
+                        V_suitable.append(candidate_v)
+                    else:
+                        V_unsuitable.append(candidate_v)      
+        # --------------------------------------------------------------------------------------------------     
+        rospy.loginfo("Suit V: [%s], Unsuit V: [%s], Admis: [%s], Total: [%s]", str(len(V_suitable)), str(len(V_unsuitable)), str(n_admissible), str(n_total))     
 
         return V_suitable, V_unsuitable
 
@@ -241,6 +268,8 @@ class RvoControl():
         if V_suitable:
             # get the velocity with minimum distance to the desired
             V_opt = min(V_suitable, key = lambda v: self.compute_distance(v, vA))
+
+            # rospy.loginfo("Suitable V found! # of velocities: [%s]", str(len(V_suitable)))
 
         # If no suitable velocity is found, then:
         else:
@@ -276,6 +305,8 @@ class RvoControl():
                         tc.append(tc_v)
                 # finds the minimum ttc across all agents for a given velocity
                 tc_V[tuple(unsuit_v)] = min(tc)+0.001
+
+            # rospy.loginfo("Suitable V NOT found! # of unsuitable velocities: [%s]", str(len(V_unsuitable)))
 
             # define weighting
             WT = 0.2
@@ -365,23 +396,23 @@ class RvoControl():
 
         return V_desired
 
-    def compute_operator_goal(self):
-        """
-        This function returns a vector based on the current robot heading and
-        (1) max_linear_velocity, or (2) the operator's inputted linear velocity
+    # def compute_operator_goal(self):
+    #     """
+    #     This function returns a vector based on the current robot heading and
+    #     (1) max_linear_velocity, or (2) the operator's inputted linear velocity
 
-        Arguments: None
-        Returns:
-            - operator_goal (list)
-        """
+    #     Arguments: None
+    #     Returns:
+    #         - operator_goal (list)
+    #     """
         
-        ### Implementing case (1): using max_linear_velocity
-        vec_dir = self.agent.compute_heading(-self.agent.theta)
+    #     ### Implementing case (1): using max_linear_velocity
+    #     vec_dir = self.compute_heading(-self.agent.theta)
 
-        operator_goal = [vec_dir[0] * self.agent.max_lin_vel,
-                         vec_dir[1] * self.agent.max_lin_vel]
+    #     operator_goal = [vec_dir[0] * self.agent.max_lin_vel,
+    #                      vec_dir[1] * self.agent.max_lin_vel]
         
-        return operator_goal
+    #     return operator_goal
 
     def compute_distance(self, pose1, pose2):
         """
@@ -435,10 +466,89 @@ class RvoControl():
         """
 
         # compute direction vector
-        heading_vec_dir = self.agent.compute_heading(-self.agent.theta)
+        heading_vec_dir = self.compute_heading(self.agent_theta) # theta was previously set to -ve
         # compute new position
         self.agent_pos = [self.agent.x + heading_vec_dir[0]*self.D,
                          self.agent.y + heading_vec_dir[1]*self.D]
+
+    def compute_velocity_limits(self):
+
+        # set delta_t
+        self.delta_t = 1.0
+
+        # obtain current angular velocity
+        agent_vel = self.agent.get_agent_velocities() # agent_vel = [v, omega]
+
+        # compute range of admissible velocity headings
+        omega_min = agent_vel[1] - self.agent.max_angular_acceleration * self.delta_t
+        omega_max = agent_vel[1] + self.agent.max_angular_acceleration * self.delta_t
+        if omega_max > self.agent.max_angular_velocity:
+            omega_max = self.agent.max_angular_velocity
+        if omega_min < -self.agent.max_angular_velocity:
+            omega_min = -self.agent.max_angular_velocity
+        
+        if self.D > 0:
+            v_omega_min = self.D * omega_min
+            v_omega_max = self.D * omega_max
+
+        # compute range of admissible velocity magnitudes 
+        v_min = agent_vel[0] - self.agent.max_linear_acceleration * self.delta_t
+        v_max = agent_vel[0] + self.agent.max_linear_acceleration * self.delta_t
+        if v_max > self.agent.max_linear_velocity:
+            v_max = self.agent.max_linear_velocity
+        if v_min < -self.agent.max_linear_velocity:
+            v_min = -self.agent.max_linear_velocity
+        v_range = abs(v_max - v_min)
+
+        # define admissible velocity vector vertices (clockwise direction)
+        v_a = [v_min, v_omega_min] # lower left vertex
+        v_b = [v_min, v_omega_max]
+        v_c = [v_max, v_omega_max] # upper right vertex
+        v_d = [v_max, v_omega_min]
+
+        # rotate rect vertices by theta
+        v_a_rot = self.DD2point_velocity(v_a)
+        v_b_rot = self.DD2point_velocity(v_b)
+        v_c_rot = self.DD2point_velocity(v_c)
+        v_d_rot = self.DD2point_velocity(v_d)
+
+        return v_a_rot, v_b_rot, v_c_rot, v_d_rot
+
+        # # compute min and max phi values
+        # v_p_current = self.DD2point_velocity(agent_vel)
+        # phi = math.atan2(v_p_current[1], v_p_current[0])
+
+        # # 
+        # phi_min = []
+        # vel_min1 = self.DD2point_velocity([v_min, omega_min])
+        # vel_min2 = self.DD2point_velocity([v_max, omega_min])
+
+        # phi_min.append(math.atan2(vel_min1[1], vel_min1[0]))
+        # phi_min.append(math.atan2(vel_min2[1], vel_min2[0]))
+
+        # phi_max = []
+        # vel_max1 = self.DD2point_velocity([v_min, omega_max])
+        # vel_max2 = self.DD2point_velocity([v_max, omega_max])
+
+        # phi_max.append(math.atan2(vel_max1[1], vel_max1[0]))
+        # phi_max.append(math.atan2(vel_max2[1], vel_max2[0]))
+
+        # rospy.loginfo("Values of phi range: [%s, %s], [%s], [%s, %s]", str(phi_min[0]), str(phi_min[1]), str(phi), str(phi_max[0]), str(phi_max[1]))
+
+    def admissibility_check(self, vel):
+        """
+        Checks if the velocity sampled is admissible based on kinodynamic constraints on the diff drive robot
+
+        Arguments: vel
+        Returns: bool
+        """
+        admissible = False
+        if vel[0] >= self.v_x_min and vel[0] <= self.v_x_max:
+            if vel[1] >= self.v_y_min and vel[1] <= self.v_y_max:
+                admissible = True
+
+        return admissible
+
 
     def transform_augmented_V(self, v_opt):
         """
@@ -449,8 +559,8 @@ class RvoControl():
         Returns: transformed_v_opt
         """
         # 
-        # Minv = [cos(theta)    -sin(theta)
-        #         sin(theta)/D cos(theta)/D]
+        # Minv = [cos(theta)    sin(theta)
+        #         -sin(theta)/D cos(theta)/D]
         theta_rad = math.radians(self.agent.theta)
         Minv = np.array([[math.cos(theta_rad), math.sin(theta_rad)],
                         [-(math.sin(theta_rad)/self.D),  (math.cos(theta_rad)/self.D)]])
@@ -461,10 +571,50 @@ class RvoControl():
         transformed_v_opt = [trans_v_opt[0], trans_v_opt[1]] # make a list for consistency sake
         
         return transformed_v_opt
-
-    def get_desired_velocity(self):
+    
+    def DD2point_velocity(self, vel):
         """
-        Gets the agent desired velocity, i.e. velocity towards the agent goal.
+        Tranforms robot velocity by M(theta) from DD (kinematic constrained) to point velocity space
+        
+        Arguments: vel
+        Returns: vel_point
+        """
+        # 
+        # M = [cos(theta)  -D*sin(theta)
+        #      sin(theta)   D*cos(theta)]
+        theta_rad = math.radians(self.agent.theta)
+        M = np.array([[math.cos(theta_rad), math.sin(theta_rad)],
+                      [-math.sin(theta_rad), math.cos(theta_rad)]])
+        vel_point = M.dot(np.array([vel[0], vel[1]]))
+        
+        # for V[1], convert rad/s to degrees/s
+        # transformed_v_opt = [trans_v_opt[0], math.degrees(trans_v_opt[1])] # make a list for consistency sake
+        # transformed_v_opt = [trans_v_opt[0], trans_v_opt[1]] # make a list for consistency sake
+        
+        return vel_point
+
+    def compute_heading(self, theta):
+        """
+        Computes the heading of the robot from the reference position based on a
+        rotation of theta.
+
+        Arguments: 
+            - theta (float)
+        Returns: 
+            - new_heading (list)
+
+        """
+        # init_heading = np.array([0, -1])
+        init_heading = np.array([1, 0]) # initial heading is aligned to the world x position
+        theta = math.radians(theta)
+        rotation_matrix = np.array([[math.cos(theta), -math.sin(theta)],
+                                   [math.sin(theta), math.cos(theta)]])
+        new_heading = rotation_matrix.dot(init_heading)
+        return [new_heading[0], new_heading[1]]
+
+    def get_goal_velocity(self):
+        """
+        Gets the agent goal/desired velocity, i.e. velocity towards the agent goal.
 
         Arguments: None
 
