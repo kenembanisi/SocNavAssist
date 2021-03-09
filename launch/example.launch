@@ -1,8 +1,7 @@
 <launch>
     <!-- initial robot pose -->
-    <!-- <arg name="robot_x" default="0.009" /> -->
-    <arg name="robot_x" default="4.94" />
-    <!-- <arg name="robot_y" default="-10.48" /> -->
+    <!-- <arg name="robot_x" default="4.94" /> -->
+    <arg name="robot_x" default="2.94" />
     <arg name="robot_y" default="-9.5" />
     <arg name="robot_z" default="0.0" />
     <arg name="robot_yaw" default="1.55" />
