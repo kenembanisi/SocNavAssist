@@ -23,21 +23,32 @@ def main(args):
 
     # plot data
         # instantiate figure and axes object
-    fig, (ax1, ax2) = plt.subplots(2, 1)
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1)
         # v_opt
     v_opt = data[4]
-    v_opt_linear = [v_opt[i][0] for i in range(len(v_opt))]
-    v_opt_angular = [v_opt[i][1] for i in range(len(v_opt))]
+    v_opt_linear = [v_opt[i][1][0] for i in range(len(v_opt))]
+    v_opt_angular = [v_opt[i][1][1] for i in range(len(v_opt))]
+    v_opt_point_linear = [v_opt[i][0][0] for i in range(len(v_opt))]
+    v_opt_point_angular = [v_opt[i][0][1] for i in range(len(v_opt))]
 
         # v_actual
     v_actual_linear = data[7][0]
     v_actual_angular = data[8][0]
+
+        # agent.theta
+    agent_theta = data[3][0]
+    
 
     ax1.plot(v_opt_linear, label='Optimal')
     ax1.plot(v_actual_linear, label='Current')
 
     ax2.plot(v_opt_angular, label='Optimal')
     ax2.plot(v_actual_angular, label='Current')
+
+    ax3.plot(v_opt_point_linear, label='x')
+    ax3.plot(v_opt_point_angular, label='y')
+
+    ax4.plot(agent_theta, label='theta')
     
     # set labels
     ax1.set_ylabel('Velocity (m/s)')
@@ -50,6 +61,7 @@ def main(args):
     # set legends
     ax1.legend(fontsize=8)
     ax2.legend(fontsize=8)
+    ax3.legend(fontsize=8)
 
     plt.show()
 
