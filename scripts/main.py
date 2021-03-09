@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
         ### Instantiate rvo_control class
         D = 0.2
-        rvo_agent = RvoControl(agent, obstacles, D=D, tau=1.5)
+        rvo_agent = RvoControl(agent, obstacles, D=D, tau=4)
 
         ### set goal position. TODO: This should be set from launch file
         goal = [4.63, 8.05]
