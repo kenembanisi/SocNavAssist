@@ -112,6 +112,17 @@ class AgentClass():
         # call the velocity data publisher:
         # self.publish_data(v_opt, v_list)
 
+    def get_agent_velocities(self):
+        """
+        Returns the linear and angular velocities of the agent
+        
+        Arguments:
+            - None
+        Returns:
+            - [v, omega]
+        """
+        return [self.v, self.omega]
+        
     def compute_heading(self, theta):
         """
         Computes the heading of the robot from the reference position based on a
