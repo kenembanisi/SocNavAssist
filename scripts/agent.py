@@ -54,6 +54,8 @@ class AgentClass():
             # publisher to base_controller
         self.velocity_publisher = rospy.Publisher('/base_controller/cmd_vel',
             Twist, queue_size=1)
+        # self.velocity_publisher = rospy.Publisher('/dynamic_obstacle_1/cmd_vel',
+        #     Twist, queue_size=1)
 
             # publisher for velocity data
         self.data_publisher = rospy.Publisher('/velocity_data', 
@@ -84,7 +86,7 @@ class AgentClass():
                                             orientation_quaterion.y, 
                                             orientation_quaterion.z, 
                                             orientation_quaterion.w])
-        self.theta = np.degrees(orientation_euler[2])
+        self.theta = np.degrees(orientation_euler[2]) # converted to degrees
         # ---
         self.v = data.twist[idx].linear.x
         self.omega = data.twist[idx].angular.z
@@ -107,30 +109,42 @@ class AgentClass():
         # Set the variables into cmd_vel:
         cmd_vel.linear.x = v_opt[0]
         cmd_vel.angular.z = v_opt[1]
+        # cmd_vel.linear.x = v_opt[0]
+        # cmd_vel.linear.y = v_opt[1]
 
         # Publish the cmd_vel message:
         self.velocity_publisher.publish(cmd_vel)
 
-        # call the velocity data publisher:
-        # self.publish_data(v_opt, v_list)
-
-    def compute_heading(self, theta):
+    def get_agent_velocities(self):
         """
-        Computes the heading of the robot from the reference position based on a
-        rotation of self.theta.
+        Returns the linear and angular velocities of the agent
+        
+        Arguments:
+            - None
 
-        Arguments: 
-            - theta (float)
-        Returns: 
-            - new_heading (list)
-
+        Returns:
+            - [v, omega]
         """
-        init_heading = np.array([0, -1])
-        theta = math.radians(theta)
-        rotation_matrix = np.array([[math.cos(theta), math.sin(theta)],
-                                   [-math.sin(theta), math.cos(theta)]])
-        new_heading = rotation_matrix.dot(init_heading)
-        return [new_heading[0], new_heading[1]]
+        return [self.v, self.omega]
+
+    # def compute_heading(self, theta):
+    #     """
+    #     Computes the heading of the robot from the reference position based on a
+    #     rotation of theta.
+
+    #     Arguments: 
+    #         - theta (float)
+    #     Returns: 
+    #         - new_heading (list)
+
+    #     """
+    #     # init_heading = np.array([0, -1])
+    #     init_heading = np.array([1, 0]) # initial heading is aligned to the world x position
+    #     theta = math.radians(theta)
+    #     rotation_matrix = np.array([[math.cos(theta), -math.sin(theta)],
+    #                                [math.sin(theta), math.cos(theta)]])
+    #     new_heading = rotation_matrix.dot(init_heading)
+    #     return [new_heading[0], new_heading[1]]
 
 
     def publish_data(self, v_opt, v_list):
