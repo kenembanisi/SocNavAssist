@@ -42,9 +42,9 @@ if __name__ == "__main__":
         ### define active obstacles (pedestrians)
         pedestrian_id = ['dynamic_obstacle_1', 'dynamic_obstacle_2', 'dynamic_obstacle_3', 'dynamic_obstacle_4']
         pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.95, 0.0]},
-                                 {'radius': 0.4, 'pref_velocity': [0.75, -0.1]},
-                                 {'radius': 0.4, 'pref_velocity': [0.0, -0.7]},
-                                 {'radius': 0.4, 'pref_velocity': [-0.2, -0.7]}]
+                                 {'radius': 0.4, 'pref_velocity': [0.95, -0.25]},
+                                 {'radius': 0.4, 'pref_velocity': [0.0, -0.85]},
+                                 {'radius': 0.4, 'pref_velocity': [-0.3, -0.7]}]
         # pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, -0.8]},
         #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
         #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
@@ -97,8 +97,11 @@ if __name__ == "__main__":
             # Update simulation:
             v_opt, v_suitable = rvo_agent.compute_V_opt(goal, alpha=1)
 
+            # get desired/goal agent velocity
+            v_goal = rvo_agent.get_goal_velocity()
+
             # store states
-            logger.store_data(v_opt[1], v_suitable)
+            logger.store_data(v_opt, v_suitable, v_goal)
 
             # update agent's state
             agent.update_controls(v_opt[1], v_suitable)
