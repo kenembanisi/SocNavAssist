@@ -41,17 +41,22 @@ if __name__ == "__main__":
 
         ### define active obstacles (pedestrians)
         pedestrian_id = ['dynamic_obstacle_1', 'dynamic_obstacle_2', 'dynamic_obstacle_3', 'dynamic_obstacle_4']
-        pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.95, 0.0]},
-                                 {'radius': 0.4, 'pref_velocity': [0.75, -0.1]},
-                                 {'radius': 0.4, 'pref_velocity': [0.0, -0.7]},
-                                 {'radius': 0.4, 'pref_velocity': [-0.2, -0.7]}]
-        # pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, -0.8]},
-        #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
-        #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
-        #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]}]
+        # pedestrian_id = ['dynamic_obstacle_2', 'dynamic_obstacle_3', 'dynamic_obstacle_4']
+        # pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.75, -0.1]},
+        #                          {'radius': 0.4, 'pref_velocity': [0.0, -0.7]},
+        #                          {'radius': 0.4, 'pref_velocity': [-0.2, -0.7]}]
+        # pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.95, 0.0]},
+        #                          {'radius': 0.4, 'pref_velocity': [0.75, -0.1]},
+        #                          {'radius': 0.4, 'pref_velocity': [0.0, -0.7]},
+        #                          {'radius': 0.4, 'pref_velocity': [-0.2, -0.7]}]
+        pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
+                                 {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
+                                 {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
+                                 {'radius': 0.4, 'pref_velocity': [0.0, 0.0]}]
 
         ### define agent
         agent_id = 'trina2'
+        # agent_id = 'dynamic_obstacle_1'
         agent_properties = {'radius': 1.0}
         
 
@@ -60,6 +65,7 @@ if __name__ == "__main__":
 
         ### initialize data logger (for active objects only)
         model_ids = ['trina2'] + pedestrian_id
+        # model_ids = ['dynamic_obstacle_1'] + pedestrian_id
         logger = DataLogger(model_ids)
 
          ### Instantiate object class
@@ -80,7 +86,8 @@ if __name__ == "__main__":
         rvo_agent = RvoControl(agent, obstacles, D=D, tau=1.5)
 
         ### set goal position. TODO: This should be set from launch file
-        goal = [4.63, 8.05]
+        # goal = [4.63, 8.05]
+        goal = [8.1, -10.05]
         
         ### Move the active obstacles
         for i in range(num_pedestrians):
@@ -97,8 +104,11 @@ if __name__ == "__main__":
             # Update simulation:
             v_opt, v_suitable = rvo_agent.compute_V_opt(goal, alpha=1)
 
+            # get desired/goal agent velocity
+            v_goal = rvo_agent.get_goal_velocity()
+
             # store states
-            logger.store_data(v_opt[1], v_suitable)
+            logger.store_data(v_opt, v_suitable, v_goal)
 
             # update agent's state
             agent.update_controls(v_opt[1], v_suitable)
@@ -111,9 +121,9 @@ if __name__ == "__main__":
 
             t_stop = time.time()
             dt = t_stop - t_start
+            # rospy.loginfo("Time interval: %s", str(dt))
 
-
-            if round(dt) > 1 and round(dt) % 30 == 0:
+            if round(dt) > 1 and round(dt) % 10 == 0:
                 logger.save_data()
                 rospy.loginfo("<<<<< Trial Saving Complete! >>>>>")
 

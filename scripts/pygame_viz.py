@@ -160,24 +160,24 @@ def main(args):
 
     # print data
         # instantiate figure and axes object
-    fig, (ax1, ax2) = plt.subplots(2, 1)
-        # v_opt
-    v_opt = data[4]
-    v_opt_linear = [v_opt[i][1][0] for i in range(len(v_opt))]
-    v_opt_angular = [v_opt[i][1][1] for i in range(len(v_opt))]
+    # fig, (ax1, ax2) = plt.subplots(2, 1)
+    #     # v_opt
+    # v_opt = data[4]
+    # v_opt_linear = [v_opt[i][1][0] for i in range(len(v_opt))]
+    # v_opt_angular = [v_opt[i][1][1] for i in range(len(v_opt))]
 
-        # v_actual
-    v_actual_linear = data[7][0]
-    v_actual_angular = data[8][0]
+    #     # v_actual
+    # v_actual_linear = data[7][0]
+    # v_actual_angular = data[8][0]
 
-    ax1.plot(v_opt_linear)
-    ax1.plot(v_actual_linear)
+    # ax1.plot(v_opt_linear)
+    # ax1.plot(v_actual_linear)
 
-    ax2.plot(v_opt_angular)
-    ax2.plot(v_actual_angular)
+    # ax2.plot(v_opt_angular)
+    # ax2.plot(v_actual_angular)
     
-    plt.legend(fontsize=10)
-    plt.show()
+    # plt.legend(fontsize=10)
+    # plt.show()
 
 
     # control loop
