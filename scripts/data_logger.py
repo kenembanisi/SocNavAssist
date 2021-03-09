@@ -5,6 +5,7 @@ from geometry_msgs.msg import Twist
 from gazebo_msgs.msg import ModelStates
 from sensor_msgs.msg import LaserScan
 import numpy as np
+import math
 import time
 import argparse
 import sys
@@ -38,13 +39,13 @@ class DataLogger():
         # self.min_dist = []
         self.v_opt = []
         self.v_suitable = []
-        self.v_desired = []
+        self.v_goal = []
 
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
 
-    # def store_data(self, v_opt_, v_suitable_, v_desired_):
-    def store_data(self, v_opt_, v_suitable_):
+    def store_data(self, v_opt_, v_suitable_, v_goal_):
+    # def store_data(self, v_opt_, v_suitable_):
         # get one instance of message
         data = None
         while data is None:
@@ -67,19 +68,26 @@ class DataLogger():
                  data.pose[idx].orientation.y,
                  data.pose[idx].orientation.z,
                  data.pose[idx].orientation.w])[2])
-            self.v[i].append(data.twist[idx].linear.x)
+            
+                # transform velocity from world frame to robot frame
+            v_world = [data.twist[idx].linear.x, data.twist[idx].linear.y]
+            v_robot = self.world2robot_transform(v_world, self.theta[i][-1])
+
+            # self.v[i].append(data.twist[idx].linear.x)
+            self.v[i].append(v_robot[0])
             self.omega[i].append(data.twist[idx].angular.z)
 
             if self.model_ids[i] == 'trina2':
+            # if self.model_ids[i] == 'dynamic_obstacle_1':
                 self.v_opt.append(v_opt_)
                 self.v_suitable.append(v_suitable_)
-                # self.v_desired.append(v_desired_)
+                self.v_goal.append(v_goal_)
 
 
     def save_data(self):
  
         # data = np.array([self.model_ids, self.x, self.y, self.theta, self.v, self.omega, self.v_opt, self.v_suitable])
-        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, self.v_desired, self.v, self.omega])
+        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, self.v_goal, self.v, self.omega])
            
         time_struct = time.localtime(time.time())
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
@@ -93,3 +101,23 @@ class DataLogger():
             os.makedirs(self.directory)
             np.save(self.directory+filename+".npy", data)
 
+    def world2robot_transform(self, v, theta):
+        """
+        Converts vector from world frame to robot frame
+        
+        Arguments: v
+        Returns: v_transformed
+        """
+        # 
+        # Minv = [cos(theta)  sin(theta)
+        #         -sin(theta) cos(theta)]
+        # theta_rad = math.radians(self.agent.theta)
+        Minv = np.array([[math.cos(theta), math.sin(theta)],
+                        [-math.sin(theta), math.cos(theta)]])
+        v_transformed = Minv.dot(np.array([v[0], v[1]]))
+        
+        # for V[1], convert rad/s to degrees/s
+        # transformed_v_opt = [trans_v_opt[0], math.degrees(trans_v_opt[1])] # make a list for consistency sake
+        # transformed_v_opt = [trans_v_opt[0], trans_v_opt[1]] # make a list for consistency sake
+        
+        return v_transformed
