@@ -444,3 +444,12 @@ class RvoControl():
         
         return transformed_v_opt
 
+    def get_goal_velocity(self):
+        """
+        Gets the agent goal/desired velocity, i.e. velocity towards the agent goal.
+        Arguments: None
+        Returns: self.desired_agent_vel (list)
+        """
+        # return self.desired_agent_vel
+        return self.agent_vel
+
