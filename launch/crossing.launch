@@ -1,27 +1,12 @@
 <launch>
-    <!-- initial robot pose -->
-    <!-- <arg name="robot_x" default="4.94" /> -->
-    <!-- <arg name="robot_x" default="2.94" />
-    <arg name="robot_y" default="-9.5" />
-    <arg name="robot_z" default="0.0" />
-    <arg name="robot_yaw" default="1.55" /> -->
-    <!-- <arg name="robot_yaw" default="0.03" /> -->
-
-    <!-- for approach world -->
-    <!-- <arg name="robot_x" default="-6.31" />
-    <arg name="robot_y" default="-9.95" />
-    <arg name="robot_z" default="0.0" />
-    <arg name="robot_yaw" default="1.55" /> -->
-
-    <!-- for crossing world -->
+    <!-- Initial robot pose -->
     <arg name="robot_x" default="-6.31" />
     <arg name="robot_y" default="-5.95" />
     <arg name="robot_z" default="0.0" />
     <arg name="robot_yaw" default="1.55" />
 
 
-    <!-- <arg name="world_name" default="$(find rvo_ros)worlds/example.world" /> -->
-    <!-- <arg name="world_name" default="$(find rvo_ros)worlds/approach.world" /> -->
+    <!-- Set world -->
     <arg name="world_name" default="$(find rvo_ros)worlds/crossing.world" />
 
     <!-- Load the description for the robot -->
@@ -59,6 +44,7 @@
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
 
     <!-- Launch rvo agent -->
-    <node name="move_trina2" pkg="rvo_ros" type="main.py" output="screen"/>
+    <arg name="scenario" default="crossing"/>
+    <node name="move_trina2" pkg="rvo_ros" type="main.py" output="screen" args="$(arg scenario)" />
 
 </launch>
