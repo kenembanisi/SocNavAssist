@@ -55,3 +55,4 @@ python velocity_plotter.py --data <filename>
     - It seems that choosing the right `tau` resolves the main issues here
 3. How can we incorporate social constraints to RVO? 
 4. How to deal with arbitrarily shaped static features? Using a preprocess to filter velocities using static map.
+5. Solve angular oscillation issue! So far, it seems the angular acceleration is a constraint.
