@@ -5,6 +5,10 @@
     <arg name="robot_z" default="0.0" />
     <arg name="robot_yaw" default="1.55" />
 
+    <!-- Set control mode -->
+    <arg name="control_mode" default="auto" />
+    <param name="control_mode" value="$(arg control_mode)" />
+
     <!-- Set world -->
     <arg name="world_name" default="$(find rvo_ros)worlds/approach.world" />
 

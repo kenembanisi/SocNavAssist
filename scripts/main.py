@@ -83,6 +83,11 @@ def run(args):
     ############################ Set agent goal location ############################
     goal = [-6.5, 8.2]
     
+    ################### Get control mode from ROS parameter server ##################
+    control_mode = rospy.get_param('control_mode')
+    AUTO = False
+    if control_mode == 'auto':
+        AUTO = True
 
     ################################### Set timer ###################################
     t_start = time.time()
@@ -107,7 +112,8 @@ def run(args):
         logger.store_data(v_opt, v_suitable, v_goal)
 
         # update agent's state ----------------------------------------------------
-        agent.update_controls(v_opt[1], v_suitable) # only takes v_opt[1]: the
+        if AUTO:
+            agent.update_controls(v_opt[1], v_suitable) # only takes v_opt[1]: the
                                                     # kinematically feasible velocities
 
         # Move the active obstacles -----------------------------------------------
