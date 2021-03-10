@@ -9,10 +9,11 @@ main_control.py
 """
 
 
-#------------------------------------------------------------------------------------
+#####################################################################################
 # Import packages
-#------------------------------------------------------------------------------------
+#####################################################################################
 
+import sys
 import rospy
 import numpy as np
 from gazebo_msgs.msg import ModelStates
@@ -25,101 +26,118 @@ from agent import AgentClass
 from rvo_control import RvoControl
 from data_logger import DataLogger
 
+#####################################################################################
+# run function
+#####################################################################################
+def run(args):
+
+    ############################# Instantiate ROS node ##############################
+    rospy.init_node('rvo_ros_node')
 
 
-#------------------------------------------------------------------------------------
+    ################### Define scenario and pedestrian properties ###################
+    scenario = args[1]
+
+    if scenario == "crossing":
+        # for crossing scenario
+        pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.8, -0.0]},
+                                {'radius': 0.4, 'pref_velocity': [-1.0, -0.0]},
+                                {'radius': 0.4, 'pref_velocity': [0.6, -0.0]},
+                                {'radius': 0.4, 'pref_velocity': [-0.7, -0.0]}]
+    if scenario == "approach":
+        # for approach scenario
+        pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
+                                {'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
+                                {'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
+                                {'radius': 0.4, 'pref_velocity': [0.0, -1.0]}]
+    pedestrian_id = ['dynamic_obstacle_1', 'dynamic_obstacle_2', 
+                     'dynamic_obstacle_3', 'dynamic_obstacle_4']
+    num_pedestrians = len(pedestrian_id)
+    
+    #################################################################################
+
+
+    ########################### Define agent and properties #########################
+    agent_id = 'trina2'
+    agent_properties = {'radius': 1.0}
+    agent = AgentClass(agent_id, agent_properties)
+    
+
+    ################ Initialize data logger (for active objects only) ###############
+    model_ids = ['trina2'] + pedestrian_id
+    logger = DataLogger(model_ids, scenario)
+
+
+    ######################### Define pedestrians as obstacles #######################
+    obstacle_list = {}
+    for i in range(num_pedestrians):
+        obstacle_list[i] = ObstacleClass(pedestrian_id[i], pedestrian_properties[i])
+
+    
+    ################ Initiate RVO controller for agent & obstacle set ###############
+    D = 0.2 # radius extension for differential drive condition
+    tau = 3.0 # planning horizon
+    rvo_agent = RvoControl(agent, obstacle_list, D=D, tau=tau)
+
+
+    ############################ Set agent goal location ############################
+    goal = [-6.5, 8.2]
+    
+
+    ################################### Set timer ###################################
+    t_start = time.time()
+
+    ################################### Main loop ###################################
+    while not rospy.is_shutdown():
+        
+        # timer to check computing time--------------------------------------------
+        # t_start = time.time()
+        # -------------------------------------------------------------------------
+
+        # Update simulation -------------------------------------------------------
+        alpha = 1 # collision avoidance responsibility, 1 means the agent 
+                  # takes full responsibility
+        v_opt, v_suitable = rvo_agent.compute_V_opt(goal, alpha=alpha)
+        # -------------------------------------------------------------------------
+
+        # get desired/goal agent velocity -----------------------------------------
+        v_goal = rvo_agent.get_goal_velocity()
+
+        # store states ------------------------------------------------------------
+        logger.store_data(v_opt, v_suitable, v_goal)
+
+        # update agent's state ----------------------------------------------------
+        agent.update_controls(v_opt[1], v_suitable) # only takes v_opt[1]: the
+                                                    # kinematically feasible velocities
+
+        # Move the active obstacles -----------------------------------------------
+        for i in range(num_pedestrians):
+            obstacle_list[i].move()
+            
+        # rospy.loginfo("The computed optimal control is: %s", str([round(v_opt[1][0],2), round(v_opt[1][1],2)]))
+
+        # Set stop time -----------------------------------------------------------
+        t_stop = time.time()
+        dt = t_stop - t_start
+
+        # Save logged data at intervals -------------------------------------------
+        save_interval = 20 # seconds
+        if round(dt) > 1 and round(dt) % save_interval == 0:
+            logger.save_data()
+            rospy.loginfo("<<<<< Trial Saving Complete! >>>>>")
+
+#####################################################################################
 # main
-#------------------------------------------------------------------------------------
+#####################################################################################
 
 if __name__ == "__main__":
 
+    # get argument passed to node
+    args = rospy.myargv(argv=sys.argv)
+
     try:
-        ### define static features. TODO: Detect this directly from a static occupancy grid map
-        static_features_id = ['static_obstacle_1', 'static_obstacle_2']
-        static_features_properties = [{'radius': 1.7, 'pref_velocity': [0, 0]},
-                                    {'radius': 1.7, 'pref_velocity': [0, 0]}]
-
-        ### define active obstacles (pedestrians)
-        pedestrian_id = ['dynamic_obstacle_1', 'dynamic_obstacle_2', 'dynamic_obstacle_3', 'dynamic_obstacle_4']
-        pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.95, 0.0]},
-                                 {'radius': 0.4, 'pref_velocity': [0.95, -0.25]},
-                                 {'radius': 0.4, 'pref_velocity': [0.0, -0.85]},
-                                 {'radius': 0.4, 'pref_velocity': [-0.3, -0.7]}]
-        # pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, -0.8]},
-        #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
-        #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
-        #                          {'radius': 0.4, 'pref_velocity': [0.0, 0.0]}]
-
-        ### define agent
-        agent_id = 'trina2'
-        agent_properties = {'radius': 1.0}
-        
-
-        ### Instantiate the ros node:
-        rospy.init_node('test_object')
-
-        ### initialize data logger (for active objects only)
-        model_ids = ['trina2'] + pedestrian_id
-        logger = DataLogger(model_ids)
-
-        ### Instantiate object class
-        num_static_obstacles = len(static_features_id)
-        obstacles = {}
-        for i in range(num_static_obstacles):
-            obstacles[i] = ObstacleClass(static_features_id[i], static_features_properties[i])
-
-        num_pedestrians = len(pedestrian_id)
-        for i in range(num_pedestrians):
-            obstacles[num_static_obstacles+i] = ObstacleClass(pedestrian_id[i], pedestrian_properties[i])
-
-        ### Instantiate vehicle class
-        agent = AgentClass(agent_id, agent_properties)
-
-        ### Instantiate rvo_control class
-        D = 0.2
-        rvo_agent = RvoControl(agent, obstacles, D=D, tau=4)
-
-        ### set goal position. TODO: This should be set from launch file
-        goal = [4.63, 8.05]
-        
-        ### Move the active obstacles
-        for i in range(num_pedestrians):
-            obstacles[i+num_static_obstacles].move()
-
-        t_start = time.time()
-
-        while not rospy.is_shutdown():
-            
-            # timer:-------------------------------------------------------------------
-            # t_start = time.time()
-            # -------------------------------------------------------------------------
-
-            # Update simulation:
-            v_opt, v_suitable = rvo_agent.compute_V_opt(goal, alpha=1)
-
-            # get desired/goal agent velocity
-            v_goal = rvo_agent.get_goal_velocity()
-
-            # store states
-            logger.store_data(v_opt, v_suitable, v_goal)
-
-            # update agent's state
-            agent.update_controls(v_opt[1], v_suitable)
-
-            # Move the active obstacles
-            for i in range(num_pedestrians):
-                obstacles[i+2].move()
-                
-            # rospy.loginfo("The computed optimal control is: %s", str([round(v_opt[1][0],2), round(v_opt[1][1],2)]))
-
-            t_stop = time.time()
-            dt = t_stop - t_start
-
-
-            if round(dt) > 1 and round(dt) % 30 == 0:
-                logger.save_data()
-                rospy.loginfo("<<<<< Trial Saving Complete! >>>>>")
-
+       # run the node
+       run(args)
 
     finally:
         pass
