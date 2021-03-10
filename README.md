@@ -33,6 +33,15 @@ roslaunch rvo_ros crossing.launch
 ***
 <br>
 
+> **_NOTE:_** 
+    By default, the `control_mode` is set to `auto` in the scenario launch files. 
+    If you wish to use `manual` mode, include `control_mode:='manual` when running the launch file
+    
+    E.g.  roslaunch rvo_ros approach.launch control_mode:='manual' 
+
+***
+<br>
+
 ## Evaluation
 
 1. To visualize the recorded data in pygame, run the following
