@@ -12,15 +12,16 @@
           <iyz>0</iyz>
           <izz>0.0156413</izz>
         </inertia>
-        <pose frame=''>0 0 0 0 -0 0</pose>
+       <pose frame=''>0 0 -0.3 0 -0 0</pose>
       </inertial>
       <pose frame=''>-0 3e-06 0 0 -0 0</pose>
+      
       <visual name='visual'>
         <pose frame=''>0 0 0 0 -0 0</pose>
         <geometry>
           <cylinder>
-            <radius>0.318908</radius>
-            <length>0.43945</length>
+            <radius>0.3</radius>
+            <length>0.8</length>
           </cylinder>
         </geometry>
         <material>
@@ -39,8 +40,8 @@
         <pose frame=''>0 0 0 0 -0 0</pose>
         <geometry>
           <cylinder>
-            <radius>0.318908</radius>
-            <length>0.43945</length>
+            <radius>0.3</radius>
+            <length>0.8</length>
           </cylinder>
         </geometry>
         <surface>
