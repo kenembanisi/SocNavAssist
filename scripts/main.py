@@ -36,7 +36,10 @@ def run(args):
 
 
     ################### Define scenario and pedestrian properties ###################
-    scenario = args[1]
+    if len(args) > 1: # this means something is being passed
+        scenario = args[1]
+    else:
+        scenario = "crossing" # crossing is the default
 
     if scenario == "crossing":
         # for crossing scenario
