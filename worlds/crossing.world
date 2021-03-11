@@ -56,29 +56,29 @@
 
     <!-- Other models -->
 
-    <!-- <include>
-      <uri>model://corridor_world</uri>
-      <pose>0.0 0.10 0 0 0 0</pose>
-    </include> -->
+    <include>
+      <uri>model://open_hall2</uri>
+      <pose>-6.39 0.85 0 0 0 0</pose>
+    </include>
 
     <include>
       <uri>model://dynamic_obstacle_1</uri>
-      <pose>-11.4 0.72 0.219 0 0 0</pose>
+      <pose>-11.4 0.72 0.4 0 0 0</pose>
     </include>
 
     <include>
       <uri>model://dynamic_obstacle_2</uri>
-      <pose>-2.72 2.16 0.219 0 0 0</pose>
+      <pose>-2.72 2.16 0.4 0 0 0</pose>
     </include>
 
     <include>
       <uri>model://dynamic_obstacle_3</uri>
-      <pose>-10.92 3.71 0.219 0 0 0</pose>
+      <pose>-10.92 3.71 0.4 0 0 0</pose>
     </include>
 
     <include>
       <uri>model://dynamic_obstacle_4</uri>
-      <pose>-2.9 5.28 0.219 0 0 0</pose>
+      <pose>-2.9 5.28 0.4 0 0 0</pose>
     </include>
 
     <include>
