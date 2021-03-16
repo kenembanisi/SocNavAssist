@@ -1,26 +1,10 @@
 <?xml version="1.0"?>
 <sdf version="1.4">
   <world name="default">
-    <!-- A global light source -->
-    <light type="directional" name="sun">
-      <cast_shadows>true</cast_shadows>
-      <pose>0.0 0.0 1000 -0.35 -0.5 0</pose>
-      <diffuse>0.8 0.8 0.8 1</diffuse>
-      <specular>0.2 0.2 0.2 1</specular>
-      <attenuation>
-        <range>1000</range>
-        <constant>0.9</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <direction>-0.5 0.1 -0.9</direction>
-    </light>
-
-    <!-- A ground plane -->
-    <model name="ground_plane">
-      <static>true</static>
-      <link name="link">
-        <collision name="collision">
+    <model name='ground_plane'>
+      <static>1</static>
+      <link name='link'>
+        <collision name='collision'>
           <geometry>
             <plane>
               <normal>0 0 1</normal>
@@ -33,11 +17,19 @@
                 <mu>100</mu>
                 <mu2>50</mu2>
               </ode>
+              <torsional>
+                <ode/>
+              </torsional>
             </friction>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
           </surface>
+          <max_contacts>10</max_contacts>
         </collision>
-        <visual name="visual">
-          <cast_shadows>false</cast_shadows>
+        <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
           <geometry>
             <plane>
               <normal>0 0 1</normal>
@@ -51,8 +43,24 @@
             </script>
           </material>
         </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
       </link>
     </model>
+    <light name='sun' type='directional'>
+      <cast_shadows>1</cast_shadows>
+      <pose frame=''>0 0 10 0 -0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
 
     <!-- Other models -->
 
@@ -76,28 +84,6 @@
       <uri>model://goal_location</uri>
       <pose>-6.5 8.2 0.7 0 0 0</pose>
     </include>
-
-
-    <!-- Physics -->
-    <physics type='ode'>
-      <max_step_size>0.01</max_step_size>
-      <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>100</real_time_update_rate>
-      <gravity>0 0 -9.8</gravity>
-    </physics>
-
-    <!-- Scene -->
-    <scene>
-      <ambient>0.9 0.9 0.9 1</ambient>
-      <sky>
-        <clouds>
-          <speed>8</speed>
-        </clouds>
-      </sky>
-
-      <background>0.7 0.7 0.7 1</background>
-      <shadows>1</shadows>
-    </scene>
 
     <!-- User Camera -->
     <gui fullscreen='0'>
