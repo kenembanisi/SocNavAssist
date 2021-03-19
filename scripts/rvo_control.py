@@ -124,7 +124,7 @@ class RvoControl():
             RVO_all.append(RVO_BA)
     
         # find set of suitable and unsuitable velocities
-        V_suitable, V_unsuitable = self.check_intersection(pA, vA, RVO_all)
+        V_suitable, V_unsuitable, V_admissible = self.check_intersection(pA, vA, RVO_all)
     
         # find optimal velocity choice
         V_opt_point = self.select_optimalV(V_suitable, V_unsuitable, RVO_all)
@@ -141,7 +141,7 @@ class RvoControl():
         if self.reached:
             V_opt = [[0.0, 0.0], [0.0, 0.0]]
 
-        return V_opt, V_suitable
+        return V_opt, V_suitable, V_admissible
 
     def check_intersection(self, pA, vA, RVO_all):
         """
@@ -163,6 +163,7 @@ class RvoControl():
         norm_v = self.compute_distance(vA, [0, 0]) # magnitude of the agent velocity
         V_suitable = []
         V_unsuitable = []
+        V_admissible = []
 
         # --------------------------------------------------------------------------------------------------
         # Velocity search: velocity vectors all around the agent 
@@ -196,6 +197,8 @@ class RvoControl():
                     n_not_admissible += 1
                     continue
 
+                V_admissible.append(candidate_v) # store admissible velocities
+
                 suitable = True
                 for RVO in RVO_all: # <---- Check for all the RVOs
                     RVO_apex_pos = RVO[0]
@@ -223,9 +226,9 @@ class RvoControl():
                 else:
                     V_unsuitable.append(candidate_v)      
         # --------------------------------------------------------------------------------------------------          
-        rospy.loginfo("Suit V: [%s], Unsuit V: [%s], Admis: [%s], Total: [%s]", str(len(V_suitable)), str(len(V_unsuitable)), str(n_total - n_not_admissible), str(n_total))
+        # rospy.loginfo("Suit V: [%s], Unsuit V: [%s], Admis: [%s], Total: [%s]", str(len(V_suitable)), str(len(V_unsuitable)), str(n_total - n_not_admissible), str(n_total))
 
-        return V_suitable, V_unsuitable
+        return V_suitable, V_unsuitable, V_admissible
 
     def select_optimalV(self, V_suitable, V_unsuitable, RVO_all):
         """

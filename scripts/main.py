@@ -105,14 +105,14 @@ def run(args):
         # Update simulation -------------------------------------------------------
         alpha = 1 # collision avoidance responsibility, 1 means the agent 
                   # takes full responsibility
-        v_opt, v_suitable = rvo_agent.compute_V_opt(goal, alpha=alpha)
+        v_opt, v_suitable, v_admissible = rvo_agent.compute_V_opt(goal, alpha=alpha)
         # -------------------------------------------------------------------------
 
         # get desired/goal agent velocity -----------------------------------------
         v_goal = rvo_agent.get_goal_velocity()
 
         # store states ------------------------------------------------------------
-        logger.store_data(v_opt, v_suitable, v_goal)
+        logger.store_data(v_opt, v_suitable, v_admissible, v_goal)
 
         # update agent's state ----------------------------------------------------
         if AUTO:

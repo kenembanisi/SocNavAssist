@@ -39,13 +39,13 @@ class DataLogger():
         # self.min_dist = []
         self.v_opt = []
         self.v_suitable = []
+        self.v_admissible = []
         self.v_goal = []
 
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
 
-    def store_data(self, v_opt_, v_suitable_, v_goal_):
-    # def store_data(self, v_opt_, v_suitable_):
+    def store_data(self, v_opt_, v_suitable_, v_admissible_, v_goal_):
         # get one instance of message
         data = None
         while data is None:
@@ -80,13 +80,14 @@ class DataLogger():
             if self.model_ids[i] == 'trina2':
                 self.v_opt.append(v_opt_)
                 self.v_suitable.append(v_suitable_)
+                self.v_admissible.append(v_admissible_)
                 self.v_goal.append(v_goal_)
 
 
     def save_data(self):
  
         # data = np.array([self.model_ids, self.x, self.y, self.theta, self.v, self.omega, self.v_opt, self.v_suitable])
-        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, self.v_goal, self.v, self.omega])
+        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, self.v_admissible, self.v_goal, self.v, self.omega])
            
         time_struct = time.localtime(time.time())
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \

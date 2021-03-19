@@ -57,7 +57,8 @@ def draw_window(idx, data):
     actors_theta = data[3][1:]
     v_opt = data[4]
     v_suitable = data[5]
-    v_desired = data[6]
+    v_admissible = data[6]
+    v_desired = data[7]
 
     # set the background color to white
     screen.fill((249,250,248)) 
@@ -85,7 +86,6 @@ def draw_window(idx, data):
     ped_radius = 35 * 0.4
     color = (180,180,120)
     for i in range(num_pedestrians):
-        # ped_x = data[1][i+1][idx]; ped_y = data[2][i+1][idx]
         ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
         ped_x_transformed = transform_x(ped_x); ped_y_transformed = transform_y(ped_y)
         pygame.draw.circle(screen, color, (round(ped_x_transformed), round(ped_y_transformed)), round(ped_radius))
@@ -100,26 +100,23 @@ def draw_window(idx, data):
     show_rays = True
     scaling = 40
     if show_rays:
-        # if D > 0: # if so, move the origin position
-        #     augmented_pos = self.augment_position(self.D)
-        #     for i in range(len(self.V_suitable)):
-        #         pygame.draw.line(screen, (100,100,230), (augmented_pos[0], augmented_pos[1]), 
-        #                         (augmented_pos[0] + self.V_suitable[i][0]*scaling, augmented_pos[1] + self.V_suitable[i][1]*scaling))
-        # else:
-        # for i in range(len(data[5][idx])):
-            # pygame.draw.line(screen, (100,100,230), (agent_x, agent_y), (agent_x + data[5][idx][i][0]*scaling, 
-            #                 agent_y - data[5][idx][i][1]*scaling))
-        for i in range(len(v_suitable[idx])):
-            pygame.draw.line(screen, (100,100,230), (agent_x, agent_y), (agent_x + v_suitable[idx][i][0]*scaling, 
-                            agent_y - v_suitable[idx][i][1]*scaling))
+        # v_admissible rays
+        for i in range(len(v_admissible[idx])):
+            pygame.draw.line(screen, (150, 150, 100), (agent_x, agent_y), (agent_x + v_admissible[idx][i][0]*scaling, 
+                            agent_y - v_admissible[idx][i][1]*scaling))
 
+        # v_suitable rays
+        for i in range(len(v_suitable[idx])):
+            pygame.draw.line(screen, (100,100,255), (agent_x, agent_y), (agent_x + v_suitable[idx][i][0]*scaling, 
+                            agent_y - v_suitable[idx][i][1]*scaling))
+                            
         # v_desired heading
         pygame.draw.line(screen, (180,100,100), (agent_x, agent_y), (agent_x + v_desired[idx][0]*scaling, 
                             agent_y - v_desired[idx][1]*scaling))
 
         # v_opt heading
         pygame.draw.line(screen, (255,0,0), (agent_x, agent_y), (agent_x + v_opt[idx][0][0]*scaling, 
-                            agent_y - v_opt[idx][0][1]*scaling))
+                            agent_y - v_opt[idx][0][1]*scaling), 2)
 
     # draw agent
     radius = 35 * 0.5
