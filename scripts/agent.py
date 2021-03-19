@@ -37,6 +37,8 @@ class AgentClass():
         self.bounding_radius = agent_properties['radius']
         self.max_linear_velocity = 1.2      # TODO: Get this from rosparam?
         self.max_angular_velocity = 0.75     # TODO: Get this from rosparam?
+        self.max_linear_acceleration = 2.0 
+        self.max_angular_acceleration = 2.0
         self.x = 0
         self.y = 0
         self.z = 0
