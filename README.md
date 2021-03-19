@@ -1,7 +1,7 @@
 # rvo_ros
 
 
-Last updated: March 10th 2021
+Last updated: March 19th 2021
 ## Dependencies
 
 * Tested on Ubuntu 18.04 and ROS Melodic
@@ -50,10 +50,10 @@ cd ~/catkin_ws/src/<navigate to package>/rvo_ros/scripts
 python pygame_viz.py --data <filename>
 ```
 
-2. To plot the velocities from a recorded data, run the following
+2. To plot the trajectory and velocities from a recorded data, run the following
 ```
 cd ~/catkin_ws/src/<navigate to package>/rvo_ros/scripts
-python velocity_plotter.py --data <filename>
+python plotter.py --data <filename>
 ```
 
 
