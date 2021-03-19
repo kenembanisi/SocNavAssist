@@ -46,8 +46,10 @@ def main(args):
     data = np.load(log_directory+data_filename, allow_pickle=True, encoding='latin1')
     n_frames = len(data[1])
 
-    # plot data
-        # instantiate figure and axes object
+    #------------------------------------------------------------------------------------------------------
+    # Velocity Plotter
+    #------------------------------------------------------------------------------------------------------
+    # instantiate figure and axes object
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1)
         # v_opt
     v_opt = data[4]
@@ -57,8 +59,8 @@ def main(args):
     v_opt_point_angular = [v_opt[i][0][1] for i in range(len(v_opt))]
 
         # v_actual
-    v_actual_linear = data[7][0]
-    v_actual_angular = data[8][0]
+    v_actual_linear = data[8][0]
+    v_actual_angular = data[9][0]
 
         # agent.theta
     agent_theta = data[3][0]
@@ -119,6 +121,31 @@ def main(args):
     ax2.legend(fontsize=8)
     ax3.legend(fontsize=8)
     ax4.legend(fontsize=8)
+
+    #------------------------------------------------------------------------------------------------------
+    # Trajectory Plotter
+    #------------------------------------------------------------------------------------------------------
+    plt.figure()
+
+    # get data
+    agent_x = data[1][0][:]
+    agent_y = data[2][0][:]
+
+    # call plotter
+    plt.plot(agent_x, agent_y)
+    plt.plot(agent_x[0], agent_y[0],'go', label='Origin')
+    plt.plot(agent_x[-1], agent_y[-1],'ro', label='Goal')
+
+    # set limits & axis
+    plt.xlim(-12.93, 0.22)
+    plt.ylim(-9.62, 8.5)
+    plt.axis('equal')
+
+    # set title
+    plt.title("Trajectory of Robot Motion")
+
+    # show legend
+    plt.legend()
 
     plt.show()
 
