@@ -105,7 +105,7 @@ def run(args):
         # Update simulation -------------------------------------------------------
         alpha = 1 # collision avoidance responsibility, 1 means the agent 
                   # takes full responsibility
-        v_opt, v_suitable, v_admissible = rvo_agent.compute_V_opt(goal, alpha=alpha)
+        v_opt, v_suitable, v_admissible, heading_delta = rvo_agent.compute_V_opt(goal, alpha=alpha)
         # -------------------------------------------------------------------------
 
         # get desired/goal agent velocity -----------------------------------------
@@ -118,6 +118,10 @@ def run(args):
         if AUTO:
             agent.update_controls(v_opt[1], v_suitable) # only takes v_opt[1]: the
                                                     # kinematically feasible velocities
+
+        # publish heading_delta ---------------------------------------------------
+        agent.publish_heading_delta(heading_delta) # this is for shared control in manual
+                                                   # control mode
 
         # Move the active obstacles -----------------------------------------------
         for i in range(num_pedestrians):

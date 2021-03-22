@@ -18,6 +18,7 @@ import numpy as np
 from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import Float32
 from tf.transformations import euler_from_quaternion
 import time
 import math
@@ -58,6 +59,10 @@ class AgentClass():
             # publisher for velocity data
         self.data_publisher = rospy.Publisher('/velocity_data', 
                             Float64MultiArray, queue_size=1)
+
+            # publisher for heading_delta data
+        self.heading_delta_publisher = rospy.Publisher('/heading_delta', 
+                            Float32, queue_size=1)
 
 
     def update_states_callback(self, data):
@@ -152,3 +157,13 @@ class AgentClass():
 
         # Publish array data
         self.data_publisher.publish(self.array)
+
+    
+    def publish_heading_delta(self, delta):
+
+        # Instantiate Float32
+        heading_delta = Float32()
+        heading_delta.data = delta
+
+        # Publish array data
+        self.heading_delta_publisher.publish(heading_delta)

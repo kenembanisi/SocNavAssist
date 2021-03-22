@@ -89,8 +89,8 @@ class RvoControl():
             self.augment_player_position()
 
         # compute agent velocity
-        self.agent_vel = self.compute_V_desired(goal)
-        # self.agent_vel = self.compute_operator_goal()
+        # self.agent_vel = self.compute_V_desired(goal)
+        self.agent_vel = self.compute_operator_goal()
 
         # compute RVOs for all obstacles:
         RVO_all = []
@@ -129,6 +129,9 @@ class RvoControl():
         # find optimal velocity choice
         V_opt_point = self.select_optimalV(V_suitable, V_unsuitable, RVO_all)
 
+        # compute the heading_delta between current heading and optimal heading
+        heading_delta = self.compute_heading_delta(V_opt_point)
+
         V_opt_DD = [0, 0] 
 
         if self.D > 0:
@@ -141,7 +144,7 @@ class RvoControl():
         if self.reached:
             V_opt = [[0.0, 0.0], [0.0, 0.0]]
 
-        return V_opt, V_suitable, V_admissible
+        return V_opt, V_suitable, V_admissible, heading_delta
 
     def check_intersection(self, pA, vA, RVO_all):
         """
@@ -387,10 +390,10 @@ class RvoControl():
         """
         
         ### Implementing case (1): using max_linear_velocity
-        vec_dir = self.agent.compute_heading(-self.agent.theta)
+        vec_dir = self.compute_heading(self.agent.theta)
 
-        operator_goal = [vec_dir[0] * self.agent.max_lin_vel,
-                         vec_dir[1] * self.agent.max_lin_vel]
+        operator_goal = [vec_dir[0] * self.agent.max_linear_velocity,
+                         vec_dir[1] * self.agent.max_linear_velocity]
         
         return operator_goal
 
@@ -579,3 +582,22 @@ class RvoControl():
                                    [math.sin(theta), math.cos(theta)]])
         new_heading = rotation_matrix.dot(init_heading)
         return [new_heading[0], new_heading[1]]
+
+    def compute_heading_delta(self, v_opt):
+        """
+        Computes the angle difference between operator goal (i.e. current heading) and the optimal heading
+        defined by rvo.
+        Arguments:
+            - 
+        Returns: 
+            - heading_delta
+        """
+
+        # calculate the optimal heading based on v_opt velocity
+        # optimal_theta = math.atan((v_opt[1]/v_opt[0]))
+        optimal_theta = math.atan2(v_opt[1], v_opt[0])
+
+        # calculate heading_delta
+        heading_delta = optimal_theta - math.radians(self.agent_theta) # clockwise is -ve, anticlockwise is +ve
+
+        return heading_delta
