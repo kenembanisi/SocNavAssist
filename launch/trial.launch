@@ -10,7 +10,7 @@
     <param name="control_mode" value="$(arg control_mode)" />
 
     <!-- Set world -->
-    <arg name="world_name" default="$(find rvo_ros)worlds/crossing2.world" />
+    <arg name="world_name" default="$(find rvo_ros)worlds/random.world" />
 
     <!-- Load the description for the robot -->
     <arg name="robot_name" default="trina2"/>
@@ -47,7 +47,7 @@
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
 
     <!-- Launch rvo agent -->
-    <arg name="scenario" default="crossing"/>
+    <arg name="scenario" default="random"/>
     <node name="move_trina2" pkg="rvo_ros" type="main.py" output="screen" args="$(arg scenario)" />
 
 </launch>
