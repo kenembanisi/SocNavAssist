@@ -5,49 +5,37 @@
     <arg name="robot_z" default="0.0" />
     <arg name="robot_yaw" default="1.55" />
 
+    <!-- Show Gazebo gui -->
+    <arg name="gui" default="false" />
+
+    <!-- Set scenario -->
+    <arg name="scenario" default="approach_human" />
+    <param name="scenario" value="$(arg scenario)" />
+
     <!-- Set control mode -->
     <arg name="control_mode" default="auto" />
     <param name="control_mode" value="$(arg control_mode)" />
 
     <!-- Set world -->
-    <arg name="world_name" default="$(find rvo_ros)worlds/random.world" />
+    <arg name="world_name" default="$(find rvo_ros)worlds/$(arg scenario).world" />
 
-    <!-- Load the description for the robot -->
-    <arg name="robot_name" default="trina2"/>
-    <param name="robot_description" command="$(find xacro)/xacro 
-        $(find freight_description)/robot/urdf/trina2_base.xacro 
-                ns:=$(arg robot_name) sim:=true --inorder" />
-
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <!-- Include Gazebo simulation launch file -->
+    <include file="$(find rvo_ros)/launch/gazebo_sim.launch" >
         <arg name="world_name" value="$(arg world_name)" />
-        <arg name="paused" value="true" />
-        <arg name="use_sim_time" value="true" />
-        <arg name="gui" value="true" />
-        <arg name="headless" value="false" />
-        <arg name="debug" value="false" />
-        <arg name="verbose" value="false" />
+        <arg name="robot_x" value="$(arg robot_x)" />
+        <arg name="robot_y" value="$(arg robot_y)" />
+        <arg name="robot_z" value="$(arg robot_z)" />
+        <arg name="robot_yaw" value="$(arg robot_yaw)" />
+        <arg name="gui" value="$(arg gui)" />
     </include>
 
-    <!-- Spawn the robot in Gazebo -->
-    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" 
-        output="screen" args="-urdf -param robot_description -model $(arg robot_name) 
-            -x $(arg robot_x) 
-            -y $(arg robot_y) 
-            -z $(arg robot_z) 
-            -Y $(arg robot_yaw)"/> 
-
-    <!-- Load controller configuration files from trina2_control package -->
-    <rosparam file="$(find freight_control)/config/freight_controller.yaml" command="load" />
-
-    <!-- Start base and camera controllers -->
-    <node name="controller_spawner" pkg="controller_manager" type="spawner" 
-        respawn="false" output="screen" args="base_controller"/>
-
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
-    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-
     <!-- Launch rvo agent -->
-    <arg name="scenario" default="random"/>
     <node name="move_trina2" pkg="rvo_ros" type="main.py" output="screen" args="$(arg scenario)" />
+
+    <!-- Launch the visual interface -->
+    <node name="visual_interface_" pkg="visual_interface" type="visual_interface_node" output="screen" />
+
+    <!-- Launch the falcon novint haptic interface -->
+    <node name="haptic_interface" pkg="sim_control" type="falcon_novint_control.py" output="screen" />
 
 </launch>
