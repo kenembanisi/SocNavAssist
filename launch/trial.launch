@@ -1,19 +1,22 @@
 <launch>
     <!-- Initial robot pose -->
     <arg name="robot_x" default="-6.31" />
-    <arg name="robot_y" default="-5.95" />
+    <arg name="robot_y" default="-9.55" />
     <arg name="robot_z" default="0.0" />
     <arg name="robot_yaw" default="1.55" />
 
     <!-- Show Gazebo gui -->
     <arg name="gui" default="false" />
 
-    <!-- Set scenario -->
+    <!-- Set scenario details-->
     <arg name="scenario" default="approach_human" />
+    <arg name="num_pedestrians" default="5" />
     <param name="scenario" value="$(arg scenario)" />
+    <param name="num_pedestrians" value="$(arg num_pedestrians)" />
+    
 
     <!-- Set control mode -->
-    <arg name="control_mode" default="auto" />
+    <arg name="control_mode" default="manual" />
     <param name="control_mode" value="$(arg control_mode)" />
 
     <!-- Set world -->
