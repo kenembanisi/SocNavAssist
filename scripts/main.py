@@ -41,49 +41,52 @@ def run(args):
     else:
         scenario = "crossing" # crossing is the default
 
-    if scenario == "crossing":
-        # for crossing scenario
-        pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.8, -0.0]},
-                                {'radius': 0.4, 'pref_velocity': [-1.0, -0.0]},
-                                {'radius': 0.4, 'pref_velocity': [0.7, -0.0]},
-                                {'radius': 0.4, 'pref_velocity': [-0.7, -0.0]},
-                                {'radius': 0.4, 'pref_velocity': [-0.7, -0.0]},
-                                {'radius': 0.4, 'pref_velocity': [0.7, -0.0]},
-                                {'radius': 0.4, 'pref_velocity': [0.3, -0.0]}]
-    if scenario == "approach":
-        # for approach scenario
-        pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, -0.50]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, -1.0]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, -0.45]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, -0.51]}]
-    if scenario == "ahead":
-        # for ahead scenario
-        pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, 0.20]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, 0.22]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, 0.40]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, 0.10]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, 0.2]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, 0.22]}]
+    # if scenario == "crossing":
+    #     # for crossing scenario
+    #     pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.8, -0.0]},
+    #                             {'radius': 0.4, 'pref_velocity': [-1.0, -0.0]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.7, -0.0]},
+    #                             {'radius': 0.4, 'pref_velocity': [-0.7, -0.0]},
+    #                             {'radius': 0.4, 'pref_velocity': [-0.7, -0.0]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.7, -0.0]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.3, -0.0]}]
+    # if scenario == "approach":
+    #     # for approach scenario
+    #     pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, -0.50]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, -1.0]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, -0.45]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, -0.51]}]
+    # if scenario == "ahead":
+    #     # for ahead scenario
+    #     pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, 0.20]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.22]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.40]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.10]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.2]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.22]}]
     
-    if scenario == "random":
-        # for ahead scenario
-        pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.35, -0.40]},
-                                {'radius': 0.4, 'pref_velocity': [0.0, 0.32]},
-                                {'radius': 0.4, 'pref_velocity': [0.65, -0.10]},
-                                {'radius': 0.4, 'pref_velocity': [-0.70, -0.20]},
-                                {'radius': 0.4, 'pref_velocity': [-0.70, -0.18]},
-                                {'radius': 0.4, 'pref_velocity': [0.61, -0.10]},
-                                {'radius': 0.4, 'pref_velocity': [0.22, 0.0]}]
+    # if scenario == "random":
+    #     # for ahead scenario
+    #     pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.35, -0.40]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.32]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.65, -0.10]},
+    #                             {'radius': 0.4, 'pref_velocity': [-0.70, -0.20]},
+    #                             {'radius': 0.4, 'pref_velocity': [-0.70, -0.18]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.61, -0.10]},
+    #                             {'radius': 0.4, 'pref_velocity': [0.22, 0.0]}]
 
-    pedestrian_id = ['dynamic_obstacle_1', 'dynamic_obstacle_2', 
-                     'dynamic_obstacle_3', 'dynamic_obstacle_4',
-                     'dynamic_obstacle_5', 'dynamic_obstacle_6',
-                     'dynamic_obstacle_7']
-    num_pedestrians = len(pedestrian_id)
+    # # pedestrian_id = ['dynamic_obstacle_1', 'dynamic_obstacle_2', 
+    # #                  'dynamic_obstacle_3', 'dynamic_obstacle_4',
+    # #                  'dynamic_obstacle_5', 'dynamic_obstacle_6',
+    # #                  'dynamic_obstacle_7']
+    # pedestrian_id = ['dynamic_obstacle_1', 'dynamic_obstacle_2', 
+    #                  'dynamic_obstacle_3', 'dynamic_obstacle_4'
+    #                  ]
+    # num_pedestrians = len(pedestrian_id)
     
     #################################################################################
 
@@ -94,21 +97,25 @@ def run(args):
     agent = AgentClass(agent_id, agent_properties)
     
 
-    ################ Initialize data logger (for active objects only) ###############
-    model_ids = ['trina2'] + pedestrian_id
-    logger = DataLogger(model_ids, scenario)
-
-
     ######################### Define pedestrians as obstacles #######################
+    num_pedestrians = int(rospy.get_param("num_pedestrians")) # convert to int
+    pedestrian_id = []
     obstacle_list = {}
     for i in range(num_pedestrians):
-        obstacle_list[i] = ObstacleClass(pedestrian_id[i], pedestrian_properties[i])
+        # obstacle_list[i] = ObstacleClass(pedestrian_id[i], pedestrian_properties[i])
+        pedestrian_id.append("actor" + str(i+1)) # actor numbering starts from 1
+        obstacle_list[i] = ObstacleClass(pedestrian_id[i])
 
-    
+
     ################ Initiate RVO controller for agent & obstacle set ###############
     D = 0.2 # radius extension for differential drive condition
     tau = 3.0 # planning horizon
     rvo_agent = RvoControl(agent, obstacle_list, D=D, tau=tau)
+
+
+    ################ Initialize data logger (for active objects only) ###############
+    model_ids = ['trina2'] + pedestrian_id
+    logger = DataLogger(model_ids, scenario, obstacle_list)
 
 
     ############################ Set agent goal location ############################
@@ -122,6 +129,7 @@ def run(args):
 
     ################################### Set timer ###################################
     t_start = time.time()
+    time_to_goal = 0
 
     ################################### Main loop ###################################
     while not rospy.is_shutdown():
@@ -139,8 +147,12 @@ def run(args):
         # get desired/goal agent velocity -----------------------------------------
         v_goal = rvo_agent.get_goal_velocity()
 
+        # check goal reached ------------------------------------------------------
+        if rvo_agent.reached:
+            time_to_goal = (time.time() - t_start)
+        
         # store states ------------------------------------------------------------
-        logger.store_data(v_opt, v_suitable, v_admissible, v_goal)
+        logger.store_data(v_opt, v_suitable, v_admissible, v_goal, time_to_goal)
 
         # update agent's state ----------------------------------------------------
         if AUTO:
@@ -153,7 +165,8 @@ def run(args):
 
         # Move the active obstacles -----------------------------------------------
         for i in range(num_pedestrians):
-            obstacle_list[i].move()
+            obstacle_list[i].update_states()
+        #     obstacle_list[i].move()
             
         # rospy.loginfo("The computed optimal control is: %s", str([round(v_opt[1][0],2), round(v_opt[1][1],2)]))
 
@@ -161,11 +174,12 @@ def run(args):
         t_stop = time.time()
         dt = t_stop - t_start
 
+
         # Save logged data at intervals -------------------------------------------
-        # save_interval = 380 # seconds
-        # if round(dt) > 1 and round(dt) % save_interval == 0:
-        #     logger.save_data()
-        #     rospy.loginfo("<<<<< Trial Saving Complete! >>>>>")
+        save_interval = 10 # seconds
+        if round(dt) > 1 and round(dt) % save_interval == 0:
+            logger.save_data()
+            rospy.loginfo("<<<<< Trial Saving Complete! >>>>>")
 
 #####################################################################################
 # main

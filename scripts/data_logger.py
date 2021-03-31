@@ -20,7 +20,7 @@ data_logger.py
 
 class DataLogger():
 
-    def __init__(self, model_ids, scenario):
+    def __init__(self, model_ids, scenario, active_obstacle_dict):
         # define objects to track
         # self.stage = args[1]
         # self.method = args[2]
@@ -29,6 +29,8 @@ class DataLogger():
         self.model_ids = model_ids
         self.n_models = len(self.model_ids)
         self.scenario = scenario
+
+        self.time_to_goal = 0
             
         # variables
         self.x = [[] for i in range(self.n_models)]
@@ -42,10 +44,13 @@ class DataLogger():
         self.v_admissible = []
         self.v_goal = []
 
+        # agent and obstacle objects
+        self.active_obstacle_dict = active_obstacle_dict
+
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
 
-    def store_data(self, v_opt_, v_suitable_, v_admissible_, v_goal_):
+    def store_data(self, v_opt_, v_suitable_, v_admissible_, v_goal_, time_to_goal):
         # get one instance of message
         data = None
         while data is None:
@@ -69,13 +74,6 @@ class DataLogger():
                  data.pose[idx].orientation.z,
                  data.pose[idx].orientation.w])[2])
             
-                # transform velocity from world frame to robot frame
-            v_world = [data.twist[idx].linear.x, data.twist[idx].linear.y]
-            v_robot = self.world2robot_transform(v_world, self.theta[i][-1])
-
-            # self.v[i].append(data.twist[idx].linear.x)
-            self.v[i].append(v_robot[0])
-            self.omega[i].append(data.twist[idx].angular.z)
 
             if self.model_ids[i] == 'trina2':
                 self.v_opt.append(v_opt_)
@@ -83,11 +81,26 @@ class DataLogger():
                 self.v_admissible.append(v_admissible_)
                 self.v_goal.append(v_goal_)
 
+                # transform velocity from world frame to robot frame
+                v_world = [data.twist[idx].linear.x, data.twist[idx].linear.y]
+                v_robot = self.world2robot_transform(v_world, self.theta[i][-1])
+
+                # set velocities
+                self.v[i].append(v_robot[0])
+                self.omega[i].append(data.twist[idx].angular.z)
+
+            else:
+                self.v[i].append(self.active_obstacle_dict[i-1].v)  # i-1 because agent index is always 0
+                self.omega[i].append(self.active_obstacle_dict[i-1].omega)
+
+        # set time to goal
+        self.time_to_goal = time_to_goal
+
 
     def save_data(self):
  
         # data = np.array([self.model_ids, self.x, self.y, self.theta, self.v, self.omega, self.v_opt, self.v_suitable])
-        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, self.v_admissible, self.v_goal, self.v, self.omega])
+        data = np.array([self.model_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, self.v_admissible, self.v_goal, self.v, self.omega, self.time_to_goal])
            
         time_struct = time.localtime(time.time())
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
