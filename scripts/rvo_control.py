@@ -46,7 +46,7 @@ class RvoControl():
         self.obstacle_radius = []
         for i in range(self.num_obstacles):
             self.obstacle_pos.append([self.active_obstacle_dict[i].x, self.active_obstacle_dict[i].y])
-            self.obstacle_vel.append(self.active_obstacle_dict[i].v_pref)
+            self.obstacle_vel.append(self.active_obstacle_dict[i].v)
             self.obstacle_radius.append(self.active_obstacle_dict[i].bounding_radius)
 
         # extract agent's parameters
@@ -80,7 +80,7 @@ class RvoControl():
         # first, update environment states:
         for i in range(self.num_obstacles):
             self.obstacle_pos[i] = [self.active_obstacle_dict[i].x, self.active_obstacle_dict[i].y]
-            self.obstacle_vel[i] = self.active_obstacle_dict[i].v_pref
+            self.obstacle_vel[i] = self.active_obstacle_dict[i].v
         self.agent_pos = [self.agent.x, self.agent.y]
         self.agent_theta = self.agent.theta
 
@@ -89,8 +89,8 @@ class RvoControl():
             self.augment_player_position()
 
         # compute agent velocity
-        # self.agent_vel = self.compute_V_desired(goal)
-        self.agent_vel = self.compute_operator_goal()
+        self.agent_vel = self.compute_V_desired(goal)
+        # self.agent_vel = self.compute_operator_goal()
 
         # compute RVOs for all obstacles:
         RVO_all = []
