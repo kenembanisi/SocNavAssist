@@ -149,13 +149,23 @@ def main(args):
 
     plt.show()
 
+    #------------------------------------------------------------------------------------------------------
+    # Angle Plotter
+    #------------------------------------------------------------------------------------------------------
+    plt.figure()
 
+    plt.plot(agent_theta, label='theta')
 
+    # show legend
+    plt.legend()
 
+    plt.show()
+
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plotter")
-    parser.add_argument('--data', default='data_crossing_[318_1040].npy', help='logged data filename')
+    parser.add_argument('--data', default='data_approach_human_[331_146].npy', help='logged data filename')
                 
     args = parser.parse_args()
 

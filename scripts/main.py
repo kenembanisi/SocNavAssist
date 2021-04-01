@@ -41,55 +41,6 @@ def run(args):
     else:
         scenario = "crossing" # crossing is the default
 
-    # if scenario == "crossing":
-    #     # for crossing scenario
-    #     pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.8, -0.0]},
-    #                             {'radius': 0.4, 'pref_velocity': [-1.0, -0.0]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.7, -0.0]},
-    #                             {'radius': 0.4, 'pref_velocity': [-0.7, -0.0]},
-    #                             {'radius': 0.4, 'pref_velocity': [-0.7, -0.0]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.7, -0.0]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.3, -0.0]}]
-    # if scenario == "approach":
-    #     # for approach scenario
-    #     pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, -0.50]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, -1.0]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, -0.80]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, -0.45]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, -0.51]}]
-    # if scenario == "ahead":
-    #     # for ahead scenario
-    #     pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.0, 0.20]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.22]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.40]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.0]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.10]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.2]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.22]}]
-    
-    # if scenario == "random":
-    #     # for ahead scenario
-    #     pedestrian_properties = [{'radius': 0.4, 'pref_velocity': [0.35, -0.40]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.0, 0.32]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.65, -0.10]},
-    #                             {'radius': 0.4, 'pref_velocity': [-0.70, -0.20]},
-    #                             {'radius': 0.4, 'pref_velocity': [-0.70, -0.18]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.61, -0.10]},
-    #                             {'radius': 0.4, 'pref_velocity': [0.22, 0.0]}]
-
-    # # pedestrian_id = ['dynamic_obstacle_1', 'dynamic_obstacle_2', 
-    # #                  'dynamic_obstacle_3', 'dynamic_obstacle_4',
-    # #                  'dynamic_obstacle_5', 'dynamic_obstacle_6',
-    # #                  'dynamic_obstacle_7']
-    # pedestrian_id = ['dynamic_obstacle_1', 'dynamic_obstacle_2', 
-    #                  'dynamic_obstacle_3', 'dynamic_obstacle_4'
-    #                  ]
-    # num_pedestrians = len(pedestrian_id)
-    
-    #################################################################################
-
 
     ########################### Define agent and properties #########################
     agent_id = 'trina2'
@@ -109,7 +60,7 @@ def run(args):
 
     ################ Initiate RVO controller for agent & obstacle set ###############
     D = 0.2 # radius extension for differential drive condition
-    tau = 3.0 # planning horizon
+    tau = 4.0 # planning horizon
     rvo_agent = RvoControl(agent, obstacle_list, D=D, tau=tau)
 
 
@@ -176,7 +127,7 @@ def run(args):
 
 
         # Save logged data at intervals -------------------------------------------
-        save_interval = 10 # seconds
+        save_interval = 25 # seconds
         if round(dt) > 1 and round(dt) % save_interval == 0:
             logger.save_data()
             rospy.loginfo("<<<<< Trial Saving Complete! >>>>>")
