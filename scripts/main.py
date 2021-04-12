@@ -65,8 +65,9 @@ def run(args):
 
 
     ################ Initialize data logger (for active objects only) ###############
+    trial_name = rospy.get_param("trial_name")
     model_ids = ['trina2'] + pedestrian_id
-    logger = DataLogger(model_ids, scenario, obstacle_list)
+    logger = DataLogger(model_ids, scenario, trial_name, obstacle_list)
 
 
     ############################ Set agent goal location ############################
@@ -125,12 +126,20 @@ def run(args):
         t_stop = time.time()
         dt = t_stop - t_start
 
-
         # Save logged data at intervals -------------------------------------------
-        save_interval = 25 # seconds
-        if round(dt) > 1 and round(dt) % save_interval == 0:
+        # save_interval = 20 # seconds
+        # if round(dt) > 1 and round(dt) % save_interval == 0:
+        #     logger.save_data()
+        #     rospy.loginfo("<<<<< Trial Saving Complete! >>>>>")
+        
+        # Terminate simulation (all nodes) once goal is reached -------------------
+        if rvo_agent.reached:
             logger.save_data()
-            rospy.loginfo("<<<<< Trial Saving Complete! >>>>>")
+            rospy.loginfo("<<<<< Goal Reached! >>>>>")
+            rospy.signal_shutdown("<<<<< Shutting Down Simulation >>>>>")
+
+        if scenario == "practice":
+            rospy.on_shutdown(logger.save_data)
 
 #####################################################################################
 # main

@@ -20,7 +20,7 @@ data_logger.py
 
 class DataLogger():
 
-    def __init__(self, model_ids, scenario, active_obstacle_dict):
+    def __init__(self, model_ids, scenario, trial_name, active_obstacle_dict):
         # define objects to track
         # self.stage = args[1]
         # self.method = args[2]
@@ -29,6 +29,7 @@ class DataLogger():
         self.model_ids = model_ids
         self.n_models = len(self.model_ids)
         self.scenario = scenario
+        self.trial_name = trial_name
 
         self.time_to_goal = 0
             
@@ -106,7 +107,8 @@ class DataLogger():
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
                     str(time_struct.tm_hour) + str(time_struct.tm_min) + ']'
         # filename = self.model_ids[i]+'_'+time_now
-        filename = 'data_'+self.scenario+'_'+time_now
+        # filename = 'data_'+self.scenario+'_'+time_now
+        filename = self.trial_name+'_'+self.scenario+'_'+time_now
 
         if os.path.isdir(self.directory):
             np.save(self.directory+filename+".npy", data)

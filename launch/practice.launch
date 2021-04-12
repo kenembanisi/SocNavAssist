@@ -9,7 +9,7 @@
     <arg name="gui" default="false" />
 
     <!-- Set scenario details-->
-    <arg name="scenario" default="approach_human" />
+    <arg name="scenario" default="practice" />
     <arg name="num_pedestrians" default="5" />
     <arg name="trial_name" default="test" />
     <param name="scenario" value="$(arg scenario)" />
@@ -19,14 +19,12 @@
     <!-- Start timer bool flag -->
     <param name="start_timer" value="false" />
 
-    <!-- Set control and manual mode -->
+    <!-- Set control mode -->
     <arg name="control_mode" default="manual" />
-    <arg name="manual_mode" default="pos-vel" />
     <param name="control_mode" value="$(arg control_mode)" />
-    <param name="manual_mode" value="$(arg manual_mode)" />
 
     <!-- Set world -->
-    <arg name="world_name" default="$(find rvo_ros)worlds/$(arg scenario).world" />
+    <arg name="world_name" default="$(find rvo_ros)worlds/$(arg scenario)_maze.world" />
 
     <!-- Include Gazebo simulation launch file -->
     <include file="$(find rvo_ros)/launch/gazebo_sim.launch" >
@@ -45,13 +43,10 @@
     <!-- Launch the visual interface -->
     <node name="visual_interface_" pkg="visual_interface" type="visual_interface_node" output="screen" />
 
-    <!-- Launch the proxemics evaluation -->
-    <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
-
     <!-- Launch the falcon novint haptic interface -->
-    <!-- <node name="haptic_interface" pkg="sim_control" type="falcon_novint_control.py" output="screen" 
-        if="$(eval control_mode == 'manual')"/> -->
-    <node name="haptic_interface" pkg="haptic_control" type="haptic_control_node" output="screen" 
+    <node name="haptic_interface" pkg="sim_control" type="falcon_novint_control.py" output="screen" 
         if="$(eval control_mode == 'manual')"/>
+    <!-- <node name="haptic_interface" pkg="haptic_control" type="haptic_control_node" output="screen" 
+        if="$(eval control_mode == 'manual')"/> -->
 
 </launch>

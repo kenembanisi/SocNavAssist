@@ -2,6 +2,7 @@
 
 import numpy as np
 import math
+import csv
 import os
 import argparse
 import matplotlib.pyplot as plt
@@ -153,119 +154,148 @@ def compute_derivative(val):
 ############################################################################################################
 def main(args):
 
-    # load stored data
-    data_filename = args.data
+    ##################################### ITERATE OVER TRIALS ##############################################
     log_directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
-    data = np.load(log_directory+data_filename, allow_pickle=True, encoding='latin1')
-    n_frames = len(data[1][0])
 
-    # get agent data
-    agent_x = data[1][0]
-    agent_y = data[2][0]
-    agent_theta = data[3][0]
-    agent_v = data[8][0]
-    agent_omega = data[9][0]
+    with open(log_directory+"pilot"+'_summary.csv', mode='w') as output:
+        
+        dw = csv.DictWriter(output, delimiter='\t', fieldnames=['Path Length (in meters)', 'CHC', 'Time to Complete',
+                     'Avg Minimum Distance', '# Intimate Intrusions'])
+        dw.writeheader()
+        
+        for r in range(1,5):
+            
+            data_files = []
 
-    # get pedestrian data
-    pedestrian_x = data[1][1:]
-    pedestrian_y = data[2][1:]
-    pedestrian_theta = data[3][1:]
-    pedestrian_v = data[8][1:]
-    pedestrian_omega = data[9][1:]
-    num_pedestrians = len(pedestrian_x)
+            participant = "For P0" + str(r)
+            
+            csv_writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            csv_writer.writerow([ participant ])
+            csv_writer.writerow([ '**********', '**********','**********','**********', '**********'])
 
-    ######################################### PATH QUALITY #################################################
-    # PATH LENGTH & PATH LENGTH RATIO
-    path_length_list = [ math.sqrt((agent_x[i+1]-agent_x[i])**2 + (agent_y[i+1]-agent_y[i])**2) for i in range(n_frames-1) ]
-    path_length = sum(path_length_list)
+            for filename in os.listdir(log_directory):
+                if filename.startswith("P0"+str(r)):
+            
+                    ########################################### LOAD DATA ##################################################
+                    # load stored data
+                    # data_filename = args.data
+                    data = np.load(log_directory+filename, allow_pickle=True, encoding='latin1')
+                    n_frames = len(data[1][0])
 
-    # CUMULATIVE HEADING CHANGES
-    # Described by the cumulative heading changes normalized by the trajectory length
-    heading_diff = [ abs(agent_omega[i+1] - agent_omega[i]) for i in range(n_frames-1)]
-    heading_diff_norm = sum(heading_diff) / (n_frames-1)
+                    # get agent data
+                    agent_x = data[1][0]
+                    agent_y = data[2][0]
+                    agent_theta = data[3][0]
+                    agent_v = data[8][0]
+                    agent_omega = data[9][0]
 
-    # TIME TO COMPLETION
-    completion_time = data[10]
+                    # get pedestrian data
+                    pedestrian_x = data[1][1:]
+                    pedestrian_y = data[2][1:]
+                    pedestrian_theta = data[3][1:]
+                    pedestrian_v = data[8][1:]
+                    pedestrian_omega = data[9][1:]
+                    num_pedestrians = len(pedestrian_x)
 
+                    ######################################### PATH QUALITY #################################################
+                    # PATH LENGTH & PATH LENGTH RATIO
+                    path_length_list = [ math.sqrt((agent_x[i+1]-agent_x[i])**2 + (agent_y[i+1]-agent_y[i])**2) for i in range(n_frames-1) ]
+                    path_length = sum(path_length_list)
 
-    ######################################## SOCIAL AWARENESS ##############################################
-    # AVG. CLOSEST DISTANCE TO PEDESTRIANS
-        # minimum distance to each pedestrian at each timestep
-    min_pair_wise_dist = [ min([ dist([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]]) \
-                                            for i in range(num_pedestrians) ]) for j in range(n_frames) ]
-    avg_min_dist = sum(min_pair_wise_dist)/n_frames
-    
-    # PROXEMICS INTRUSIONS
-        # intimate
-    intimate = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "intimate") \
-                                            for i in range(num_pedestrians) ] for j in range(n_frames) ]
-    intimate_int = [ sum([ 1 if (intimate[j+1][i] - intimate[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
-                                            for j in range(n_frames-1) ]
-    num_intimate = sum(intimate_int)
+                    # CUMULATIVE HEADING CHANGES
+                    # Described by the cumulative heading changes normalized by the trajectory length
+                    heading_diff = [ abs(agent_omega[i+1] - agent_omega[i]) for i in range(n_frames-1)]
+                    heading_diff_norm = sum(heading_diff) / (n_frames-1)
 
-        # personal
-    personal = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "personal") \
-                                            for i in range(num_pedestrians) ] for j in range(n_frames) ]
-    personal_int = [ sum([ 1 if (personal[j+1][i] - personal[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
-                                            for j in range(n_frames-1) ]
-    num_personal = sum(personal_int)
-
-        # social
-    social = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "social") \
-                                            for i in range(num_pedestrians) ] for j in range(n_frames) ]
-    social_int = [ sum([ 1 if (social[j+1][i] - social[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
-                                            for j in range(n_frames-1) ]
-    num_social = sum(social_int)
-
-    # MINIMUM TIME TO INTRUSION (OR COLLISION)
-        # at each timestep, check which pedestrian would lead to a collision
-            # for each potential collision, calculate the time to collision
-    min_ttc = [ min([ calc_ttc([agent_x[j], agent_y[j]], [agent_v[j], agent_omega[j]], agent_theta[j], [pedestrian_x[i][j], pedestrian_y[i][j]], \
-                                pedestrian_v[i][j], "collision") for i in range(num_pedestrians) ]) for j in range(n_frames) ]
-    tmp = []
-    for i in range(n_frames):
-        if min_ttc[i] != 8888:
-            tmp.append(min_ttc[i])
-    avg_min_ttc = sum(tmp)/len(tmp)
+                    # TIME TO COMPLETION
+                    completion_time = data[10]
 
 
-    ######################################## MOTION QUALITY ##############################################
-    # AVG. SPEED
-    avg_linear_speed = sum(agent_v)/n_frames
-    avg_angular_speed = sum(agent_omega)/n_frames
+                    ######################################## SOCIAL AWARENESS ##############################################
+                    # AVG. CLOSEST DISTANCE TO PEDESTRIANS
+                        # minimum distance to each pedestrian at each timestep
+                    min_pair_wise_dist = [ min([ dist([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]]) \
+                                                            for i in range(num_pedestrians) ]) for j in range(n_frames) ]
+                    avg_min_dist = sum(min_pair_wise_dist)/n_frames
+                    
+                    # PROXEMICS INTRUSIONS
+                        # intimate
+                    intimate = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "intimate") \
+                                                            for i in range(num_pedestrians) ] for j in range(n_frames) ]
+                    intimate_int = [ sum([ 1 if (intimate[j+1][i] - intimate[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
+                                                            for j in range(n_frames-1) ]
+                    num_intimate = sum(intimate_int)
 
-    # AVG. ACCELERATION
-    linear_acc = compute_derivative(agent_v)
-    avg_linear_acc = sum(linear_acc)/len(linear_acc)
+                        # personal
+                    personal = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "personal") \
+                                                            for i in range(num_pedestrians) ] for j in range(n_frames) ]
+                    personal_int = [ sum([ 1 if (personal[j+1][i] - personal[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
+                                                            for j in range(n_frames-1) ]
+                    num_personal = sum(personal_int)
 
-    angular_acc = compute_derivative(agent_omega)
-    avg_angular_acc = sum(angular_acc)/len(angular_acc)
+                        # social
+                    social = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "social") \
+                                                            for i in range(num_pedestrians) ] for j in range(n_frames) ]
+                    social_int = [ sum([ 1 if (social[j+1][i] - social[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
+                                                            for j in range(n_frames-1) ]
+                    num_social = sum(social_int)
 
-    # AVG. JERK
-    linear_jerk = compute_derivative(linear_acc)
-    avg_linear_jerk = sum(linear_jerk)/len(linear_jerk)
-
-    angular_jerk = compute_derivative(angular_acc)
-    avg_angular_jerk = sum(angular_jerk)/len(angular_jerk)
-
-
-    #####################################################################################################
-
-    print(
-        "----------------- Path Quality ---------------- \n" +
-        "Path length (m): " + str(round(path_length, 2)) + "\n" +
-        "Path smoothness: " + str(round(heading_diff_norm, 4)) + "\n" +
-        "Time to complete (secs): " + str(completion_time) + "\n \n" +
-        "----------------- Social Awareness -------------- \n" +
-        "Avg. clearance to pedestrians (m): " + str(round(avg_min_dist, 2)) + "\n" +
-        "Number of intrusions (int | pers | soc): " + str(num_intimate) + " | " + str(num_personal) + " | " + str(num_social) + "\n" +
-        "Avg. min TTC (secs): " + str(round(avg_min_ttc, 2)) + "\n"
-        "----------------- Motion Quality -------------- \n" +
-        "Avg. linear (speed, acc, jerk): " + str(round(avg_linear_speed, 4)) + " | " + str(round(avg_linear_acc, 4)) + " | " + str(round(avg_linear_jerk, 4)) + "\n" +
-        "Avg. angular (speed, acc, jerk): " + str(round(avg_angular_speed, 4)) + " | " + str(round(avg_angular_acc, 4)) + " | " + str(round(avg_angular_jerk, 4)) + "\n"
-    )
+                    # MINIMUM TIME TO INTRUSION (OR COLLISION)
+                        # at each timestep, check which pedestrian would lead to a collision
+                            # for each potential collision, calculate the time to collision
+                    min_ttc = [ min([ calc_ttc([agent_x[j], agent_y[j]], [agent_v[j], agent_omega[j]], agent_theta[j], [pedestrian_x[i][j], pedestrian_y[i][j]], \
+                                                pedestrian_v[i][j], "collision") for i in range(num_pedestrians) ]) for j in range(n_frames) ]
+                    tmp = []
+                    for i in range(n_frames):
+                        if min_ttc[i] != 8888:
+                            tmp.append(min_ttc[i])
+                    avg_min_ttc = sum(tmp)/len(tmp)
 
 
+                    ######################################## MOTION QUALITY ##############################################
+                    # AVG. SPEED
+                    avg_linear_speed = sum(agent_v)/n_frames
+                    avg_angular_speed = sum(agent_omega)/n_frames
+
+                    # AVG. ACCELERATION
+                    linear_acc = compute_derivative(agent_v)
+                    avg_linear_acc = sum(linear_acc)/len(linear_acc)
+
+                    angular_acc = compute_derivative(agent_omega)
+                    avg_angular_acc = sum(angular_acc)/len(angular_acc)
+
+                    # AVG. JERK
+                    linear_jerk = compute_derivative(linear_acc)
+                    avg_linear_jerk = sum(linear_jerk)/len(linear_jerk)
+
+                    angular_jerk = compute_derivative(angular_acc)
+                    avg_angular_jerk = sum(angular_jerk)/len(angular_jerk)
+
+
+                    #####################################################################################################
+
+                    print(
+                        "----------------- Path Quality ---------------- \n" +
+                        "Path length (m): " + str(round(path_length, 2)) + "\n" +
+                        "Path roughness(smoothness): " + str(round(heading_diff_norm, 4)) + "\n" +
+                        "Time to complete (secs): " + str(round(completion_time, 2)) + "\n \n" +
+                        "----------------- Social Awareness -------------- \n" +
+                        "Avg. clearance to pedestrians (m): " + str(round(avg_min_dist, 2)) + "\n" +
+                        "Number of intrusions (int | pers | soc): " + str(num_intimate) + " | " + str(num_personal) + " | " + str(num_social) + "\n" +
+                        "Avg. min TTC (secs): " + str(round(avg_min_ttc, 2)) + "\n"
+                        "----------------- Motion Quality -------------- \n" +
+                        "Avg. linear (speed, acc, jerk): " + str(round(avg_linear_speed, 4)) + " | " + str(round(avg_linear_acc, 4)) + " | " + str(round(avg_linear_jerk, 4)) + "\n" +
+                        "Avg. angular (speed, acc, jerk): " + str(round(avg_angular_speed, 4)) + " | " + str(round(avg_angular_acc, 4)) + " | " + str(round(avg_angular_jerk, 4)) + "\n"
+                    )
+
+                    ######################################## WRITE IN CSV FILE ##########################################
+
+                    csv_writer.writerow([ round(path_length, 2), round(heading_diff_norm, 4), round(completion_time, 2), 
+                                        round(avg_min_dist, 2), num_intimate])
+                    
+                    
+
+        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Post Analysis")
