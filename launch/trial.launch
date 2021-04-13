@@ -5,8 +5,10 @@
     <arg name="robot_z" default="0.0" />
     <arg name="robot_yaw" default="1.55" />
 
-    <!-- Show Gazebo gui -->
+    <!-- Gazebo settings -->
     <arg name="gui" default="false" />
+    <arg name="paused" default="true" />
+    <!-- <arg name="paused" value="false" if="$(eval control_mode == 'auto')"/> -->
 
     <!-- Set scenario details-->
     <arg name="scenario" default="approach_human" />
@@ -22,8 +24,10 @@
     <!-- Set control and manual mode -->
     <arg name="control_mode" default="manual" />
     <arg name="manual_mode" default="pos-vel" />
+    <arg name="rvo_planning_horizon" default="4" />
     <param name="control_mode" value="$(arg control_mode)" />
     <param name="manual_mode" value="$(arg manual_mode)" />
+    <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
 
     <!-- Set world -->
     <arg name="world_name" default="$(find rvo_ros)worlds/$(arg scenario).world" />
@@ -36,22 +40,24 @@
         <arg name="robot_z" value="$(arg robot_z)" />
         <arg name="robot_yaw" value="$(arg robot_yaw)" />
         <arg name="gui" value="$(arg gui)" />
+        <arg name="paused" value="$(arg paused)" />
     </include>
 
     <!-- Launch rvo agent -->
     <node name="move_trina2" pkg="rvo_ros" type="main.py" output="screen" args="$(arg scenario)"
         required="true" /> 
 
-    <!-- Launch the visual interface -->
-    <node name="visual_interface_" pkg="visual_interface" type="visual_interface_node" output="screen" />
+    <group if="$(eval control_mode == 'manual')">
+        <!-- Launch the visual interface -->
+        <node name="visual_interface_" pkg="visual_interface" type="visual_interface_node" output="screen" />
 
-    <!-- Launch the proxemics evaluation -->
-    <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
+        <!-- Launch the proxemics evaluation -->
+        <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
 
-    <!-- Launch the falcon novint haptic interface -->
-    <!-- <node name="haptic_interface" pkg="sim_control" type="falcon_novint_control.py" output="screen" 
-        if="$(eval control_mode == 'manual')"/> -->
-    <node name="haptic_interface" pkg="haptic_control" type="haptic_control_node" output="screen" 
-        if="$(eval control_mode == 'manual')"/>
+        <!-- Launch the falcon novint haptic interface -->
+        <!-- <node name="haptic_interface" pkg="sim_control" type="falcon_novint_control.py" output="screen" 
+            if="$(eval control_mode == 'manual')"/> -->
+        <node name="haptic_interface" pkg="haptic_control" type="haptic_control_node" output="screen" />
+    </group>
 
 </launch>

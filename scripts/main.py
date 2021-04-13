@@ -44,7 +44,7 @@ def run(args):
 
     ########################### Define agent and properties #########################
     agent_id = 'trina2'
-    agent_properties = {'radius': 1.0}
+    agent_properties = {'radius': 0.25}
     agent = AgentClass(agent_id, agent_properties)
     
 
@@ -60,7 +60,8 @@ def run(args):
 
     ################ Initiate RVO controller for agent & obstacle set ###############
     D = 0.2 # radius extension for differential drive condition
-    tau = 4.0 # planning horizon
+    tau = float(rospy.get_param("rvo_planning_horizon"))
+    # tau = 4.0 # planning horizon
     rvo_agent = RvoControl(agent, obstacle_list, D=D, tau=tau)
 
 

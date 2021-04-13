@@ -46,6 +46,7 @@ class AgentClass():
         self.theta = 0
         self.v = 0   
         self.omega = 0 
+        self.spawn_complete = False
 
         # Instantiate topic services
             # model_state subscriber
@@ -78,6 +79,18 @@ class AgentClass():
         """
 
         # Find the index of this agent_id in the name list:
+        # if not self.spawn_complete:     # check if agent id is in list
+        #     rospy.loginfo("#########################step in!###########################")
+        #     while not self.spawn_complete:  # this should only run once at start up
+        #         rospy.loginfo("#########################step in further!###########################")
+        #         # if self.agent_id in data.name: 
+        #         time.sleep(2)
+        #         self.spawn_complete = True
+        #             # break
+        #         # time.sleep(1)
+        #         rospy.loginfo("In the spawn checker loop")
+        # time.sleep(5)
+
         idx = data.name.index(self.agent_id)
 
         # Retrieve states from data
@@ -119,6 +132,7 @@ class AgentClass():
         # call the velocity data publisher:
         # self.publish_data(v_opt, v_list)
 
+
     def get_agent_velocities(self):
         """
         Returns the linear and angular velocities of the agent
@@ -130,6 +144,7 @@ class AgentClass():
         """
         return [self.v, self.omega]
         
+
     def compute_heading(self, theta):
         """
         Computes the heading of the robot from the reference position based on a
