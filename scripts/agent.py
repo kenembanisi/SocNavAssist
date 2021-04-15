@@ -40,7 +40,7 @@ class AgentClass():
         self.max_linear_velocity = 2.0      # TODO: Get this from rosparam?
         self.max_angular_velocity = 2.0     # TODO: Get this from rosparam?
         self.max_linear_acceleration = 2.0 
-        self.max_angular_acceleration = 4.5
+        self.max_angular_acceleration = 4.5 # formerly 4.5
         self.x = 0
         self.y = 0
         self.z = 0
