@@ -14,6 +14,7 @@ Describes the reciprocal velocity obstacle implementation class.
 import math
 import numpy as np
 import rospy
+import time
 
 
 class RvoControl():
@@ -62,6 +63,9 @@ class RvoControl():
         # augment agent radius if D > 0
         if self.D > 0:
             self.augment_player_radius()
+        # define time variables
+        self.curr_time = time.time()
+        self.prev_time = time.time()
 
 
     def compute_V_opt(self, goal, alpha=0.5):
@@ -229,7 +233,7 @@ class RvoControl():
                 else:
                     V_unsuitable.append(candidate_v)      
         # --------------------------------------------------------------------------------------------------          
-        # rospy.loginfo("Suit V: [%s], Unsuit V: [%s], Admis: [%s], Total: [%s]", str(len(V_suitable)), str(len(V_unsuitable)), str(n_total - n_not_admissible), str(n_total))
+        rospy.loginfo("Suit V: [%s], Unsuit V: [%s], Admis: [%s], Total: [%s]", str(len(V_suitable)), str(len(V_unsuitable)), str(n_total - n_not_admissible), str(n_total))
 
         return V_suitable, V_unsuitable, V_admissible
 
@@ -512,15 +516,16 @@ class RvoControl():
         Arguments: None
         Returns: vertex coordinates for the admissible velocity bound in x,y space
         """
-        # set the time delta
-        self.delta_t = 1.0
+        # compute the time delta
+        self.curr_time = time.time()
+        dt = self.curr_time - self.prev_time
 
         # obtain current angular velocity
         agent_vel = self.agent.get_agent_velocities() # agent_vel = [v, omega]
 
-        # compute range of admissible velocity headings
-        omega_min = agent_vel[1] - self.agent.max_angular_acceleration * self.delta_t
-        omega_max = agent_vel[1] + self.agent.max_angular_acceleration * self.delta_t
+        # compute range of admissible velocity headings (v_omega)
+        omega_min = agent_vel[1] - self.agent.max_angular_acceleration * dt
+        omega_max = agent_vel[1] + self.agent.max_angular_acceleration * dt
         if omega_max > self.agent.max_angular_velocity:
             omega_max = self.agent.max_angular_velocity
         if omega_min < -self.agent.max_angular_velocity:
@@ -531,8 +536,8 @@ class RvoControl():
             v_omega_max = self.D * omega_max
 
         # compute range of admissible velocity magnitudes 
-        v_min = agent_vel[0] - self.agent.max_linear_acceleration * self.delta_t
-        v_max = agent_vel[0] + self.agent.max_linear_acceleration * self.delta_t
+        v_min = agent_vel[0] - self.agent.max_linear_acceleration * dt
+        v_max = agent_vel[0] + self.agent.max_linear_acceleration * dt
         if v_max > self.agent.max_linear_velocity:
             v_max = self.agent.max_linear_velocity
         if v_min < -self.agent.max_linear_velocity:
@@ -550,6 +555,9 @@ class RvoControl():
         v_b_rot = self.DD2point_velocity(v_b)
         v_c_rot = self.DD2point_velocity(v_c)
         v_d_rot = self.DD2point_velocity(v_d)
+
+        # set previous time value to current time
+        self.prev_time = self.curr_time
 
         return v_a_rot, v_b_rot, v_c_rot, v_d_rot
 

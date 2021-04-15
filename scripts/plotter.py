@@ -88,14 +88,14 @@ def main(args):
     ax2.plot(limits[3], linestyle='--', color='k')
 
         # robot linear acceleration
-    ax3.plot(acc_actual_linear, label='Current')
     ax3.plot(acc_opt_linear, label='Optimal')
+    ax3.plot(acc_actual_linear, label='Current')
     ax3.plot(limits[4], linestyle='--', color='k')
     ax3.plot(limits[5], linestyle='--', color='k')
 
         # robot angular acceleration
-    ax4.plot(acc_actual_angular, label='Current')
     ax4.plot(acc_opt_angular, label='Optimal')
+    ax4.plot(acc_actual_angular, label='Current')
     ax4.plot(limits[6], linestyle='--', color='k')
     ax4.plot(limits[7], linestyle='--', color='k')
 
@@ -108,7 +108,7 @@ def main(args):
     ax1.set_ylabel('Velocity (m/s)')
     ax2.set_ylabel('Velocity (rad/s)')
     ax3.set_ylabel('Acceleration (m/s^2)')
-    ax4.set_ylabel('Acceleration (m/s^2)')
+    ax4.set_ylabel('Acceleration (rad/s^2)')
 
     # set title
     ax1.title.set_text('Linear Velocity')
