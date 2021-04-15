@@ -19,6 +19,7 @@ from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
 from std_msgs.msg import Float32
+from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 import time
 import math
@@ -51,7 +52,11 @@ class AgentClass():
         # Instantiate topic services
             # model_state subscriber
         self.model_subscriber = rospy.Subscriber('/gazebo/model_states', 
-            ModelStates, self.update_states_callback)
+            ModelStates, self.update_pos_states_callback)
+
+            # odom subscriber
+        self.odom_subscriber = rospy.Subscriber('/base_controller/odom', 
+            Odometry, self.update_vel_states_callback)
 
             # publisher to base_controller
         self.velocity_publisher = rospy.Publisher('/base_controller/cmd_vel',
@@ -66,10 +71,9 @@ class AgentClass():
                             Float32, queue_size=1)
 
 
-    def update_states_callback(self, data):
+    def update_pos_states_callback(self, data):
         """
-        Callback function which updates the states (position and velocity)
-        of the agent.
+        Callback function which updates the position of the agent.
         
         Arguments:
             - data [message struct]
@@ -104,8 +108,23 @@ class AgentClass():
                                             orientation_quaterion.w])
         self.theta = np.degrees(orientation_euler[2])
         # ---
-        self.v = data.twist[idx].linear.x
-        self.omega = data.twist[idx].angular.z
+        # self.v = data.twist[idx].linear.x
+        # self.omega = data.twist[idx].angular.z
+
+
+    def update_vel_states_callback(self, data):
+        """
+        Callback function which updates the velocity of the agent.
+        
+        Arguments:
+            - data [message struct]
+
+        Returns:
+            - None
+        """
+
+        self.v = data.twist.twist.linear.x
+        self.omega = data.twist.twist.angular.z
 
 
     def update_controls(self, v_opt, v_list):

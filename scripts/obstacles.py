@@ -31,7 +31,7 @@ class ObstacleClass():
 
         # Assign attributes:
         self.obstacle_id = obstacle_id
-        self.bounding_radius = 0.5          # arbitrary value for now
+        self.bounding_radius = 0.9          # 0.45 for intimate region, 0.9 for personal region
         self.max_linear_velocity = 2.0      # TODO: Get this from rosparam?
         self.max_angular_velocity = 1.7     # TODO: Get this from rosparam?
 
