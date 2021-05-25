@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+
+<robot name="main_camera" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:macro name="load_rear_camera" params="ns prefix main_camera_base
+                                                 color_fov:=69.4 color_w:=1920 color_h:=1080 
+                                                 depth_fov:=85.2 depth_w:=1280 depth_h:=720
+                                                 update_rate:=60 wide_flag:=true">
+
+        <xacro:property name="mass" value="0.2" /> 
+        <xacro:property name="width" value="0.04" /> 
+        <xacro:property name="height1" value="0.02" />
+        <xacro:property name="axel_offset" value="-0.25" /> 
+        
+        <link name="${prefix}camera_support">
+            <collision>
+            <origin xyz="0 0 ${height1/2}" rpy="0 0 0"/>
+            <geometry>
+                <box size="${width} ${width} ${height1}"/>
+            </geometry>
+            </collision>
+
+            <visual>
+            <origin xyz="0 0 ${height1/2}" rpy="0 0 0"/>
+            <geometry>
+                <box size="${width} ${width} ${height1}"/>
+            </geometry>
+            <material name="">
+                <color rgba="0.5 0.6 0.7 1"/>
+            </material>
+            </visual>
+
+            <inertial>
+            <origin xyz="0 0 ${height1/2}" rpy="0 0 0"/>
+            <mass value="${mass}"/>
+            <inertia ixx="${mass / 12.0 * (width*width + height1*height1)}" ixy="0.0" ixz="0.0" 
+                    iyy="${mass / 12.0 * (height1*height1 + width*width)}" iyz="0.0" 
+                    izz="${mass / 12.0 * (width*width + width*width)}"/>
+            </inertial>
+        </link>
+
+        <joint name="${prefix}camera_support_joint" type="fixed">
+            <parent link="${main_camera_base}"/>
+            <child link="${prefix}camera_support"/>
+            <origin xyz="-${0.075-width/2} 0 0.8" rpy="0 0 3.14"/>
+            <axis xyz="0 0 1"/>
+        </joint>
+
+        <!-- <link name="${prefix}camera_yaw_link">
+            <collision>
+            <origin xyz="0 0 0.02" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.01" length="0.04"/>
+            </geometry>
+            </collision>
+
+            <visual>
+            <origin xyz="0 0 0.02" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.01" length="0.04"/>
+            </geometry>
+            <material name="blue">
+                <color rgba="0 0 1 1"/>
+            </material>
+            </visual>
+
+            <inertial>
+            <origin xyz="0 0 0.02" rpy="0 0 0"/>
+            <mass value="0.5"/>
+            <inertia ixx="7.9e-02" ixy="0.0" ixz="0.0" 
+                    iyy="7.9e-02" iyz="0.0" 
+                    izz="2.5e-02"/>
+            </inertial>
+        </link>
+
+        <joint name="${prefix}camera_yaw_joint" type="revolute">
+            <parent link="${prefix}camera_support"/>
+            <child link="${prefix}camera_yaw_link"/>
+            <origin xyz="0 0 ${height1}" rpy="0 0 0"/>
+            <axis xyz="0 0 1"/>
+            <limit lower="-1.047" upper="1.047" effort="20" velocity="1.0" />
+        </joint>
+
+        <link name="${prefix}camera_pitch_link">
+            <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.01" length="0.04"/>
+            </geometry>
+            </collision>
+
+            <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.01" length="0.04"/>
+            </geometry>
+            <material name="red">
+                <color rgba="1 0 0 1"/>
+            </material>
+            </visual>
+
+            <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="0.5"/>
+            <inertia ixx="7.9e-02" ixy="0.0" ixz="0.0" 
+                    iyy="7.9e-02" iyz="0.0" 
+                    izz="2.5e-02"/>
+            </inertial>
+        </link>
+
+        <joint name="${prefix}camera_pitch_joint" type="revolute">
+            <parent link="${prefix}camera_yaw_link"/>
+            <child link="${prefix}camera_pitch_link"/>
+            <origin xyz="0.02 0 0.02" rpy="1.57 0 0"/>
+            <axis xyz="0 0 1"/>
+            <limit lower="-1.047" upper="1.047" effort="20" velocity="1.0" />
+        </joint>
+
+        <transmission name="${prefix}camera_yaw_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${prefix}camera_yaw_joint">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${prefix}camera_yaw_actuator">
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+        </transmission>
+
+        <transmission name="${prefix}camera_pitch_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${prefix}camera_pitch_joint">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${prefix}camera_pitch_actuator">
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+        </transmission> -->
+
+        <!-- <xacro:include filename="$(find freight_description)/camera/urdf/_d435.urdf.xacro"/>
+        <xacro:sensor_d435 name="${prefix}cam" topics_ns="${prefix}cam" parent="${prefix}camera_pitch_link"
+                           color_fov="${color_fov}" color_w="${color_w}" color_h="${color_h}"
+                           depth_fov="${depth_fov}" depth_w="${depth_w}" depth_h="${depth_h}"
+                           update_rate="${update_rate}"  wide_flag="${wide_flag}">
+            <origin xyz="0.02 0.0 0.0" rpy="-1.57 0 0" /> 
+        </xacro:sensor_d435> -->
+
+        <xacro:include filename="$(find freight_description)/camera/urdf/_d435.urdf.xacro"/>
+        <xacro:sensor_d435 name="${prefix}cam" topics_ns="${prefix}cam" parent="${prefix}camera_support"
+                           color_fov="${color_fov}" color_w="${color_w}" color_h="${color_h}"
+                           depth_fov="${depth_fov}" depth_w="${depth_w}" depth_h="${depth_h}"
+                           update_rate="${update_rate}"  wide_flag="${wide_flag}">
+            <origin xyz="0.02 0.0 0.0" rpy="0 0 0" /> 
+        </xacro:sensor_d435>
+
+    </xacro:macro>
+
+</robot>
