@@ -1,9 +1,0 @@
-{
-    "python.autoComplete.extraPaths": [
-        "/home/kenembanisi/test_ws/devel/lib/python2.7/dist-packages",
-        "/home/kenembanisi/robotis_ws/devel/lib/python2.7/dist-packages",
-        "/home/kenembanisi/pedsim_ws/devel/lib/python2.7/dist-packages",
-        "/home/kenembanisi/catkin_ws/devel/lib/python2.7/dist-packages",
-        "/opt/ros/melodic/lib/python2.7/dist-packages"
-    ]
-}
