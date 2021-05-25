@@ -1,0 +1,5 @@
+# directories
+logs/
+
+# vscode config files
+.vscode
