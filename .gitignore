@@ -3,3 +3,6 @@ logs/
 
 # vscode config files
 .vscode
+
+# .pyc files
+*.pyc
