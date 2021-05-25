@@ -11,7 +11,7 @@
     <!-- Load the description for the robot -->
     <arg name="robot_name" default="trina2"/>
     <param name="robot_description" command="$(find xacro)/xacro 
-        $(find freight_description)/robot/urdf/trina2_base.xacro 
+        $(find sim_robot)/robot/urdf/trina2_base.xacro 
                 ns:=$(arg robot_name) sim:=true --inorder" />
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -33,7 +33,7 @@
             -Y $(arg robot_yaw)"/> 
 
     <!-- Load controller configuration files from trina2_control package -->
-    <rosparam file="$(find freight_control)/config/freight_controller.yaml" command="load" />
+    <rosparam file="$(find sim_robot)/config/freight_controller.yaml" command="load" />
 
     <!-- Start base and camera controllers -->
     <node name="controller_spawner" pkg="controller_manager" type="spawner" 

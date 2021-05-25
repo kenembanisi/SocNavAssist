@@ -33,7 +33,7 @@
     <arg name="world_name" default="$(find rvo_ros)worlds/$(arg scenario).world" />
 
     <!-- Include Gazebo simulation launch file -->
-    <include file="$(find rvo_ros)/launch/gazebo_sim.launch" >
+    <include file="$(find socially_aware_rvo)/launch/gazebo_sim.launch" >
         <arg name="world_name" value="$(arg world_name)" />
         <arg name="robot_x" value="$(arg robot_x)" />
         <arg name="robot_y" value="$(arg robot_y)" />
@@ -44,12 +44,12 @@
     </include>
 
     <!-- Launch rvo agent -->
-    <node name="move_trina2" pkg="rvo_ros" type="main.py" output="screen" args="$(arg scenario)"
+    <node name="socnavassist" pkg="rvo_ros" type="main.py" output="screen" args="$(arg scenario)"
         required="true" /> 
 
     <group if="$(eval control_mode == 'manual')">
         <!-- Launch the visual interface -->
-        <node name="visual_interface_" pkg="visual_interface" type="visual_interface_node" output="screen" />
+        <node name="socnavassist_visual_interface" pkg="visual_interface" type="visual_interface_node" output="screen" />
 
         <!-- Launch the proxemics evaluation -->
         <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
@@ -57,7 +57,7 @@
         <!-- Launch the falcon novint haptic interface -->
         <!-- <node name="haptic_interface" pkg="sim_control" type="falcon_novint_control.py" output="screen" 
             if="$(eval control_mode == 'manual')"/> -->
-        <node name="haptic_interface" pkg="haptic_control" type="haptic_control_node" output="screen" />
+        <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" output="screen" />
     </group>
 
 </launch>
