@@ -1,0 +1,6 @@
+[submodule "libnifalcon"]
+	path = libnifalcon
+	url = https://github.com/libnifalcon/libnifalcon
+[submodule "ros_falcon"]
+	path = ros_falcon
+	url = https://github.com/WPI-AIM/ros_falcon
