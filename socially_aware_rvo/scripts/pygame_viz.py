@@ -181,7 +181,8 @@ def main(args):
 
     # load agent data
     data_filename = args.data
-    log_directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
+    # log_directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
+    log_directory = os.path.dirname(os.path.abspath(__file__))+'/'
     data = np.load(log_directory+data_filename, allow_pickle=True, encoding='latin1')
     n_frames = len(data[1])
 
