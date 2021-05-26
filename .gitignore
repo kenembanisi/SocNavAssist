@@ -6,3 +6,6 @@ logs/
 
 # .pyc files
 *.pyc
+
+# python virtual environment
+py-env/
