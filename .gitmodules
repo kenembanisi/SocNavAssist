@@ -4,3 +4,9 @@
 [submodule "ros_falcon"]
 	path = ros_falcon
 	url = https://github.com/WPI-AIM/ros_falcon
+[submodule "realsense_gazebo_plugin"]
+	path = realsense_gazebo_plugin
+	url = https://github.com/pal-robotics/realsense_gazebo_plugin.git
+[submodule "realsense_ros"]
+	path = realsense_ros
+	url = https://github.com/IntelRealSense/realsense-ros.git

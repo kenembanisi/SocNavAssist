@@ -48,6 +48,8 @@ sudo apt-get install ros-melodic-joy
 source ~/catkin_ws/devel/setup.bash
 ```
 
+#### Known Issues:
+* There's an issue with running `rosdep` because of `libnifalcon` can't be found. Hence, specifically for `realsense_ros`, you will need to install `librealsense2`. See installation information [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
 
 <br>
 
