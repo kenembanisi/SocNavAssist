@@ -144,7 +144,7 @@
             <origin xyz="0.02 0.0 0.0" rpy="-1.57 0 0" /> 
         </xacro:sensor_d435> -->
 
-        <xacro:include filename="$(find freight_description)/camera/urdf/_d435.urdf.xacro"/>
+        <xacro:include filename="$(find sim_robot)/camera/urdf/_d435.urdf.xacro"/>
         <xacro:sensor_d435 name="${prefix}cam" topics_ns="${prefix}cam" parent="${prefix}camera_support"
                            color_fov="${color_fov}" color_w="${color_w}" color_h="${color_h}"
                            depth_fov="${depth_fov}" depth_w="${depth_w}" depth_h="${depth_h}"
