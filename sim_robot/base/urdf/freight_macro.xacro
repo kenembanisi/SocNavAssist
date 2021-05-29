@@ -5,7 +5,7 @@
   <xacro:macro name="load_base" params="ns">
 
       <!-- <xacro:include filename="$(find fetch_description)/robots/freight.urdf.xacro" /> -->
-      <xacro:include filename="$(find freight_description)/base/urdf/freight.urdf.xacro" />
+      <xacro:include filename="$(find sim_robot)/base/urdf/freight.urdf.xacro" />
     
       <!-- Base is modeled as a big tub sitting on floor, with two wheels -->
       <gazebo reference="chassis_link">
