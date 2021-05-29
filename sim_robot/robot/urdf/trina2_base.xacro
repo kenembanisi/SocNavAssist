@@ -7,10 +7,10 @@
     <xacro:arg name="ns" default="trina2" />
 
     <!-- Include files -->
-    <xacro:include filename="$(find freight_description)/base/urdf/freight_macro.xacro" />
-    <xacro:include filename="$(find freight_description)/base/urdf/torso.urdf.xacro" />
-    <xacro:include filename="$(find freight_description)/camera/urdf/main_camera_support.urdf.xacro" />
-    <xacro:include filename="$(find freight_description)/camera/urdf/rear_camera_support.urdf.xacro" />
+    <xacro:include filename="$(find sim_robot)/base/urdf/freight_macro.xacro" />
+    <xacro:include filename="$(find sim_robot)/base/urdf/torso.urdf.xacro" />
+    <xacro:include filename="$(find sim_robot)/camera/urdf/main_camera_support.urdf.xacro" />
+    <xacro:include filename="$(find sim_robot)/camera/urdf/rear_camera_support.urdf.xacro" />
 
     <!-- Load main camera -->
     <xacro:load_main_camera ns="$(arg ns)" prefix="main_" main_camera_base="torso"
