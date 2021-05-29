@@ -55,6 +55,17 @@ source ~/catkin_ws/devel/setup.bash
 
 ## How to Run
 
+#### (Optional) Pre-Start: To enable haptic joystick control
+
+1. In a new terminal, run `roscore`
+
+2. In another terminal, start up the Novint Falcon joystick node:
+```
+rosrun ros_falcon joystick
+```
+
+#### Main Start:
+
 1. To run individual scenarios:
 ```
 roslaunch socially_aware_rvo trial.launch scenario:=<insert-scenario>
