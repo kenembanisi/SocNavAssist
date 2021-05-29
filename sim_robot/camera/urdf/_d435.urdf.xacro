@@ -10,7 +10,7 @@ aluminum peripherial evaluation case.
 
 <robot name="sensor_d435" xmlns:xacro="http://ros.org/wiki/xacro">
   <!--File includes-->
-  <xacro:include filename="$(find freight_description)/camera/urdf/_d435.gazebo.xacro"/>
+  <xacro:include filename="$(find sim_robot)/camera/urdf/_d435.gazebo.xacro"/>
 
   <xacro:macro name="sensor_d435" params="name:=camera topics_ns:=camera parent 
                                           color_fov:=69.4 color_w:=1920 color_h:=1080 
@@ -62,7 +62,7 @@ aluminum peripherial evaluation case.
       <origin xyz="${d435_cam_mount_from_center_offset} ${-d435_cam_depth_py} 0" rpy="${M_PI/2} 0 ${M_PI/2}"/>
         <geometry>
           <!-- <box size="${d435_cam_width} ${d435_cam_height} ${d435_cam_depth}"/> -->
-          <mesh filename="package://freight_description/camera/meshes/d435.dae" />
+          <mesh filename="package://sim_robot/camera/meshes/d435.dae" />
           <!--<mesh filename="package://realsense2_description/meshes/d435/d435.dae" />-->
         </geometry>
         <material name="${name}_aluminum"/>
