@@ -12,11 +12,42 @@ SocNavAssist is a haptic shared autonomy framework for enabling socially-aware n
 ***
 <br>
 
-## Dependencies
+## Installation
+
+Tested on Ubuntu 18.04 and ROS Melodic
+
+#### 1. Clone the repository
+```
+cd ~/catkin_ws/src
+git clone --recurse-submodules https://github.com/kenembanisi/SocNavAssist.git
+```
+Or if you have already cloned the repo without submodules, run the command `git submodule update --init --recursive`
+
+#### 2. Install `libnifalcon` following the instructions from [its repo](https://github.com/libnifalcon). See commands below:
+```
+mkdir build
+cd build
+cmake -G "Unix Makefiles" ..
+make
+make install
+```
+#### 3. Install `joy`
+```
+sudo apt-get install ros-melodic-joy
+```
+#### 4. (Optional) Create a virtual environment for Python 3 and install `pygame`. Required for running `pygame_viz.py`
+
+<!-- ## Dependencies
 
 * Tested on Ubuntu 18.04 and ROS Melodic
 * `pygame_viz.py` depends on Python 3 and `pygame`
-* Build and install `libnifalcon` (source files are already included)
+* Build and install `libnifalcon` (source files are already included) -->
+
+#### 5. Source the workspace setup file
+```
+source ~/catkin_ws/devel/setup.bash
+```
+
 
 <br>
 
