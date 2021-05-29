@@ -1,8 +1,10 @@
-#!/usr/bin/env bash
+#!/bin/zsh
 
 # Launch the robot
-source /opt/ros/melodic/setup.bash 
-source ~/socnav_ws/devel/setup.bash
+# source /opt/ros/melodic/setup.bash 
+# source ~/socnav_ws/devel/setup.bash
+source /opt/ros/melodic/setup.zsh
+source ~/research_ws/devel/setup.zsh
 
 echo "Starting the user study, kindly wait!"
 
