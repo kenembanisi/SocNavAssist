@@ -1,7 +1,7 @@
 # SocNavAssist
 
 
-Last updated: May 25th 2021
+Last updated: May 29th 2021
 
 ## Introduction
 
