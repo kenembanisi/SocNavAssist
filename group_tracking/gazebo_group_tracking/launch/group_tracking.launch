@@ -1,0 +1,9 @@
+<launch>
+  
+    <!-- Get tracked persons data from Gazebo -->
+    <node name="gazebo_data_converter" type="pedestrian_gazebo.py" pkg="gazebo_group_tracking" />
+
+    <!-- Group tracking -->
+    <include file="$(find spencer_group_tracking)/launch/group_tracking.launch"/> 
+
+</launch>
