@@ -54,6 +54,11 @@
         <arg name="paused" value="$(arg paused)" />
     </include>
 
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% People & Group Tracking %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+    <include file="$(find gazebo_group_tracking)/launch/group_tracking.launch" />
 
 
     <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
@@ -76,5 +81,7 @@
             if="$(eval control_mode == 'manual')"/> -->
         <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" output="screen" />
     </group>
+
+    
 
 </launch>
