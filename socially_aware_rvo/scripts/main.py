@@ -25,6 +25,7 @@ from obstacles import ObstacleClass
 from agent import AgentClass
 from rvo_control import RvoControl
 from data_logger import DataLogger
+from pedestrians import PedestriansClass
 
 #####################################################################################
 # run function
@@ -49,26 +50,29 @@ def run(args):
     
 
     ######################### Define pedestrians as obstacles #######################
-    num_pedestrians = int(rospy.get_param("num_pedestrians")) # convert to int
-    pedestrian_id = []
-    obstacle_list = {}
-    for i in range(num_pedestrians):
-        # obstacle_list[i] = ObstacleClass(pedestrian_id[i], pedestrian_properties[i])
-        pedestrian_id.append("actor" + str(i+1)) # actor numbering starts from 1
-        obstacle_list[i] = ObstacleClass(pedestrian_id[i])
+    # num_pedestrians = int(rospy.get_param("num_pedestrians")) # convert to int
+    # pedestrian_id = []
+    # obstacle_list = {}
+    # for i in range(num_pedestrians):
+    #     # obstacle_list[i] = ObstacleClass(pedestrian_id[i], pedestrian_properties[i])
+    #     pedestrian_id.append("actor" + str(i+1)) # actor numbering starts from 1
+    #     obstacle_list[i] = ObstacleClass(pedestrian_id[i])
+
+    pedestrians = PedestriansClass()
 
 
     ################ Initiate RVO controller for agent & obstacle set ###############
     D = 0.2 # radius extension for differential drive condition
     tau = float(rospy.get_param("rvo_planning_horizon"))
     # tau = 4.0 # planning horizon
-    rvo_agent = RvoControl(agent, obstacle_list, D=D, tau=tau)
+    # rvo_agent = RvoControl(agent, obstacle_list, D=D, tau=tau)
+    rvo_agent = RvoControl(agent, pedestrians, D=D, tau=tau)
 
 
     ################ Initialize data logger (for active objects only) ###############
     trial_name = rospy.get_param("trial_name")
-    model_ids = ['trina2'] + pedestrian_id
-    logger = DataLogger(model_ids, scenario, trial_name, obstacle_list)
+    # model_ids = ['trina2'] + pedestrian_id
+    logger = DataLogger(scenario, trial_name, pedestrians)
 
 
     ############################ Set agent goal location ############################
@@ -117,8 +121,8 @@ def run(args):
                                                    # control mode
 
         # Move the active obstacles -----------------------------------------------
-        for i in range(num_pedestrians):
-            obstacle_list[i].update_states()
+        # for i in range(num_pedestrians):
+        #     obstacle_list[i].update_states()
         #     obstacle_list[i].move()
             
         # rospy.loginfo("The computed optimal control is: %s", str([round(v_opt[1][0],2), round(v_opt[1][1],2)]))

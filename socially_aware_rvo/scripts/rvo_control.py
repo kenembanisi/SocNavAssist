@@ -23,7 +23,7 @@ class RvoControl():
 
     """
     
-    def __init__(self, agent, active_obstacle_dict, D=0, tau=0):
+    def __init__(self, agent, pedestrians, D=0, tau=0):
         """
         Constructor
 
@@ -35,20 +35,24 @@ class RvoControl():
             - tau (float): time horizon for computation of the velocity obstacle
         """
         self.agent = agent
-        self.active_obstacle_dict = active_obstacle_dict
-        self.num_obstacles = len(self.active_obstacle_dict)
+        # self.active_obstacle_dict = active_obstacle_dict
+        # self.num_obstacles = []
         self.D = D
         self.tau = tau
         self.eff_obs_radius_tol = 0.1
 
         # extract the position, velocity, size of the obstacles into lists
+        self.num_obstacles = []
         self.obstacle_pos = []
         self.obstacle_vel = []
         self.obstacle_radius = []
-        for i in range(self.num_obstacles):
-            self.obstacle_pos.append([self.active_obstacle_dict[i].x, self.active_obstacle_dict[i].y])
-            self.obstacle_vel.append(self.active_obstacle_dict[i].v)
-            self.obstacle_radius.append(self.active_obstacle_dict[i].bounding_radius)
+        # for i in range(self.num_obstacles):
+        #     self.obstacle_pos.append([self.active_obstacle_dict[i].x, self.active_obstacle_dict[i].y])
+        #     self.obstacle_vel.append(self.active_obstacle_dict[i].v)
+        #     self.obstacle_radius.append(self.active_obstacle_dict[i].bounding_radius)
+
+        self.pedestrians = pedestrians
+
 
         # extract agent's parameters
         self.agent_pos = [self.agent.x, self.agent.y]
@@ -82,9 +86,36 @@ class RvoControl():
         """
 
         # first, update environment states:
+        # for i in range(self.num_obstacles):
+        #     self.obstacle_pos[i] = [self.active_obstacle_dict[i].x, self.active_obstacle_dict[i].y]
+        #     self.obstacle_vel[i] = self.active_obstacle_dict[i].v
+
+        # clear obstacle_pos and vel lists
+        del self.obstacle_pos[:]
+        del self.obstacle_vel[:]
+        del self.obstacle_radius[:]
+
+        self.pedestrians.update_states(use_groups=True)
+        # rospy.loginfo("# of pedestrians: %d", len(self.pedestrians.pedestrian_list))
+
+
+        # if use_groups:
+        #     self.pedestrians.pedestrian_list = self.pedestrians.pedestrian_list + \
+        #                                        self.pedestrians.pedestrian_group_list
+                                        
+        self.num_obstacles = len(self.pedestrians.total_pedestrian_list)
+
         for i in range(self.num_obstacles):
-            self.obstacle_pos[i] = [self.active_obstacle_dict[i].x, self.active_obstacle_dict[i].y]
-            self.obstacle_vel[i] = self.active_obstacle_dict[i].v
+            # self.obstacle_pos[i] = [self.pedestrians.pedestrian_list[i].x, 
+            #                         self.pedestrians.pedestrian_list[i].y]
+            # self.obstacle_vel[i] = self.pedestrians.pedestrian_list[i].v
+            self.obstacle_pos.append([self.pedestrians.total_pedestrian_list[i].x, 
+                                    self.pedestrians.total_pedestrian_list[i].y])
+            self.obstacle_vel.append(self.pedestrians.total_pedestrian_list[i].v)
+            self.obstacle_radius.append(self.pedestrians.total_pedestrian_list[i].radius)
+
+        # rospy.loginfo("# of obstacles: %d", self.num_obstacles)
+
         self.agent_pos = [self.agent.x, self.agent.y]
         self.agent_theta = self.agent.theta
 
