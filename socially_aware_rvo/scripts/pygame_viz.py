@@ -56,7 +56,9 @@ def drawTime(idx, n_frames):
 def draw_window(idx, data):
 
     # define the data
-    actor_list = data[0]
+    # actor_list = data[0]
+    pedestrian_list = data[0]
+    num_pedestrians = len(pedestrian_list)
     actors_x = data[1][1:]; actors_y = data[2][1:]
     actors_theta = data[3][1:]
     v_opt = data[4]
@@ -96,17 +98,23 @@ def draw_window(idx, data):
     # -------------------------------------------------------------------------------------------
     # set active obstacles (pedestrians)
     # -------------------------------------------------------------------------------------------
-    num_pedestrians = len(actor_list) - 1 # to remove the agent count
+    # num_pedestrians = len(actor_list) - 1 # to remove the agent count
     intimate_radius = 40 * 0.45   # intimate radius
     personal_radius = 40 * 0.9   # personal radius
     color_1 = (119, 166, 131)
     color_2 = (213, 245, 221)
+    color_3 = (100, 200, 255)
     for i in range(num_pedestrians):
         ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
         ped_x_transformed = transform_x(ped_x); ped_y_transformed = transform_y(ped_y)
-        pygame.draw.circle(screen, color_2, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius))
-        pygame.draw.circle(screen, color_1, (round(ped_x_transformed), round(ped_y_transformed)), round(intimate_radius))
-        
+
+        if pedestrian_list[i] == "actor":
+            pygame.draw.circle(screen, color_2, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius))
+            pygame.draw.circle(screen, color_1, (round(ped_x_transformed), round(ped_y_transformed)), round(intimate_radius))
+        if pedestrian_list[i] == "group":
+            # transparent_circle = pygame.Surface((round(ped_x_transformed), round(ped_y_transformed)), pygame.SRCALPHA)
+            # pygame.draw.circle(transparent_circle, color_3, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius))
+            pygame.draw.circle(screen, color_3, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius))
 
         # draw velocity vector for pedestrians
         # pygame.draw.line(screen, (100,100,230), (ped_x_transformed, ped_y_transformed), 
@@ -227,7 +235,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualizer")
-    parser.add_argument('--data', default='test_approach_human_[413_853].npy', help='logged data filename')
+    parser.add_argument('--data', default='logs/test_approach_human_dense_[65_112].npy', help='logged data filename')
                 
     args = parser.parse_args()
 
