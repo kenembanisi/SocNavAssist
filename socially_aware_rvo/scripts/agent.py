@@ -23,7 +23,6 @@ from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 import time
 import math
-from obstacles import ObstacleClass
 
 
 #------------------------------------------------------------------------------------
@@ -82,19 +81,6 @@ class AgentClass():
             - None
         """
 
-        # Find the index of this agent_id in the name list:
-        # if not self.spawn_complete:     # check if agent id is in list
-        #     rospy.loginfo("#########################step in!###########################")
-        #     while not self.spawn_complete:  # this should only run once at start up
-        #         rospy.loginfo("#########################step in further!###########################")
-        #         # if self.agent_id in data.name: 
-        #         time.sleep(2)
-        #         self.spawn_complete = True
-        #             # break
-        #         # time.sleep(1)
-        #         rospy.loginfo("In the spawn checker loop")
-        # time.sleep(5)
-
         idx = data.name.index(self.agent_id)
 
         # Retrieve states from data
@@ -106,10 +92,8 @@ class AgentClass():
                                             orientation_quaterion.y, 
                                             orientation_quaterion.z, 
                                             orientation_quaterion.w])
-        self.theta = np.degrees(orientation_euler[2])
-        # ---
-        # self.v = data.twist[idx].linear.x
-        # self.omega = data.twist[idx].angular.z
+        # self.theta = np.degrees(orientation_euler[2])
+        self.theta = orientation_euler[2]
 
 
     def update_vel_states_callback(self, data):
@@ -123,7 +107,7 @@ class AgentClass():
             - None
         """
 
-        self.v = data.twist.twist.linear.x
+        self.v = data.twist.twist.linear.x # this is correct! Confirmed.
         self.omega = data.twist.twist.angular.z
 
 

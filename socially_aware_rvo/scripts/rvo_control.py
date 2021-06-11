@@ -70,6 +70,7 @@ class RvoControl():
         # define time variables
         self.curr_time = time.time()
         self.prev_time = time.time()
+        self.dt = 0.1
 
 
     def compute_V_opt(self, goal, alpha=0.5):
@@ -509,7 +510,8 @@ class RvoControl():
         # 
         # Minv = [cos(theta)    -sin(theta)
         #         sin(theta)/D cos(theta)/D]
-        theta_rad = math.radians(self.agent.theta)
+        # theta_rad = math.radians(self.agent.theta)
+        theta_rad = self.agent_theta
         Minv = np.array([[math.cos(theta_rad), math.sin(theta_rad)],
                         [-(math.sin(theta_rad)/self.D),  (math.cos(theta_rad)/self.D)]])
         trans_v_opt = Minv.dot(np.array([v_opt[0], v_opt[1]]))
@@ -532,7 +534,7 @@ class RvoControl():
 
         # compute the time delta
         self.curr_time = time.time()
-        dt = self.curr_time - self.prev_time
+        self.dt = self.curr_time - self.prev_time
 
         # obtain current angular velocity
         current_agent_vel = self.agent.get_agent_velocities() # agent_vel = [v, omega]
@@ -542,38 +544,38 @@ class RvoControl():
         v_opt_mag = self.compute_distance(v_opt, [0,0]) # 2-norm (magnitude) of the v_opt
             # check for acceleration limit
         linear_speed_diff = v_opt_mag - current_agent_vel[0]
-        if abs(linear_speed_diff) < self.agent.max_linear_acceleration * dt:
+        if abs(linear_speed_diff) < self.agent.max_linear_acceleration * self.dt:
             new_agent_vel[0] = v_opt_mag
         else:
             if linear_speed_diff < 0:
-                new_agent_vel[0] =  current_agent_vel[0] - self.agent.max_linear_acceleration * dt
+                new_agent_vel[0] =  current_agent_vel[0] - self.agent.max_linear_acceleration * self.dt
             else:
-                new_agent_vel[0] =  current_agent_vel[0] + self.agent.max_linear_acceleration * dt
+                new_agent_vel[0] =  current_agent_vel[0] + self.agent.max_linear_acceleration * self.dt
 
         # rospy.loginfo("des_lin_speed: [%s], cmd_lin_speed: [%s], lin_speed_diff: [%s], curr_lin_speed: [%s], dt: [%s]", \
         #                 str(v_opt_mag), str(new_agent_vel[0]), str(linear_speed_diff), str(current_agent_vel[0]), str(dt))
 
         ### angular speed
-        angular_speed = heading_delta/dt
+        angular_speed = heading_delta/self.dt
         angular_speed_diff = angular_speed - current_agent_vel[1]
             # check for velocity limit
         if abs(angular_speed) < self.agent.max_angular_velocity:
             # ---------------------------------------------------------------------------------------
-            if abs(angular_speed_diff) < self.agent.max_angular_acceleration * dt:
+            if abs(angular_speed_diff) < self.agent.max_angular_acceleration * self.dt:
                 new_agent_vel[1] = angular_speed
             else:
                 if angular_speed_diff < 0:
-                    new_agent_vel[1] = current_agent_vel[1] - self.agent.max_angular_acceleration * dt
+                    new_agent_vel[1] = current_agent_vel[1] - self.agent.max_angular_acceleration * self.dt
                 else:
-                    new_agent_vel[1] = current_agent_vel[1] + self.agent.max_angular_acceleration * dt
+                    new_agent_vel[1] = current_agent_vel[1] + self.agent.max_angular_acceleration * self.dt
             # ---------------------------------------------------------------------------------------
         else:
             if angular_speed < 0:
                 # new_agent_vel[1] = -self.agent.max_angular_velocity
-                new_agent_vel[1] = current_agent_vel[1] - self.agent.max_angular_acceleration * dt
+                new_agent_vel[1] = current_agent_vel[1] - self.agent.max_angular_acceleration * self.dt
             else:
                 # new_agent_vel[1] = self.agent.max_angular_velocity
-                new_agent_vel[1] = current_agent_vel[1] + self.agent.max_angular_acceleration * dt
+                new_agent_vel[1] = current_agent_vel[1] + self.agent.max_angular_acceleration * self.dt
 
         # rospy.loginfo("heading_delta: [%s], des_ang_speed: [%s], cmd_ang_speed: [%s], curr_ang_speed: [%s], dt: [%s]", \
         #                 str(heading_delta), str(angular_speed), str(new_agent_vel[1]), str(current_agent_vel[1]), str(dt))
@@ -593,7 +595,8 @@ class RvoControl():
         # 
         # M = [cos(theta)  -D*sin(theta)
         #      sin(theta)   D*cos(theta)]
-        theta_rad = math.radians(self.agent.theta)
+        # theta_rad = math.radians(self.agent.theta)
+        theta_rad = self.agent_theta
         M = np.array([[math.cos(theta_rad), -math.sin(theta_rad)],
                       [math.sin(theta_rad), math.cos(theta_rad)]])
         vel_point = M.dot(np.array([vel[0], vel[1]]))
@@ -613,56 +616,56 @@ class RvoControl():
         # return self.desired_agent_vel
         return self.agent_vel
 
-    def compute_velocity_limits(self):
-        """
-        Defines the admissible velocity bounds (limits) for the robot at an instance
-        Arguments: None
-        Returns: vertex coordinates for the admissible velocity bound in x,y space
-        """
-        # compute the time delta
-        self.curr_time = time.time()
-        dt = self.curr_time - self.prev_time
+    # def compute_velocity_limits(self):
+    #     """
+    #     Defines the admissible velocity bounds (limits) for the robot at an instance
+    #     Arguments: None
+    #     Returns: vertex coordinates for the admissible velocity bound in x,y space
+    #     """
+    #     # compute the time delta
+    #     self.curr_time = time.time()
+    #     dt = self.curr_time - self.prev_time
 
-        # obtain current angular velocity
-        agent_vel = self.agent.get_agent_velocities() # agent_vel = [v, omega]
+    #     # obtain current angular velocity
+    #     agent_vel = self.agent.get_agent_velocities() # agent_vel = [v, omega]
 
-        # compute range of admissible velocity headings (v_omega)
-        omega_min = agent_vel[1] - self.agent.max_angular_acceleration * dt
-        omega_max = agent_vel[1] + self.agent.max_angular_acceleration * dt
-        if omega_max > self.agent.max_angular_velocity:
-            omega_max = self.agent.max_angular_velocity
-        if omega_min < -self.agent.max_angular_velocity:
-            omega_min = -self.agent.max_angular_velocity
+    #     # compute range of admissible velocity headings (v_omega)
+    #     omega_min = agent_vel[1] - self.agent.max_angular_acceleration * dt
+    #     omega_max = agent_vel[1] + self.agent.max_angular_acceleration * dt
+    #     if omega_max > self.agent.max_angular_velocity:
+    #         omega_max = self.agent.max_angular_velocity
+    #     if omega_min < -self.agent.max_angular_velocity:
+    #         omega_min = -self.agent.max_angular_velocity
         
-        if self.D > 0:
-            v_omega_min = self.D * omega_min
-            v_omega_max = self.D * omega_max
+    #     if self.D > 0:
+    #         v_omega_min = self.D * omega_min
+    #         v_omega_max = self.D * omega_max
 
-        # compute range of admissible velocity magnitudes 
-        v_min = agent_vel[0] - self.agent.max_linear_acceleration * dt
-        v_max = agent_vel[0] + self.agent.max_linear_acceleration * dt
-        if v_max > self.agent.max_linear_velocity:
-            v_max = self.agent.max_linear_velocity
-        if v_min < -self.agent.max_linear_velocity:
-            v_min = -self.agent.max_linear_velocity
-        v_range = abs(v_max - v_min)
+    #     # compute range of admissible velocity magnitudes 
+    #     v_min = agent_vel[0] - self.agent.max_linear_acceleration * dt
+    #     v_max = agent_vel[0] + self.agent.max_linear_acceleration * dt
+    #     if v_max > self.agent.max_linear_velocity:
+    #         v_max = self.agent.max_linear_velocity
+    #     if v_min < -self.agent.max_linear_velocity:
+    #         v_min = -self.agent.max_linear_velocity
+    #     v_range = abs(v_max - v_min)
 
-        # define admissible velocity vector vertices (clockwise direction)
-        v_a = [v_min, v_omega_min] # lower left vertex
-        v_b = [v_min, v_omega_max]
-        v_c = [v_max, v_omega_max] # upper right vertex
-        v_d = [v_max, v_omega_min]
+    #     # define admissible velocity vector vertices (clockwise direction)
+    #     v_a = [v_min, v_omega_min] # lower left vertex
+    #     v_b = [v_min, v_omega_max]
+    #     v_c = [v_max, v_omega_max] # upper right vertex
+    #     v_d = [v_max, v_omega_min]
 
-        # rotate rect vertices by theta
-        v_a_rot = self.DD2point_velocity(v_a)
-        v_b_rot = self.DD2point_velocity(v_b)
-        v_c_rot = self.DD2point_velocity(v_c)
-        v_d_rot = self.DD2point_velocity(v_d)
+    #     # rotate rect vertices by theta
+    #     v_a_rot = self.DD2point_velocity(v_a)
+    #     v_b_rot = self.DD2point_velocity(v_b)
+    #     v_c_rot = self.DD2point_velocity(v_c)
+    #     v_d_rot = self.DD2point_velocity(v_d)
 
-        # set previous time value to current time
-        self.prev_time = self.curr_time
+    #     # set previous time value to current time
+    #     self.prev_time = self.curr_time
 
-        return v_a_rot, v_b_rot, v_c_rot, v_d_rot
+    #     return v_a_rot, v_b_rot, v_c_rot, v_d_rot
 
     def admissibility_check(self, vel):
         """
@@ -693,13 +696,14 @@ class RvoControl():
         Returns: phi_range = [phi_min, phi_max]
         """
         phi_range = [0, 0]
-        dt = 0.1    # average step size
+        # dt = 0.1    # average step size
         allowance = 1.0   # enable rvo consider a wider range of options even though its bounded
 
-        current_heading = math.radians(self.agent.theta)
+        # current_heading = math.radians(self.agent.theta)
+        current_heading = self.agent_theta
 
-        phi_range[0] = current_heading - (self.agent.max_angular_velocity * dt) - allowance
-        phi_range[1] = current_heading + (self.agent.max_angular_velocity * dt) + allowance
+        phi_range[0] = current_heading - (self.agent.max_angular_velocity * self.dt) - allowance
+        phi_range[1] = current_heading + (self.agent.max_angular_velocity * self.dt) + allowance
 
         return phi_range
 
@@ -714,7 +718,7 @@ class RvoControl():
         """
         # init_heading = np.array([0, -1])
         init_heading = np.array([1, 0]) # initial heading is aligned to the world x position
-        theta = math.radians(theta)
+        # theta = math.radians(theta)
         rotation_matrix = np.array([[math.cos(theta), -math.sin(theta)],
                                    [math.sin(theta), math.cos(theta)]])
         new_heading = rotation_matrix.dot(init_heading)
@@ -735,6 +739,7 @@ class RvoControl():
         optimal_theta = math.atan2(v_opt[1], v_opt[0])
 
         # calculate heading_delta
-        heading_delta = optimal_theta - math.radians(self.agent_theta) # clockwise is -ve, anticlockwise is +ve
+        # heading_delta = optimal_theta - math.radians(self.agent_theta)
+        heading_delta = optimal_theta - self.agent_theta # clockwise is -ve, anticlockwise is +ve
 
         return heading_delta
