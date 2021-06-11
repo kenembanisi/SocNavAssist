@@ -57,7 +57,7 @@ def draw_window(idx, data):
 
     # define the data
     # actor_list = data[0]
-    pedestrian_list = data[0]
+    pedestrian_list = data[0][idx]
     num_pedestrians = len(pedestrian_list)
     actors_x = data[1][1:]; actors_y = data[2][1:]
     actors_theta = data[3][1:]
@@ -104,22 +104,41 @@ def draw_window(idx, data):
     color_1 = (119, 166, 131)
     color_2 = (213, 245, 221)
     color_3 = (100, 200, 255)
+    black = (0,0,0)
     for i in range(num_pedestrians):
-        ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
-        ped_x_transformed = transform_x(ped_x); ped_y_transformed = transform_y(ped_y)
-
+        
         if pedestrian_list[i] == "actor":
-            pygame.draw.circle(screen, color_2, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius))
-            pygame.draw.circle(screen, color_1, (round(ped_x_transformed), round(ped_y_transformed)), round(intimate_radius))
-        if pedestrian_list[i] == "group":
-            # transparent_circle = pygame.Surface((round(ped_x_transformed), round(ped_y_transformed)), pygame.SRCALPHA)
-            # pygame.draw.circle(transparent_circle, color_3, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius))
-            pygame.draw.circle(screen, color_3, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius))
+            # plot the proxemics regions
+            ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
+            ped_x_transformed = transform_x(ped_x); ped_y_transformed = transform_y(ped_y)
+            pygame.draw.circle(screen, black, (round(ped_x_transformed), round(ped_y_transformed)), round(8))
+            pygame.draw.circle(screen, color_2, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius), 3)
+            pygame.draw.circle(screen, color_1, (round(ped_x_transformed), round(ped_y_transformed)), round(intimate_radius), 3)
+            
+            # plot the trajectory trail
+            history = min(100, idx)
+            for j in range(history):
+                ped_trail_x = actors_x[i][idx-j]; ped_trail_y = actors_y[i][idx-j]
+                ped_trail_x_transformed = transform_x(ped_trail_x); ped_trail_y_transformed = transform_y(ped_trail_y)
+                pygame.draw.circle(screen, black, (round(ped_trail_x_transformed), round(ped_trail_y_transformed)), round(40*0.025))
 
-        # draw velocity vector for pedestrians
-        # pygame.draw.line(screen, (100,100,230), (ped_x_transformed, ped_y_transformed), 
-        #                 (ped_x_transformed + data[5][0][idx][i][0]*scaling, 
-        #                     agent_y - data[5][0][idx][i][1]*scaling))
+            # draw velocity vector for pedestrians
+            if idx > 3:
+                ped_scaling = 200
+                ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
+                prev_ped_x = actors_x[i][idx-3]; prev_ped_y = actors_y[i][idx-3]
+                # prev_ped_x_transformed = transform_x(prev_ped_x); prev_ped_y_transformed = transform_y(prev_ped_x)
+                dx = ped_x - prev_ped_x; dy = ped_y - prev_ped_y # calculate the distance covered
+                pygame.draw.line(screen, (100,100,230), (ped_x_transformed, ped_y_transformed), 
+                                (ped_x_transformed + dx*ped_scaling, ped_y_transformed - dy*ped_scaling), 2)
+
+
+        if pedestrian_list[i] == "group":
+            ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
+            ped_x_transformed = transform_x(ped_x); ped_y_transformed = transform_y(ped_y)
+            pygame.draw.circle(screen, color_3, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius), 3)
+
+        
 
 
     
@@ -152,6 +171,14 @@ def draw_window(idx, data):
     radius = 40 * 0.25  # agent radius is set to 0.25m
     color = (60,40,240)
     pygame.draw.circle(screen, color, (round(agent_x), round(agent_y)), round(radius))
+
+    # plot the trajectory trail
+    history = min(100, idx)
+    for j in range(history):
+        agent_trail_x = transform_x(data[1][0][idx-j]); agent_trail_y = transform_y(data[2][0][idx-j])
+        # agent_trail_x = actors_x[i][idx-j]; ped_trail_y = actors_y[i][idx-j]
+        # ped_trail_x_transformed = transform_x(ped_trail_x); ped_trail_y_transformed = transform_y(ped_trail_y)
+        pygame.draw.circle(screen, color, (round(agent_trail_x), round(agent_trail_y)), round(40*0.025))
 
 
     # draw agent heading
@@ -235,7 +262,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualizer")
-    parser.add_argument('--data', default='logs/test_approach_human_dense_[65_112].npy', help='logged data filename')
+    parser.add_argument('--data', default='logs/test_test_approach_[610_1233].npy', help='logged data filename')
                 
     args = parser.parse_args()
 

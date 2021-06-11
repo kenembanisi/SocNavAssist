@@ -35,10 +35,9 @@
     <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
 
     <!-- Set world -->
-    <arg name="world_name" default="$(find socially_aware_rvo)worlds/$(arg scenario).world" />
+    <arg name="world_name" default="$(find socially_aware_rvo)/worlds/$(arg scenario).world" />
 
-
-
+    
     <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Gazebo Simulator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->

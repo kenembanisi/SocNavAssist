@@ -21,22 +21,19 @@ data_logger.py
 class DataLogger():
 
     def __init__(self, scenario, trial_name, pedestrians):
-        # define objects to track
-        # self.stage = args[1]
-        # self.method = args[2]
 
-        # self.object_id = ['trina2']
-        # self.model_ids = model_ids
         self.pedestrians = pedestrians
         self.pedestrians_list = self.pedestrians.total_pedestrian_list
         self.pedestrian_ids = []
         self.num_active_obstacles = len(self.pedestrians_list)
 
+        temp_pedestrian_ids = []
         for i in range(self.num_active_obstacles):
             if self.pedestrians_list[i].type == "single":
-                self.pedestrian_ids.append("actor")
+                temp_pedestrian_ids.append("actor")
             if self.pedestrians_list[i].type == "group":
-                self.pedestrian_ids.append("group")
+                temp_pedestrian_ids.append("group")
+        self.pedestrian_ids.append(temp_pedestrian_ids)
         
         self.n_models = self.num_active_obstacles + 1 # plus one is for the agent
         self.scenario = scenario
@@ -50,14 +47,10 @@ class DataLogger():
         self.theta = [[] for i in range(self.n_models)]
         self.v = [[] for i in range(self.n_models)]
         self.omega = [[] for i in range(self.n_models)]
-        # self.min_dist = []
         self.v_opt = []
         self.v_suitable = []
         self.v_admissible = []
         self.v_goal = []
-
-        # agent and obstacle objects
-        # self.active_obstacle_dict = active_obstacle_dict
 
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
@@ -66,14 +59,16 @@ class DataLogger():
         
         # update pedestrian data ------------------------------------------------------------------------
         self.pedestrians_list = self.pedestrians.total_pedestrian_list
-        self.pedestrian_ids = []
+        temp_pedestrian_ids = []
         self.num_active_obstacles = len(self.pedestrians_list)
 
         for i in range(self.num_active_obstacles):
             if self.pedestrians_list[i].type == "single":
-                self.pedestrian_ids.append("actor")
+                temp_pedestrian_ids.append("actor")
             if self.pedestrians_list[i].type == "group":
-                self.pedestrian_ids.append("group")
+                temp_pedestrian_ids.append("group")
+
+        self.pedestrian_ids.append(temp_pedestrian_ids)
 
         
         # get one instance of message -------------------------------------------------------------------
@@ -86,8 +81,6 @@ class DataLogger():
             except:
                 pass
         
-        # update the local pedestrian list
-        # self.pedestrians_list = self.pedestrians.total_pedestrian_list
 
         # get data for "trina2" ------------------------------------------------------------------------
         idx = data.name.index('trina2')
@@ -116,33 +109,35 @@ class DataLogger():
         
             # previous number of pedestrians/groups
         prev_num_active_obstacles = len(self.x) - 1
-            # check if there has been an increase in number of pedestrians/groups
+            # case #1: check if there has been an increase in number of pedestrians/groups
         if prev_num_active_obstacles < self.num_active_obstacles:
-            
+            # append states to existing pedestrian trajectories
             for i in range(1, prev_num_active_obstacles+1): # to count from 1 to n+1
                 self.x[i].append(self.pedestrians_list[i-1].x)
                 self.y[i].append(self.pedestrians_list[i-1].y)
-            
+            # add new pedestrian/group trajectories for newly detected pedestrians/groups
+            #   set previous position values to zero
             for j in range(self.num_active_obstacles - prev_num_active_obstacles):
                 x_data = [0.0] * len(self.x[0]) + [ self.pedestrians_list[j+prev_num_active_obstacles].x ]
                 y_data = [0.0] * len(self.x[0]) + [ self.pedestrians_list[j+prev_num_active_obstacles].y ] 
                 self.x.append(x_data)
                 self.y.append(y_data)
 
+            # case #2: check if there has been a decrease in number of pedestrians/groups
         if prev_num_active_obstacles > self.num_active_obstacles:
-
+            # append states to existing pedestrian trajectories
             for i in range(1, self.num_active_obstacles+1): # to count from 1 to n+1
                 self.x[i].append(self.pedestrians_list[i-1].x)
                 self.y[i].append(self.pedestrians_list[i-1].y)
-            
+            # maintain the pedestrian/group trace but set values which would locate it outside the vicinity
             for j in range(prev_num_active_obstacles - self.num_active_obstacles):
-                self.x[j+self.num_active_obstacles].append(40.0)
-                self.y[j+self.num_active_obstacles].append(40.0)
+                self.x[j+self.num_active_obstacles+1].append(40.0) # value of 40 is set arbitrarily
+                self.y[j+self.num_active_obstacles+1].append(40.0) # +1 is to address indexing issue because trina2 is index '0'
         
+        # case #3: check if num of active obstacles remained the same
         if prev_num_active_obstacles == self.num_active_obstacles:
-            
+            # append states to existing pedestrian trajectories
             for i in range(1, self.num_active_obstacles + 1): # to count from 1 to n+1
-
                 self.x[i].append(self.pedestrians_list[i-1].x)
                 self.y[i].append(self.pedestrians_list[i-1].y)
                 # self.v[i].append(self.pedestrians_list[i-1].v[0])
