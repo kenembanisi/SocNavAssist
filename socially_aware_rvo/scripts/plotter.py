@@ -34,6 +34,29 @@ def compute_accelerations(vel):
     acc_array = np.diff(vel_array)
     return acc_array
 
+def DD2point_velocity(vel, theta_rad):
+    """
+    Tranforms robot velocity by M(theta) from DD (kinematic constrained) to point velocity space
+    
+    Arguments: vel
+    Returns: vel_point
+    """
+    # 
+    # M = [cos(theta)  -D*sin(theta)
+    #      sin(theta)   D*cos(theta)]
+    # theta_rad = math.radians(theta)
+    D = 0.2
+    M = np.array([[math.cos(theta_rad), -D*math.sin(theta_rad)],
+                    [math.sin(theta_rad), D*math.cos(theta_rad)]])
+    vel_point = M.dot(np.array([vel[0], vel[1]]))
+    
+    # for V[1], convert rad/s to degrees/s
+    # transformed_v_opt = [trans_v_opt[0], math.degrees(trans_v_opt[1])] # make a list for consistency sake
+    # transformed_v_opt = [trans_v_opt[0], trans_v_opt[1]] # make a list for consistency sake
+    
+    return vel_point
+
+
 
 ############################################################################################################
 # MAIN FUNCTION
@@ -53,10 +76,12 @@ def main(args):
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1)
         # v_opt
     v_opt = data[4]
-    v_opt_linear = [v_opt[i][1][0] for i in range(len(v_opt))]
-    v_opt_angular = [v_opt[i][1][1] for i in range(len(v_opt))]
-    v_opt_point_linear = [v_opt[i][0][0] for i in range(len(v_opt))]
-    v_opt_point_angular = [v_opt[i][0][1] for i in range(len(v_opt))]
+    v_opt_point_x = [v_opt[i][0][0] for i in range(len(v_opt))]
+    v_opt_point_y = [v_opt[i][0][1] for i in range(len(v_opt))]
+    v_opt_linear_constrained = [v_opt[i][1][0] for i in range(len(v_opt))]
+    v_opt_angular_constrained = [v_opt[i][1][1] for i in range(len(v_opt))]
+    v_opt_linear = [v_opt[i][2][0] for i in range(len(v_opt))]
+    v_opt_angular = [v_opt[i][2][1] for i in range(len(v_opt))]
 
         # v_actual
     v_actual_linear = data[8][0]
@@ -64,6 +89,10 @@ def main(args):
 
         # agent.theta
     agent_theta = data[3][0]
+
+        # v_actual_point
+    v_actual_point = [DD2point_velocity([v_actual_linear[i], v_actual_angular[i]],
+                        agent_theta[i]) for i in range(len(v_opt))]
     
         # compute the limits
     count = len(v_opt_linear)
@@ -72,10 +101,14 @@ def main(args):
         # compute accelerations using discrete approach
     acc_actual_linear = compute_accelerations(v_actual_linear)
     acc_opt_linear = compute_accelerations(v_opt_linear)
+    acc_opt_linear_constrained = compute_accelerations(v_opt_linear_constrained)
     acc_actual_angular = compute_accelerations(v_actual_angular)
     acc_opt_angular = compute_accelerations(v_opt_angular)
+    acc_opt_angular_constrained = compute_accelerations(v_opt_angular_constrained)
+    
 
         # robot linear velocity (actual vs optimal)
+    ax1.plot(v_opt_linear_constrained, label='Optimal_Constrained')
     ax1.plot(v_opt_linear, label='Optimal')
     ax1.plot(v_actual_linear, label='Current')
     ax1.plot(limits[0], linestyle='--', color='k')
@@ -83,6 +116,7 @@ def main(args):
 
         # robot angular velocity (actual vs optimal)
     ax2.plot(v_opt_angular, label='Optimal')
+    ax2.plot(v_opt_angular_constrained, label='Optimal_Constrained')
     ax2.plot(v_actual_angular, label='Current')
     ax2.plot(limits[2], linestyle='--', color='k')
     ax2.plot(limits[3], linestyle='--', color='k')
@@ -90,12 +124,14 @@ def main(args):
 
         # robot linear acceleration
     ax3.plot(acc_opt_linear, label='Optimal')
+    ax3.plot(acc_opt_linear_constrained, label='Optimal_Constrained')
     ax3.plot(acc_actual_linear, label='Current')
     ax3.plot(limits[4], linestyle='--', color='k')
     ax3.plot(limits[5], linestyle='--', color='k')
 
         # robot angular acceleration
     ax4.plot(acc_opt_angular, label='Optimal')
+    ax4.plot(acc_opt_angular_constrained, label='Optimal_Constrained')
     ax4.plot(acc_actual_angular, label='Current')
     ax4.plot(limits[6], linestyle='--', color='k')
     ax4.plot(limits[7], linestyle='--', color='k')
@@ -150,15 +186,36 @@ def main(args):
 
     # plt.show()
 
+    # #------------------------------------------------------------------------------------------------------
+    # # Angle Plotter
+    # #------------------------------------------------------------------------------------------------------
+    # plt.figure()
+
+    # plt.plot(agent_theta, label='theta')
+
+    # # show legend
+    # plt.legend()
+
+    # # plt.show()
+
+
     #------------------------------------------------------------------------------------------------------
     # Angle Plotter
     #------------------------------------------------------------------------------------------------------
     plt.figure()
 
+    v_actual_point_phi = [ math.atan2(v_actual_point[i][1], v_actual_point[i][0]) for i in range(len(v_opt))]
+    v_opt_point_phi = [ math.atan2(v_opt_point_y[i], v_opt_point_x[i]) for i in range(len(v_opt))]
+
+    plt.plot(v_opt_point_phi, label='optimal point velocity phi')
+    plt.plot(v_actual_point_phi, label='actual point velocity phi')
     plt.plot(agent_theta, label='theta')
 
     # show legend
     plt.legend()
+
+    plt.ylabel('Angle (rad)')
+    plt.title('Plot of Angles in radians')
 
     plt.show()
 
@@ -166,7 +223,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plotter")
-    parser.add_argument('--data', default='data_approach_human_[331_146].npy', help='logged data filename')
+    parser.add_argument('--data', default='logs/test_test_approach_[622_153].npy', help='logged data filename')
                 
     args = parser.parse_args()
 
