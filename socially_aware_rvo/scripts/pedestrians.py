@@ -17,7 +17,6 @@ Describes the PedestriansClass
 
 import rospy
 import numpy as np
-from gazebo_msgs.msg import ModelStates, ModelState
 from spencer_tracking_msgs.msg import TrackedPerson, TrackedPersons, TrackedGroup, TrackedGroups
 from geometry_msgs.msg import Twist
 from tf.transformations import euler_from_quaternion

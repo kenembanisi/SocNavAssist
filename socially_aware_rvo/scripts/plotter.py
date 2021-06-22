@@ -87,6 +87,7 @@ def main(args):
     ax2.plot(limits[2], linestyle='--', color='k')
     ax2.plot(limits[3], linestyle='--', color='k')
 
+
         # robot linear acceleration
     ax3.plot(acc_opt_linear, label='Optimal')
     ax3.plot(acc_actual_linear, label='Current')
@@ -147,7 +148,7 @@ def main(args):
     # show legend
     plt.legend()
 
-    plt.show()
+    # plt.show()
 
     #------------------------------------------------------------------------------------------------------
     # Angle Plotter

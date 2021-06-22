@@ -156,7 +156,7 @@ void FalconNovintControl::commandVelocity()
         cmd_vel_.angular.z = base_angular_vel_z_;
 
         // manage control engagement
-        if (button_pressed_ != 4){
+        if (button_pressed_ != 4){      // button '4' is the middle button
             cmd_vel_.linear.x = 0.0;
             cmd_vel_.angular.z = 0.0;
         }

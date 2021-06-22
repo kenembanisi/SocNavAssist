@@ -75,6 +75,9 @@
         <!-- Launch the proxemics evaluation -->
         <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
 
+        <!-- Launch the augmented visualization -->
+        <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" />
+
         <!-- Launch the falcon novint haptic interface -->
         <!-- <node name="socnavassist_haptic_interface" pkg="socially_aware_rvo" type="haptic_interface.py" output="screen" 
             if="$(eval control_mode == 'manual')"/> -->
