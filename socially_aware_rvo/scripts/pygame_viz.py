@@ -27,6 +27,27 @@ class obstacleCircle():
         pygame.draw.circle(screen, (0, 0, 0), (int(round(self.x)), int(round(self.y))), 2, 0)
 
 
+def DD2point_velocity(vel, theta_rad):
+    """
+    Tranforms robot velocity by M(theta) from DD (kinematic constrained) to point velocity space
+    
+    Arguments: vel
+    Returns: vel_point
+    """
+    # 
+    # M = [cos(theta)  -D*sin(theta)
+    #      sin(theta)   D*cos(theta)]
+    # theta_rad = math.radians(theta)
+    D = 0.2
+    M = np.array([[math.cos(theta_rad), -D*math.sin(theta_rad)],
+                    [math.sin(theta_rad), D*math.cos(theta_rad)]])
+    vel_point = M.dot(np.array([vel[0], vel[1]]))
+    
+    # for V[1], convert rad/s to degrees/s
+    # transformed_v_opt = [trans_v_opt[0], math.degrees(trans_v_opt[1])] # make a list for consistency sake
+    # transformed_v_opt = [trans_v_opt[0], trans_v_opt[1]] # make a list for consistency sake
+    
+    return vel_point
 
 # transforms from Gazebo coordinates (in meters) to pixels
 def transform_x(x):
@@ -182,10 +203,14 @@ def draw_window(idx, data):
 
 
     # draw agent heading
-    # pygame.draw.line(screen, (0,0,0), (agent_x, agent_y), (agent_x + np.cos(data[3][0][idx])*scaling, 
-    #                         agent_y - np.sin(data[3][0][idx])*scaling), 2)
     pygame.draw.line(screen, (0,0,0), (agent_x, agent_y), (agent_x + np.cos(agent_theta[idx])*scaling, 
                             agent_y - np.sin(agent_theta[idx])*scaling), 2)
+
+    # draw agent commanded velocity
+    agent_vel_DD = [data[8][0][idx], data[9][0][idx]]
+    agent_vel_point = DD2point_velocity(agent_vel_DD, agent_theta[idx])
+    pygame.draw.line(screen, (0,180,0), (agent_x, agent_y), (agent_x + agent_vel_point[0]*scaling, 
+                            agent_y - agent_vel_point[1]*scaling), 2)
 
     drawTime(idx, n_frames)
     
@@ -262,7 +287,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualizer")
-    parser.add_argument('--data', default='logs/test_test_approach_[610_1233].npy', help='logged data filename')
+    parser.add_argument('--data', default='logs/test_test_approach_[611_124].npy', help='logged data filename')
                 
     args = parser.parse_args()
 
