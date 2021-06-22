@@ -104,6 +104,10 @@ def run(args):
         agent.publish_heading_delta(heading_delta) # this is for shared control in manual
                                                    # control mode
 
+        # publish optimal velocity data -------------------------------------------
+        agent.publish_optimal_vel_data(v_opt[1])
+
+
         # rospy.loginfo("The computed optimal control is: %s", str([round(v_opt[1][0],2), round(v_opt[1][1],2)]))
 
         # Set stop time -----------------------------------------------------------

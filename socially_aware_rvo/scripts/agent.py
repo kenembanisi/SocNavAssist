@@ -133,7 +133,7 @@ class AgentClass():
         self.velocity_publisher.publish(cmd_vel)
 
         # call the velocity data publisher:
-        # self.publish_data(v_opt, v_list)
+        # self.publish_data(v_opt)
 
 
     def get_agent_velocities(self):
@@ -167,7 +167,7 @@ class AgentClass():
         return [new_heading[0], new_heading[1]]
 
 
-    def publish_data(self, v_opt, v_list):
+    def publish_optimal_vel_data(self, v_opt):
 
         # Instantiate Float64MultiArray
         self.array = Float64MultiArray()

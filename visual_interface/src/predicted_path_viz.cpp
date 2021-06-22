@@ -62,7 +62,7 @@ void PathPredictor::odomCallback(const nav_msgs::Odometry::ConstPtr& odom_data) 
 
     current_state_.theta = yaw;  // theta is in radians
 
-    // retrieve odom_to_base transform
+    // retrieve odom_to_camera transform
     try {
         tf_listener_.lookupTransform("/main_cam_color_optical_frame", "/odom",
                                     ros::Time(0), odom_to_camera_transform_);
@@ -190,7 +190,7 @@ void PathPredictor::addStateToTrajectory(const RobotState& state_in, Trajectory&
 int main(int argc, char** argv)
 {
     // calling ROS:init
-    ros::init(argc, argv, "trajectory prediction");
+    ros::init(argc, argv, "trajectory_prediction");
 
     // instantiating ROS node handle
     ros::NodeHandle nh;
