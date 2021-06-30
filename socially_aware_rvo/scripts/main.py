@@ -63,7 +63,7 @@ def run(args):
     goal = [-6.5, 8.2]
     
     ################### Get control mode from ROS parameter server ##################
-    control_mode = rospy.get_param('control_mode')
+    control_mode = rospy.get_param('trial_condition')
     AUTO = False
     if control_mode == 'auto':
         AUTO = True
@@ -82,22 +82,26 @@ def run(args):
         # Update simulation -------------------------------------------------------
         alpha = 1 # collision avoidance responsibility, 1 means the agent 
                   # takes full responsibility
-        v_opt, v_suitable, v_admissible, heading_delta = rvo_agent.compute_V_opt(goal, alpha=alpha)
+        v_opt, v_suitable, v_admissible, heading_delta, delta_t = rvo_agent.compute_V_opt(goal, alpha=alpha)
         # -------------------------------------------------------------------------
 
         # get desired/goal agent velocity -----------------------------------------
-        v_goal = rvo_agent.get_goal_velocity()
+        # v_goal = rvo_agent.get_goal_velocity()
+
+        # get agent velocity ------------------------------------------------------
+        # v_current = agent.get_agent_velocities()
 
         # check goal reached ------------------------------------------------------
         if rvo_agent.reached:
             time_to_goal = (time.time() - t_start)
         
         # store states ------------------------------------------------------------
-        logger.store_data(v_opt, v_suitable, v_admissible, v_goal, time_to_goal)
+        # logger.store_data(v_opt, v_suitable, v_admissible, v_goal, v_current, time_to_goal, delta_t, rvo_agent.sim_states)
+        logger.store_data(rvo_agent.sim_states, time_to_goal)
 
         # update agent's state ----------------------------------------------------
         if AUTO:
-            agent.update_controls(v_opt[1], v_suitable) # only takes v_opt[1]: the
+            agent.update_controls(v_opt[2], v_suitable) # only takes v_opt[1]: the
                                                     # kinematically feasible velocities
 
         # publish heading_delta ---------------------------------------------------
