@@ -1,0 +1,17 @@
+<launch>
+
+    <arg name="trial_condition" default="MC" />
+
+    <!-- Launch the visual interface -->
+    <node name="socnavassist_visual_interface" pkg="visual_interface" type="visual_interface_node" 
+        output="screen" respawn="true" />
+
+    <!-- Launch the proxemics evaluation -->
+    <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
+
+    <!-- Launch the augmented visualization -->
+    <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" 
+        if="$(eval trial_condition == 'SNA-V')"/>
+
+
+</launch>

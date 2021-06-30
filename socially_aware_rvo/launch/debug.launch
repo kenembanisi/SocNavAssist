@@ -13,21 +13,24 @@
     <!-- Gazebo settings -->
     <arg name="gui" default="false" />
     <arg name="paused" default="true" />
+    <!-- <arg name="paused" value="false" if="$(eval control_mode == 'auto')"/> -->
 
     <!-- Set scenario details-->
-    <arg name="scenario" default="approach-01" />
+    <arg name="scenario" default="approach_human" />
+    <arg name="num_pedestrians" default="5" />
     <arg name="trial_name" default="test" />
     <param name="scenario" value="$(arg scenario)" />
+    <param name="num_pedestrians" value="$(arg num_pedestrians)" />
     <param name="trial_name" value="$(arg trial_name)" />
 
     <!-- Start timer bool flag -->
     <param name="start_timer" value="false" />
 
     <!-- Set control and manual mode -->
-    <arg name="trial_condition" default="MC" />
+    <arg name="control_mode" default="manual" />
     <arg name="manual_mode" default="pos-vel" />
-    <arg name="rvo_planning_horizon" default="2.5" />
-    <param name="trial_condition" value="$(arg trial_condition)" />
+    <arg name="rvo_planning_horizon" default="4" />
+    <param name="control_mode" value="$(arg control_mode)" />
     <param name="manual_mode" value="$(arg manual_mode)" />
     <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
 
@@ -65,13 +68,22 @@
     <node name="socnavassist" pkg="socially_aware_rvo" type="main.py" output="screen" args="$(arg scenario)"
         required="true" /> 
 
-    <!-- Launch the falcon novint haptic interface -->
-    <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" 
-        output="screen"/>
+    <group if="$(eval control_mode == 'manual')">
+        <!-- Launch the visual interface -->
+        <node name="socnavassist_visual_interface" pkg="visual_interface" type="visual_interface_node" output="screen" />
 
-    <include file= "$(find socially_aware_rvo)/launch/visual.launch" >
-        <arg name="trial_condition" default="$(arg trial_condition)" />
-    </include>
+        <!-- Launch the proxemics evaluation -->
+        <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
+
+        <!-- Launch the augmented visualization -->
+        <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" />
+
+        <!-- Launch the falcon novint haptic interface -->
+        <!-- <node name="socnavassist_haptic_interface" pkg="socially_aware_rvo" type="haptic_interface.py" output="screen" 
+            if="$(eval control_mode == 'manual')"/> -->
+        <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" output="screen" />
+    </group>
+
     
 
 </launch>

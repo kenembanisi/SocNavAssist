@@ -15,16 +15,12 @@ main_control.py
 
 import sys
 import rospy
-import numpy as np
-from gazebo_msgs.msg import ModelStates
-from geometry_msgs.msg import Twist
-from tf.transformations import euler_from_quaternion
 import time
 
-from obstacles import ObstacleClass
 from agent import AgentClass
 from rvo_control import RvoControl
 from data_logger import DataLogger
+from pedestrians import PedestriansClass
 
 #####################################################################################
 # run function
@@ -49,33 +45,25 @@ def run(args):
     
 
     ######################### Define pedestrians as obstacles #######################
-    num_pedestrians = int(rospy.get_param("num_pedestrians")) # convert to int
-    pedestrian_id = []
-    obstacle_list = {}
-    for i in range(num_pedestrians):
-        # obstacle_list[i] = ObstacleClass(pedestrian_id[i], pedestrian_properties[i])
-        pedestrian_id.append("actor" + str(i+1)) # actor numbering starts from 1
-        obstacle_list[i] = ObstacleClass(pedestrian_id[i])
+    pedestrians = PedestriansClass()
 
 
     ################ Initiate RVO controller for agent & obstacle set ###############
     D = 0.2 # radius extension for differential drive condition
     tau = float(rospy.get_param("rvo_planning_horizon"))
-    # tau = 4.0 # planning horizon
-    rvo_agent = RvoControl(agent, obstacle_list, D=D, tau=tau)
+    rvo_agent = RvoControl(agent, pedestrians, D=D, tau=tau)
 
 
     ################ Initialize data logger (for active objects only) ###############
     trial_name = rospy.get_param("trial_name")
-    model_ids = ['trina2'] + pedestrian_id
-    logger = DataLogger(model_ids, scenario, trial_name, obstacle_list)
+    logger = DataLogger(scenario, trial_name, pedestrians)
 
 
     ############################ Set agent goal location ############################
     goal = [-6.5, 8.2]
     
     ################### Get control mode from ROS parameter server ##################
-    control_mode = rospy.get_param('control_mode')
+    control_mode = rospy.get_param('trial_condition')
     AUTO = False
     if control_mode == 'auto':
         AUTO = True
@@ -94,33 +82,36 @@ def run(args):
         # Update simulation -------------------------------------------------------
         alpha = 1 # collision avoidance responsibility, 1 means the agent 
                   # takes full responsibility
-        v_opt, v_suitable, v_admissible, heading_delta = rvo_agent.compute_V_opt(goal, alpha=alpha)
+        v_opt, v_suitable, v_admissible, heading_delta, delta_t = rvo_agent.compute_V_opt(goal, alpha=alpha)
         # -------------------------------------------------------------------------
 
         # get desired/goal agent velocity -----------------------------------------
-        v_goal = rvo_agent.get_goal_velocity()
+        # v_goal = rvo_agent.get_goal_velocity()
+
+        # get agent velocity ------------------------------------------------------
+        # v_current = agent.get_agent_velocities()
 
         # check goal reached ------------------------------------------------------
         if rvo_agent.reached:
             time_to_goal = (time.time() - t_start)
         
         # store states ------------------------------------------------------------
-        logger.store_data(v_opt, v_suitable, v_admissible, v_goal, time_to_goal)
+        # logger.store_data(v_opt, v_suitable, v_admissible, v_goal, v_current, time_to_goal, delta_t, rvo_agent.sim_states)
+        logger.store_data(rvo_agent.sim_states, time_to_goal)
 
         # update agent's state ----------------------------------------------------
         if AUTO:
-            agent.update_controls(v_opt[1], v_suitable) # only takes v_opt[1]: the
+            agent.update_controls(v_opt[2], v_suitable) # only takes v_opt[1]: the
                                                     # kinematically feasible velocities
 
         # publish heading_delta ---------------------------------------------------
         agent.publish_heading_delta(heading_delta) # this is for shared control in manual
                                                    # control mode
 
-        # Move the active obstacles -----------------------------------------------
-        for i in range(num_pedestrians):
-            obstacle_list[i].update_states()
-        #     obstacle_list[i].move()
-            
+        # publish optimal velocity data -------------------------------------------
+        agent.publish_optimal_vel_data(v_opt[1])
+
+
         # rospy.loginfo("The computed optimal control is: %s", str([round(v_opt[1][0],2), round(v_opt[1][1],2)]))
 
         # Set stop time -----------------------------------------------------------

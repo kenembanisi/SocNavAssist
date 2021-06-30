@@ -66,7 +66,7 @@ class FalconNovintControl
         float max_angular_vel_;
 
         // force variable
-        // int Kf_ = 0.5; // 20
+        float Ks_ = 3.0f; // 20
         float Kf_ = 0.5f; // 20
         ros_falcon::falconForces force_fbk_;
         std::vector<float> centering_force_ = {0,0,0} ;
@@ -86,6 +86,8 @@ class FalconNovintControl
 
         // instantiate control mode
         std::string manual_mode_ = "pos-vel";
+        std::string trial_condition_ = "MC";
+        bool force_enabled_ = false;
 
         // custom objects
         geometry_msgs::Twist cmd_vel_;

@@ -27,6 +27,27 @@ class obstacleCircle():
         pygame.draw.circle(screen, (0, 0, 0), (int(round(self.x)), int(round(self.y))), 2, 0)
 
 
+def DD2point_velocity(vel, theta_rad):
+    """
+    Tranforms robot velocity by M(theta) from DD (kinematic constrained) to point velocity space
+    
+    Arguments: vel
+    Returns: vel_point
+    """
+    # 
+    # M = [cos(theta)  -D*sin(theta)
+    #      sin(theta)   D*cos(theta)]
+    # theta_rad = math.radians(theta)
+    D = 0.2
+    M = np.array([[math.cos(theta_rad), -D*math.sin(theta_rad)],
+                    [math.sin(theta_rad), D*math.cos(theta_rad)]])
+    vel_point = M.dot(np.array([vel[0], vel[1]]))
+    
+    # for V[1], convert rad/s to degrees/s
+    # transformed_v_opt = [trans_v_opt[0], math.degrees(trans_v_opt[1])] # make a list for consistency sake
+    # transformed_v_opt = [trans_v_opt[0], trans_v_opt[1]] # make a list for consistency sake
+    
+    return vel_point
 
 # transforms from Gazebo coordinates (in meters) to pixels
 def transform_x(x):
@@ -56,7 +77,9 @@ def drawTime(idx, n_frames):
 def draw_window(idx, data):
 
     # define the data
-    actor_list = data[0]
+    # actor_list = data[0]
+    pedestrian_list = data[0][idx]
+    num_pedestrians = len(pedestrian_list)
     actors_x = data[1][1:]; actors_y = data[2][1:]
     actors_theta = data[3][1:]
     v_opt = data[4]
@@ -96,22 +119,47 @@ def draw_window(idx, data):
     # -------------------------------------------------------------------------------------------
     # set active obstacles (pedestrians)
     # -------------------------------------------------------------------------------------------
-    num_pedestrians = len(actor_list) - 1 # to remove the agent count
+    # num_pedestrians = len(actor_list) - 1 # to remove the agent count
     intimate_radius = 40 * 0.45   # intimate radius
     personal_radius = 40 * 0.9   # personal radius
     color_1 = (119, 166, 131)
     color_2 = (213, 245, 221)
+    color_3 = (100, 200, 255)
+    black = (0,0,0)
     for i in range(num_pedestrians):
-        ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
-        ped_x_transformed = transform_x(ped_x); ped_y_transformed = transform_y(ped_y)
-        pygame.draw.circle(screen, color_2, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius))
-        pygame.draw.circle(screen, color_1, (round(ped_x_transformed), round(ped_y_transformed)), round(intimate_radius))
         
+        if pedestrian_list[i] == "actor":
+            # plot the proxemics regions
+            ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
+            ped_x_transformed = transform_x(ped_x); ped_y_transformed = transform_y(ped_y)
+            pygame.draw.circle(screen, black, (round(ped_x_transformed), round(ped_y_transformed)), round(8))
+            pygame.draw.circle(screen, color_2, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius), 3)
+            pygame.draw.circle(screen, color_1, (round(ped_x_transformed), round(ped_y_transformed)), round(intimate_radius), 3)
+            
+            # plot the trajectory trail
+            history = min(100, idx)
+            for j in range(history):
+                ped_trail_x = actors_x[i][idx-j]; ped_trail_y = actors_y[i][idx-j]
+                ped_trail_x_transformed = transform_x(ped_trail_x); ped_trail_y_transformed = transform_y(ped_trail_y)
+                pygame.draw.circle(screen, black, (round(ped_trail_x_transformed), round(ped_trail_y_transformed)), round(40*0.025))
 
-        # draw velocity vector for pedestrians
-        # pygame.draw.line(screen, (100,100,230), (ped_x_transformed, ped_y_transformed), 
-        #                 (ped_x_transformed + data[5][0][idx][i][0]*scaling, 
-        #                     agent_y - data[5][0][idx][i][1]*scaling))
+            # draw velocity vector for pedestrians
+            if idx > 3:
+                ped_scaling = 200
+                ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
+                prev_ped_x = actors_x[i][idx-3]; prev_ped_y = actors_y[i][idx-3]
+                # prev_ped_x_transformed = transform_x(prev_ped_x); prev_ped_y_transformed = transform_y(prev_ped_x)
+                dx = ped_x - prev_ped_x; dy = ped_y - prev_ped_y # calculate the distance covered
+                pygame.draw.line(screen, (100,100,230), (ped_x_transformed, ped_y_transformed), 
+                                (ped_x_transformed + dx*ped_scaling, ped_y_transformed - dy*ped_scaling), 2)
+
+
+        if pedestrian_list[i] == "group":
+            ped_x = actors_x[i][idx]; ped_y = actors_y[i][idx]
+            ped_x_transformed = transform_x(ped_x); ped_y_transformed = transform_y(ped_y)
+            pygame.draw.circle(screen, color_3, (round(ped_x_transformed), round(ped_y_transformed)), round(personal_radius), 3)
+
+        
 
 
     
@@ -145,12 +193,24 @@ def draw_window(idx, data):
     color = (60,40,240)
     pygame.draw.circle(screen, color, (round(agent_x), round(agent_y)), round(radius))
 
+    # plot the trajectory trail
+    history = min(100, idx)
+    for j in range(history):
+        agent_trail_x = transform_x(data[1][0][idx-j]); agent_trail_y = transform_y(data[2][0][idx-j])
+        # agent_trail_x = actors_x[i][idx-j]; ped_trail_y = actors_y[i][idx-j]
+        # ped_trail_x_transformed = transform_x(ped_trail_x); ped_trail_y_transformed = transform_y(ped_trail_y)
+        pygame.draw.circle(screen, color, (round(agent_trail_x), round(agent_trail_y)), round(40*0.025))
+
 
     # draw agent heading
-    # pygame.draw.line(screen, (0,0,0), (agent_x, agent_y), (agent_x + np.cos(data[3][0][idx])*scaling, 
-    #                         agent_y - np.sin(data[3][0][idx])*scaling), 2)
     pygame.draw.line(screen, (0,0,0), (agent_x, agent_y), (agent_x + np.cos(agent_theta[idx])*scaling, 
                             agent_y - np.sin(agent_theta[idx])*scaling), 2)
+
+    # draw agent commanded velocity
+    agent_vel_DD = [data[8][0][idx], data[9][0][idx]]
+    agent_vel_point = DD2point_velocity(agent_vel_DD, agent_theta[idx])
+    pygame.draw.line(screen, (0,180,0), (agent_x, agent_y), (agent_x + agent_vel_point[0]*scaling, 
+                            agent_y - agent_vel_point[1]*scaling), 2)
 
     drawTime(idx, n_frames)
     
@@ -227,7 +287,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualizer")
-    parser.add_argument('--data', default='test_approach_human_[413_853].npy', help='logged data filename')
+    parser.add_argument('--data', default='logs/test_test_approach_[611_124].npy', help='logged data filename')
                 
     args = parser.parse_args()
 
