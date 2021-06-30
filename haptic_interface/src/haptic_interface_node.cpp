@@ -38,8 +38,12 @@ FalconNovintControl::FalconNovintControl(ros::NodeHandle &nh) : nh_(nh){
 
     // get parameters from ROS param
     nh_.getParam("manual_mode", manual_mode_);
+    nh_.getParam("trial_condition", trial_condition_);
     nh_.getParam("base_controller/linear/x/max_velocity", max_linear_vel_);
     nh_.getParam("base_controller/angular/z/max_velocity", max_angular_vel_);
+
+    // set force_enabled
+    force_enabled_ = (trial_condition_ == "MC") ? false : true;
 
     // log info
     ROS_INFO("Novint Falcon Controller Initialized");
@@ -194,15 +198,19 @@ void FalconNovintControl::commandVelocity()
 */
 void FalconNovintControl::commandForce()
     {
-        // compute centering force using f = K*(distance to center)
-        // this->centering_force_[0] = this->Kf_ * -(this->raw_x_pos_);
-        // this->centering_force_[2] = this->Kf_ * -(this->z_mid_ - this->raw_z_pos_);
-
-        // compute the guidance forces
-        this->guidance_force_[0] = this->Kf_ * this->heading_delta_;
-        // this->guidance_force_[0] = 0.1;
-        // ROS_INFO("Heading delta: [ %f ]", this->heading_delta_);
-
+        
+        if (force_enabled_){
+            // compute the guidance forces
+            this->guidance_force_[0] = this->Kf_ * this->heading_delta_;
+            // this->guidance_force_[0] = 0.1;
+            // ROS_INFO("Heading delta: [ %f ]", this->heading_delta_);
+        }
+        else {
+            // compute centering force using f = K*(distance to center)
+            this->centering_force_[0] = this->Ks_ * -(this->raw_x_pos_);
+            this->centering_force_[2] = this->Ks_ * -(this->z_mid_ - this->raw_z_pos_);
+        }
+        
         // find resultant force
         this->force_fbk_.X = this->centering_force_[0] + this->guidance_force_[0];
         this->force_fbk_.Y = this->centering_force_[1] + this->guidance_force_[1];
