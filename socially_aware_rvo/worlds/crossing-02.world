@@ -96,7 +96,7 @@
           <model>ground_plane</model>
         </ignore_obstacles>
         <trajectory>
-          <cyclic>false</cyclic>
+          <cyclic>true</cyclic>
           <waypoint>-0.25 5.18 0.0</waypoint>
           <waypoint>-12.7 5.44 0.0</waypoint>
         </trajectory>
@@ -106,7 +106,7 @@
 
     <!-- actor 2 (grouped with actor 3) -->
     <actor name="actor2">
-      <pose>-15.5 3.60 0.0 0 0 0</pose>
+      <pose>-15.5 4.35 0.0 0 0 0</pose>
       <skin>
         <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
         <scale>1.0</scale>
@@ -118,8 +118,8 @@
       </animation>
 
       <plugin name="actor2_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>0.8</velocity>
-        <radius>0.4</radius>
+        <velocity>0.9</velocity>
+        <radius>0.6</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
         <!-- weights -->
@@ -138,9 +138,9 @@
           <model>ground_plane</model>
         </ignore_obstacles>
         <trajectory>
-          <cyclic>false</cyclic>
-          <waypoint>-15.5 3.60 0.0</waypoint>
-          <waypoint>-0.23 2.54 0.0</waypoint>
+          <cyclic>true</cyclic>
+          <waypoint>-15.5 4.35 0.0</waypoint>
+          <waypoint>-0.23 3.95 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -190,7 +190,7 @@
 
     <!-- actor 4 (grouped with actor 5) -->
     <actor name="actor4">
-      <pose>-0.06 -0.83 0.0 0 0 0</pose>
+      <pose>-0.06 -4.9 0.0 0 0 0</pose>
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -200,7 +200,7 @@
       </animation>
 
       <plugin name="actor4_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>1.1</velocity>
+        <velocity>1.25</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -221,8 +221,8 @@
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-0.06 -0.83 0.0</waypoint>
-          <waypoint>-12.54 -0.82 0.0</waypoint>
+          <waypoint>-0.06 -4.9 0.0</waypoint>
+          <waypoint>-12.54 -4.8 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -230,7 +230,7 @@
 
     <!-- actor 5 (grouped with actor 4) -->
     <actor name="actor5">
-      <pose>-0.1 -0.98 0 0 0</pose>
+      <pose>-0.1 -3.7 0 0 0</pose>
       <skin>
         <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
         <scale>1.0</scale>
@@ -243,7 +243,7 @@
 
       <plugin name="actor5_plugin" filename="libPedestrianSFMPlugin.so">
         <velocity>1.2</velocity>
-        <radius>0.4</radius>
+        <radius>0.5</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
         <!-- weights -->
@@ -263,8 +263,8 @@
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-0.06 -0.83 0.0</waypoint>
-          <waypoint>-12.9 0.53 0.0</waypoint>
+          <waypoint>-0.06 -3.7 0.0</waypoint>
+          <waypoint>-12.9 -3.4 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -310,7 +310,7 @@
 
     <!-- actor 7 -->
     <actor name="actor7">
-      <pose>-10.9 -5.32 0.0 0 0 0</pose>
+      <pose>-10.9 1.25 0.0 0 0 0</pose>
       <skin>
         <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
         <scale>1.0</scale>
@@ -339,8 +339,8 @@
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-10.9 -5.32 0.0</waypoint>
-          <waypoint>-0.39 -5.56 0.0</waypoint>
+          <waypoint>-10.9 1.25 0.0</waypoint>
+          <waypoint>-0.39 1.36 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -348,7 +348,7 @@
 
     <!-- actor 8 -->
     <actor name="actor8">
-      <pose>-15.5 1.10 0.0 0 0 0</pose>
+      <pose>-15.5 -1.10 0.0 0 0 0</pose>
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -379,8 +379,8 @@
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-15.5 1.10 0.0</waypoint>
-          <waypoint>-0.2 1.9 0.0</waypoint>
+          <waypoint>-15.5 -1.10 0.0</waypoint>
+          <waypoint>-0.2 -1.8 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -388,7 +388,7 @@
 
     <!-- actor 9 -->
     <actor name="actor9">
-      <pose>-12.7 7.44 0.0 0 0 0</pose>
+      <pose>-12.7 7.64 0.0 0 0 0</pose>
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -398,7 +398,7 @@
       </animation>
 
       <plugin name="actor9_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>2.1</velocity>
+        <velocity>2.3</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -419,8 +419,8 @@
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-12.7 7.44 0.0</waypoint>
-          <waypoint>-1.0 4.3 0.0</waypoint>
+          <waypoint>-12.7 7.64 0.0</waypoint>
+          <waypoint>-1.0 5.3 0.0</waypoint>
         </trajectory>
       </plugin>
 
