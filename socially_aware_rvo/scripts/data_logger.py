@@ -40,6 +40,7 @@ class DataLogger():
         self.trial_name = trial_name
 
         self.time_to_goal = 0
+        self.time_delta = []
             
         # variables
         self.x = [[] for i in range(self.n_models)]
@@ -52,10 +53,17 @@ class DataLogger():
         self.v_admissible = []
         self.v_goal = []
 
+        self.optimal_acc = []
+        self.optimal_acc_constrained = []
+        self.actual_acc = [[0,0]]
+
+        self.heading_delta = []
+
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
 
-    def store_data(self, v_opt_, v_suitable_, v_admissible_, v_goal_, time_to_goal):
+    # def store_data(self, v_opt_, v_suitable_, v_admissible_, v_goal_, v_current, time_to_goal, time_delta, sim_states):
+    def store_data(self, sim_states, time_to_goal):
         
         # update pedestrian data ------------------------------------------------------------------------
         self.pedestrians_list = self.pedestrians.total_pedestrian_list
@@ -92,18 +100,25 @@ class DataLogger():
                 data.pose[idx].orientation.y,
                 data.pose[idx].orientation.z,
                 data.pose[idx].orientation.w])[2])
-        self.v_opt.append(v_opt_)
-        self.v_suitable.append(v_suitable_)
-        self.v_admissible.append(v_admissible_)
-        self.v_goal.append(v_goal_)
+        self.v_opt.append(sim_states.v_opt)
+        self.v_suitable.append(sim_states.v_suitable)
+        self.v_admissible.append(sim_states.v_admissible)
+        self.v_goal.append(sim_states.v_goal)
 
             # transform velocity from world frame to robot frame
-        v_world = [data.twist[idx].linear.x, data.twist[idx].linear.y]
-        v_robot = self.world2robot_transform(v_world, self.theta[0][-1])
+        # v_world = [data.twist[idx].linear.x, data.twist[idx].linear.y]
+        # v_robot = self.world2robot_transform(v_world, self.theta[0][-1])
 
             # set velocities
-        self.v[0].append(v_robot[0])
-        self.omega[0].append(data.twist[idx].angular.z)
+        # self.v[0].append(v_robot[0])
+        # self.omega[0].append(data.twist[idx].angular.z)
+        self.v[0].append(sim_states.v_current[0])
+        self.omega[0].append(sim_states.v_current[1])
+
+            # set accelerations
+        self.optimal_acc.append(sim_states.optimal_acc)
+        self.optimal_acc_constrained.append(sim_states.optimal_acc_constrained)
+        self.actual_acc.append(sim_states.actual_acc)
 
         # get data for pedestrians and groups ------------------------------------------------------------
         
@@ -142,16 +157,22 @@ class DataLogger():
                 self.y[i].append(self.pedestrians_list[i-1].y)
                 # self.v[i].append(self.pedestrians_list[i-1].v[0])
 
-
         # set time to goal
         self.time_to_goal = time_to_goal
+
+        # update time delta
+        self.time_delta.append(sim_states.dt)
+
+        # update heading delta
+        self.heading_delta.append(sim_states.heading_delta)
 
 
     def save_data(self):
  
         # data = np.array([self.model_ids, self.x, self.y, self.theta, self.v, self.omega, self.v_opt, self.v_suitable])
         data = np.array([self.pedestrian_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, 
-                        self.v_admissible, self.v_goal, self.v, self.omega, self.time_to_goal])
+                        self.v_admissible, self.v_goal, self.v, self.omega, self.optimal_acc, self.optimal_acc_constrained,
+                        self.actual_acc, self.time_to_goal, self.time_delta, self.heading_delta])
            
         time_struct = time.localtime(time.time())
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
