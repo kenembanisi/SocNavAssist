@@ -52,6 +52,7 @@ class DataLogger():
         self.v_suitable = []
         self.v_admissible = []
         self.v_goal = []
+        self.v_commanded = []
 
         self.optimal_acc = []
         self.optimal_acc_constrained = []
@@ -114,6 +115,7 @@ class DataLogger():
         # self.omega[0].append(data.twist[idx].angular.z)
         self.v[0].append(sim_states.v_current[0])
         self.omega[0].append(sim_states.v_current[1])
+        self.v_commanded.append(sim_states.v_commanded)
 
             # set accelerations
         self.optimal_acc.append(sim_states.optimal_acc)
@@ -172,7 +174,7 @@ class DataLogger():
         # data = np.array([self.model_ids, self.x, self.y, self.theta, self.v, self.omega, self.v_opt, self.v_suitable])
         data = np.array([self.pedestrian_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, 
                         self.v_admissible, self.v_goal, self.v, self.omega, self.optimal_acc, self.optimal_acc_constrained,
-                        self.actual_acc, self.time_to_goal, self.time_delta, self.heading_delta])
+                        self.actual_acc, self.time_to_goal, self.time_delta, self.heading_delta, self.v_commanded])
            
         time_struct = time.localtime(time.time())
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \

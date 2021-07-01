@@ -25,6 +25,7 @@ class SimulationStates():
         self.v_current = []
         self.v_admissible = []
         self.v_goal = []
+        self.v_commanded = []
         self.optimal_acc = []
         self.optimal_acc_constrained = []
         self.actual_acc = []
@@ -237,7 +238,12 @@ class RvoControl():
             Adapted from Meng's code - https://github.com/MengGuo/RVO_Py_MAS
         """
 
-        norm_v = self.compute_distance(vA, [0, 0]) # magnitude of the agent velocity
+        v_to_goal = self.compute_V_desired()
+        # norm_v = self.compute_distance(vA, [0, 0]) # magnitude of the agent velocity
+        norm_v = self.compute_distance(v_to_goal, [0, 0])
+        # if norm_v < 0.1: # avoid zero
+        #     norm_v = 0.1
+
         V_suitable = []
         V_unsuitable = []
         V_admissible = []
@@ -339,8 +345,8 @@ class RvoControl():
             # define weighting
             # WT = 0.5
             # WT = 0.0
-            WT = [0.7,  # distance to operator's velocity
-                  0.15, # distance to previous v_opt
+            WT = [1.0,  # distance to operator's velocity
+                  0.5, # distance to previous v_opt
                   0.0] # distance to goal velocity
 
             # check if this is the first iteration
@@ -489,21 +495,29 @@ class RvoControl():
 
         Arguments: None
         Returns:
-            - operator_goal (list)
+            - v_operator (list)
         """
         
         ### Implementing case (1): using max_linear_velocity
-        vec_dir = self.compute_heading(self.agent.theta)
+        # vec_dir = self.compute_heading(self.agent.theta)
 
-        operator_goal = [vec_dir[0] * self.agent.max_linear_velocity,
-                         vec_dir[1] * self.agent.max_linear_velocity]
+        # v_operator = [vec_dir[0] * self.agent.max_linear_velocity,
+        #                  vec_dir[1] * self.agent.max_linear_velocity]
+
+
+        ### Implementing case (2): using operator's inputted velocity
+        v_operator_dd = self.agent.get_commanded_agent_velocities() # in [v, omega] form
+        v_operator = self.DD2point_velocity(v_operator_dd)
+
+        # update simulation states
+        self.sim_states.v_commanded = v_operator
 
         # check if the agent has reached the goal
         if self.reach_goal(self.goal, self.agent_pos, self.goal_threshold):
             # V_desired = [0.0001, 0.0001]
             self.reached = True
         
-        return operator_goal
+        return v_operator
 
     def compute_distance(self, pose1, pose2):
         """
@@ -577,7 +591,7 @@ class RvoControl():
         self.dt = self.curr_time - self.prev_time
 
         # obtain current angular velocity
-        current_agent_vel = self.agent.get_agent_velocities() # agent_vel = [v, omega]
+        current_agent_vel = self.agent.get_current_agent_velocities() # agent_vel = [v, omega]
 
         ### linear speed
             # compute optimal linear speed
@@ -673,7 +687,7 @@ class RvoControl():
 
     def compute_heading_delta(self, v_opt):
         """
-        Computes the angle difference between operator goal (i.e. current heading) and the optimal heading
+        Computes the angle difference between operator's commanded heading and the optimal heading
         defined by rvo.
         Arguments:
             - 
@@ -686,9 +700,23 @@ class RvoControl():
         optimal_theta = math.atan2(v_opt[1], v_opt[0])
 
         # calculate heading_delta
-        # heading_delta = optimal_theta - math.radians(self.agent_theta)
-        # heading_delta = optimal_theta - self.agent_theta # clockwise is -ve, anticlockwise is +ve
-        heading_delta = math.fmod(optimal_theta - self.agent_theta, 2*math.pi)
+        operator_theta = math.atan2(self.sim_states.v_commanded[1],
+                                    self.sim_states.v_commanded[0])
+
+            # in case v_comannded is [0,0], use the current agent heading
+        if all(self.sim_states.v_commanded == [0.0, 0.0]):
+            # operator_theta = self.agent_theta
+            heading_delta = 0.0
+
+            # in case v_commanded[1] < 0.0, i.e. robot is moving backwards, use agent heading
+        elif self.sim_states.v_commanded[1] <= 0.0:
+            # operator_theta = self.agent_theta
+            heading_delta = 0.0
+        
+        else:
+            heading_delta = math.fmod(optimal_theta - operator_theta, 2*math.pi)
+
+        # rospy.loginfo("operator_theta is: [%f]", operator_theta)
 
         return heading_delta
 
@@ -808,7 +836,7 @@ class RvoControl():
         self.dt = self.curr_time - self.prev_time
 
         # obtain current angular velocity
-        current_agent_vel = self.agent.get_agent_velocities() # agent_vel = [v, omega]
+        current_agent_vel = self.agent.get_current_agent_velocities() # agent_vel = [v, omega]
 
         tau_dynamic = 4
 
@@ -875,33 +903,26 @@ class RvoControl():
 
         return v_opt_dd_constrained
 
-
-
-
-
-    # def DD2point_velocity(self, vel):
-    #     """
-    #     Tranforms robot velocity by M(theta) from DD (kinematic constrained) to point velocity space
+    def DD2point_velocity(self, vel):
+        """
+        Tranforms robot velocity by M(theta) from DD (kinematic constrained) to point velocity space
         
-    #     Arguments: vel
-    #     Returns: vel_point
-    #     """
-    #     # 
-    #     # M = [cos(theta)  -D*sin(theta)
-    #     #      sin(theta)   D*cos(theta)]
-    #     # theta_rad = math.radians(self.agent.theta)
-    #     theta_rad = self.agent_theta
-    #     M = np.array([[math.cos(theta_rad), -math.sin(theta_rad)],
-    #                   [math.sin(theta_rad), math.cos(theta_rad)]])
-    #     vel_point = M.dot(np.array([vel[0], vel[1]]))
-        
-    #     # for V[1], convert rad/s to degrees/s
-    #     # transformed_v_opt = [trans_v_opt[0], math.degrees(trans_v_opt[1])] # make a list for consistency sake
-    #     # transformed_v_opt = [trans_v_opt[0], trans_v_opt[1]] # make a list for consistency sake
-        
-    #     return vel_point
-
+        Arguments: vel
+        Returns: vel_point
+        """
+        # 
+        # M = [cos(theta)  -D*sin(theta)
+        #      sin(theta)   D*cos(theta)]
+        D = 0.2
+        M = np.array([[math.cos(self.agent.theta), -D*math.sin(self.agent.theta)],
+                        [math.sin(self.agent.theta), D*math.cos(self.agent.theta)]])
+        vel_point = M.dot(np.array([vel[0], vel[1]]))
+            
+        return vel_point
     
+
+
+
     # def compute_velocity_limits(self):
     #     """
     #     Defines the admissible velocity bounds (limits) for the robot at an instance
@@ -967,7 +988,7 @@ class RvoControl():
         # return admissible
 
         # obtain current angular velocity
-        current_agent_vel = self.agent.get_agent_velocities() # agent_vel = [v, omega]
+        current_agent_vel = self.agent.get_current_agent_velocities() # agent_vel = [v, omega]
 
         admissible = False
         # max speed check

@@ -85,12 +85,6 @@ def run(args):
         v_opt, v_suitable, v_admissible, heading_delta, delta_t = rvo_agent.compute_V_opt(goal, alpha=alpha)
         # -------------------------------------------------------------------------
 
-        # get desired/goal agent velocity -----------------------------------------
-        # v_goal = rvo_agent.get_goal_velocity()
-
-        # get agent velocity ------------------------------------------------------
-        # v_current = agent.get_agent_velocities()
-
         # check goal reached ------------------------------------------------------
         if rvo_agent.reached:
             time_to_goal = (time.time() - t_start)
@@ -109,7 +103,7 @@ def run(args):
                                                    # control mode
 
         # publish optimal velocity data -------------------------------------------
-        agent.publish_optimal_vel_data(v_opt[1])
+        agent.publish_optimal_vel_data(v_opt[2]) # puclishing the unconstrained vel (v_opt_dd)
 
 
         # rospy.loginfo("The computed optimal control is: %s", str([round(v_opt[1][0],2), round(v_opt[1][1],2)]))

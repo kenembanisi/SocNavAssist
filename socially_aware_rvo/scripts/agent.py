@@ -44,8 +44,10 @@ class AgentClass():
         self.y = 0
         self.z = 0
         self.theta = 0
-        self.v = 0   
-        self.omega = 0 
+        self.v_actual = 0   
+        self.omega_actual = 0 
+        self.v_cmd = 10.1   
+        self.omega_cmd = 10.1 
         self.spawn_complete = False
 
         # Instantiate topic services
@@ -60,6 +62,10 @@ class AgentClass():
             # publisher to base_controller
         self.velocity_publisher = rospy.Publisher('/base_controller/cmd_vel',
             Twist, queue_size=1)
+
+            # base_controller subscriber
+        self.cmd_vel_subscriber = rospy.Subscriber('/base_controller/cmd_vel',
+            Twist, self.update_cmd_vel_callback)
 
             # publisher for velocity data
         self.data_publisher = rospy.Publisher('/velocity_data', 
@@ -107,10 +113,25 @@ class AgentClass():
             - None
         """
 
-        self.v = data.twist.twist.linear.x # this is correct! Confirmed.
-        self.omega = data.twist.twist.angular.z
+        self.v_actual = data.twist.twist.linear.x # this is correct! Confirmed.
+        self.omega_actual = data.twist.twist.angular.z
 
+    
+    def update_cmd_vel_callback(self, data):
+        """
+        Callback function which obtains the commanded velocity of the agent.
+        
+        Arguments:
+            - data [message struct]
 
+        Returns:
+            - None
+        """
+
+        self.v_cmd = data.linear.x
+        self.omega_cmd = data.angular.z
+
+    
     def update_controls(self, v_opt, v_list):
         """
         Publishes the given velocity to the cmd_vel topic.
@@ -136,16 +157,28 @@ class AgentClass():
         # self.publish_data(v_opt)
 
 
-    def get_agent_velocities(self):
+    def get_current_agent_velocities(self):
         """
-        Returns the linear and angular velocities of the agent
+        Returns the current linear and angular velocities of the agent
         
         Arguments:
             - None
         Returns:
             - [v, omega]
         """
-        return [self.v, self.omega]
+        return [self.v_actual, self.omega_actual]
+
+
+    def get_commanded_agent_velocities(self):
+        """
+        Returns the commanded linear and angular velocities of the agent
+        
+        Arguments:
+            - None
+        Returns:
+            - [v_cmd, omega_cmd]
+        """
+        return [self.v_cmd, self.omega_cmd]
         
 
     def compute_heading(self, theta):
