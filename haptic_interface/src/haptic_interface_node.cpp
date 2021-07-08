@@ -201,7 +201,7 @@ void FalconNovintControl::commandForce()
         
         if (force_enabled_){
             // compute the guidance forces
-            this->guidance_force_[0] = this->Kf_ * this->heading_delta_;
+            this->guidance_force_[0] = this->Kf_ * -this->heading_delta_;
             // this->guidance_force_[0] = 0.1;
             // ROS_INFO("Heading delta: [ %f ]", this->heading_delta_);
         }
