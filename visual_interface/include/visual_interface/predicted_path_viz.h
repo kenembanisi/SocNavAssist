@@ -13,6 +13,7 @@
 
 // Other includes
 #include <vector>
+#include <cmath>
 
 #define PI  3.142
 
@@ -87,6 +88,9 @@ class PathPredictor {
         tf::TransformListener tf_listener_;
         tf::StampedTransform odom_to_camera_transform_;
 
+        // define offset value to set the visualization inside the camera FOV
+        float z_offset_ = 0.5f;
+
     private:
 
         // Callbacks
@@ -97,6 +101,9 @@ class PathPredictor {
         void optimalCmdCallback(const std_msgs::Float64MultiArray& velocities);
 
         // member functions
+
+        // void filterOptimalCmdVel(float new_v, float new_w);
+
         TrajectoryPair computePredictedTraj(void);
           
         RobotState motionModel(const Control& vel_cmd, const RobotState& current_state);

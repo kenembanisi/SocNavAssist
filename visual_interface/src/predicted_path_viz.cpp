@@ -83,10 +83,26 @@ void PathPredictor::userCmdCallback(const geometry_msgs::Twist& cmd_vel) {
 
 void PathPredictor::optimalCmdCallback(const std_msgs::Float64MultiArray& velocities) {
     // update optimal_control values
+    // optimal_control_.v = velocities.data[0];
+    // optimal_control_.w = velocities.data[1];
+
+    float filter_threshold = 0.2f;
+
+    // compare the current optimal_velocities with the new ones
+    if (std::abs(velocities.data[1] - optimal_control_.w) > filter_threshold){
+        optimal_control_.w = velocities.data[1];
+    }
     optimal_control_.v = velocities.data[0];
-    optimal_control_.w = velocities.data[1];
+
 }
 
+// void PathPredictor::filterOptimalCmdVel(float new_v, float new_w){
+//     // compare the current optimal_velocities with the new ones
+//     if (std::abs(new_w - optimal_control_.w) > filter_threshold){
+//         optimal_control_.w = new_w;
+//     }
+//     optimal_control_.v = new_v;
+// }
 
 TrajectoryPair PathPredictor::computePredictedTraj(void) {
 
@@ -152,8 +168,27 @@ RobotState PathPredictor::motionModel(const Control& vel_cmd, const RobotState& 
 
     RobotState new_state;
 
+    float max_omega_value = 1.5f;
+
+    // ensure velocity limit
+    float omega;
+    // if (std::abs(vel_cmd.w) > config_.max_angular_vel){
+    if (std::abs(vel_cmd.w) > max_omega_value){
+        if (vel_cmd.w > 0.0){
+            // omega = config_.max_angular_vel;
+            omega = max_omega_value;
+        }
+        else {
+            // omega = -config_.max_angular_vel;
+            omega = -max_omega_value;
+        }
+    }
+    else {
+        omega = vel_cmd.w;
+    }
+
     // update theta first then use it to update x & y
-    new_state.theta = current_state.theta + vel_cmd.w * config_.dt;
+    new_state.theta = current_state.theta + omega * config_.dt;
     
     // update x, y
     new_state.x = current_state.x + vel_cmd.v * std::cos(new_state.theta) * config_.dt;
@@ -172,7 +207,7 @@ RobotState PathPredictor::transformStates(const RobotState& state_in) {
 
     state_out.x = state_out_vec3.getX();
     state_out.y = state_out_vec3.getY();
-    state_out.z = state_out_vec3.getZ();
+    state_out.z = state_out_vec3.getZ() + z_offset_;
 
     // ROS_INFO("From: [%f, %f, %f] to [%f, %f, %f]", state_in.x, state_in.y, state_in.z, state_out.x, state_out.y, state_out.z);
     return state_out;
@@ -195,7 +230,7 @@ int main(int argc, char** argv)
     // instantiating ROS node handle
     ros::NodeHandle nh;
 
-    float prediction_time = 2.0f;
+    float prediction_time = 1.0f;
     float dt = 0.1f;
 
     // instantiate the PathPredictor object

@@ -67,7 +67,9 @@ class VisualInterface
     time_t start_time;
     bool show_rearview = false;
     bool start_timer = false;
+    bool show_debug_bars = false;
     int proxemics_state_[2];
+    std::string trial_condition;
     visual_interface::trajectory user_pred_traj_;
     visual_interface::trajectory optimal_pred_traj_;
     int pred_trajectory_size_;
@@ -107,6 +109,7 @@ class VisualInterface
         nh_.getParam("base_controller/angular/z/max_velocity", this->max_angular_vel);
         nh_.getParam("base_controller/angular/z/min_velocity", this->min_angular_vel);
         nh_.getParam("toggle_rear_camera", this->show_rearview);
+        nh_.getParam("trial_condition", this->trial_condition);
 
         cv::namedWindow(OPENCV_WINDOW);
 
@@ -348,6 +351,12 @@ class VisualInterface
         cv::putText(this->fwd_img_ptr->image, time_passed, cv::Point(1520, 65), cv::FONT_HERSHEY_DUPLEX, 2, cv::Scalar( 0, 0, 0 ), 2, false);
     }
 
+    void drawScenarioTitle() {
+
+        // display scenario title
+        cv::putText(this->fwd_img_ptr->image, this->trial_condition, cv::Point(100, 65), cv::FONT_HERSHEY_DUPLEX, 2, cv::Scalar( 0, 0, 0 ), 2, false);
+    }
+
     void drawSideIndicators() {
 
         // get the proxemics state
@@ -393,18 +402,23 @@ class VisualInterface
         // float x = 5.0f, y = 0.f;
             for (int i = 0; i < pred_trajectory_size_; ++i) {
                 
-                float threshold = 0.2; // formerly 0.2
+                float threshold = 0.05; // formerly 0.1
 
-                // if (abs(heading_delta_) > threshold){
-                //     cv::circle(this->fwd_img_ptr->image, 
-                //                 tranformToPixel(optimal_pred_traj_.x[i], 
-                //                                 optimal_pred_traj_.y[i], 
-                //                                 optimal_pred_traj_.z[i]), 
-                //                 computePointSize(optimal_pred_traj_.z[i]), 
-                //                 cv::Scalar( 20, 15, 245, 0.6 ), cv::FILLED);
-                // }
+                if (this->trial_condition == "SNA-VA") {
+                // v_opt predicted trajectories
+                    if (abs(heading_delta_) > threshold){
+                        cv::circle(this->fwd_img_ptr->image, 
+                                    tranformToPixel(optimal_pred_traj_.x[i], 
+                                                    optimal_pred_traj_.y[i], 
+                                                    optimal_pred_traj_.z[i]), 
+                                    computePointSize(optimal_pred_traj_.z[i]), 
+                                    cv::Scalar( 20, 15, 245, 0.6 ), cv::FILLED);
+                        // ROS_INFO("Getting in here!");
+                    }
+                }    
+            
 
-                
+                // operator-based predicted trajectories
                 cv::circle(this->fwd_img_ptr->image, 
                             tranformToPixel(user_pred_traj_.x[i], 
                                             user_pred_traj_.y[i], 
@@ -461,14 +475,20 @@ class VisualInterface
         // retrieve the start_timer & rear view bool state
         nh_.getParam("/start_timer", this->start_timer);
         nh_.getParam("toggle_rear_camera", this->show_rearview);
+        nh_.getParam("debug_bars", this->show_debug_bars);
 
         if (this->fwd_img_ptr && this->bwd_img_ptr) {
 
             // draw top down map
             // this->drawTopViewMap();
 
+            // draw the scenario title
+            this->drawScenarioTitle();
+
             // draw the optimal speedbars
-            this->drawOptimalSpeedBars();
+            // if (this->show_debug_bars)
+            if (this->trial_condition == "SNA-VB")
+                this->drawOptimalSpeedBars();
 
             // draw the operatpor speedbars
             this->drawOperatorSpeedBars();
@@ -477,7 +497,8 @@ class VisualInterface
             this->drawSideIndicators();
 
             // draw predicted trajectories
-            this->drawPredictedTrajectories();
+            if (this->trial_condition == "SNA-VB" || this->trial_condition == "SNA-VA")
+                this->drawPredictedTrajectories();
 
             // draw the rearview camera 
             if (this->show_rearview) this->drawRearView();
