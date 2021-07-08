@@ -82,7 +82,7 @@ class RvoControl():
         self.reached = False
         # threshold for reaching goal
         self.goal = [0.0, 0.0]
-        self.goal_threshold = 0.5
+        self.goal_threshold = 1.0 # formerly 0.5
         # augment agent radius if D > 0
         if self.D > 0:
             self.augment_player_radius()
@@ -121,17 +121,9 @@ class RvoControl():
         self.pedestrians.update_states(use_groups=True)
         # rospy.loginfo("# of pedestrians: %d", len(self.pedestrians.pedestrian_list))
 
-
-        # if use_groups:
-        #     self.pedestrians.pedestrian_list = self.pedestrians.pedestrian_list + \
-        #                                        self.pedestrians.pedestrian_group_list
-                                        
         self.num_obstacles = len(self.pedestrians.total_pedestrian_list)
 
         for i in range(self.num_obstacles):
-            # self.obstacle_pos[i] = [self.pedestrians.pedestrian_list[i].x, 
-            #                         self.pedestrians.pedestrian_list[i].y]
-            # self.obstacle_vel[i] = self.pedestrians.pedestrian_list[i].v
             self.obstacle_pos.append([self.pedestrians.total_pedestrian_list[i].x, 
                                     self.pedestrians.total_pedestrian_list[i].y])
             self.obstacle_vel.append(self.pedestrians.total_pedestrian_list[i].v)
@@ -139,8 +131,19 @@ class RvoControl():
 
         # rospy.loginfo("# of obstacles: %d", self.num_obstacles)
 
+        # if self.num_obstacles > 0:
+        #     rospy.loginfo("velocity: %f", self.compute_distance(self.obstacle_vel[5], [0,0]))
+
+        ### forward simulation
+        # if self.num_obstacles > 0:
+        #     self.compute_future_states()
+
+        ###
+
         self.agent_pos = [self.agent.x, self.agent.y]
         self.agent_theta = self.agent.theta
+
+        # rospy.loginfo("Robot's X and Y position: %0.2f, %0.2f", self.agent.x, self.agent.y)
 
         # for DD scenario, compute effective radius and center
         if self.D > 0:
@@ -255,13 +258,6 @@ class RvoControl():
             # N.B. We should be interested in searching within admissible velocities, 
             #   not the whole velocity space (though this isn't searching the whole space)
 
-        # v_a, v_b, v_c, v_d = self.compute_velocity_limits()
-
-        # self.v_x_min = min(v_a[0], v_b[0], v_c[0], v_d[0])
-        # self.v_x_max = max(v_a[0], v_b[0], v_c[0], v_d[0])
-
-        # self.v_y_min = min(v_a[1], v_b[1], v_c[1], v_d[1])
-        # self.v_y_max = max(v_a[1], v_b[1], v_c[1], v_d[1])
 
         n_not_admissible = 0
         n_total = 0
@@ -282,9 +278,15 @@ class RvoControl():
 
                 # admissible = self.admissibility_check(candidate_v) # <-- is the candidate velocity admissible?
 
-                # if not admissible: # if not admissible, skip the candidate velocity
-                #     n_not_admissible += 1
-                #     continue
+                if self.num_obstacles > 0:
+                    admissible = self.static_collision_check(candidate_v)
+
+                    if not admissible: # if not admissible, skip the candidate velocity
+                        n_not_admissible += 1
+
+                        # rospy.loginfo("Number of non-admissible: %d", n_not_admissible)
+                        continue
+
 
                 V_admissible.append(candidate_v) # store admissible velocities
 
@@ -350,7 +352,8 @@ class RvoControl():
                   0.0] # distance to goal velocity
 
             # check if this is the first iteration
-            if self.prev_V_opt_point == [0.0, 0.0]:
+            # if self.prev_V_opt_point == [0.0, 0.0]:
+            if self.prev_V_opt_point[0] == 0.0 and self.prev_V_opt_point[1] == 0.0:
                 V_opt = min(V_suitable, key = lambda v: (self.compute_distance(v, vA)))
             else:
 
@@ -403,7 +406,12 @@ class RvoControl():
             # define weighting
             WT = 0.2
             # choose the velocity that minimizes the penalty function
-            V_opt = min(V_unsuitable, key = lambda v: ((WT/tc_V[tuple(v)])+self.compute_distance(v, vA)))
+                # if V_unsuitable is empty, just pass the operator velocity as the optimal
+            if V_unsuitable:
+                V_opt = min(V_unsuitable, key = lambda v: ((WT/tc_V[tuple(v)])+self.compute_distance(v, vA)))
+            else:
+                V_opt = vA
+                
 
         return V_opt
 
@@ -920,6 +928,14 @@ class RvoControl():
             
         return vel_point
     
+    # def compute_future_states(self):
+
+    #     self.lookahead = 2.0
+    #     # compute future states for pedestrians:
+    #     for i in range(self.num_obstacles):
+    #     # for each obstacle
+    #         self.obstacle_pos[i][0] = self.obstacle_pos[i][0] + self.obstacle_vel[i][0] * self.lookahead
+    #         self.obstacle_pos[i][1] = self.obstacle_pos[i][1] + self.obstacle_vel[i][1] * self.lookahead
 
 
 
@@ -1000,5 +1016,37 @@ class RvoControl():
 
         return admissible
 
+    def static_collision_check(self, vel):
+        """
+        Checks if the velocity sampled could collide with static features in the environment
+        Arguments: vel
+        Returns: bool
+        """
 
+        collision_free = True
+
+        horizon = 2.5
+
+        # obtain future position state
+        future_state_x = self.agent_pos[0] + vel[0]* horizon
+        future_state_y = self.agent_pos[1] + vel[1]* horizon
+
+        # check collision
+        x_limits = [-12.7, 0.0]
+        y_limits = [-10.1, 8.0]
+
+        if not (x_limits[0] < future_state_x < x_limits[1]):
+            collision_free = False
+            # rospy.loginfo("X position is in collision")
+
+        if not (y_limits[0] < future_state_y < y_limits[1]):
+            collision_free = False
+            # rospy.loginfo("Y position is in collision")
+
+        # correct for goal area/passage
+        # if future_state_y > 8.2 and (-8 < future_state_x < -5): 
+        if future_state_y > 8.2 and (-8.7 < future_state_x < -4.3): 
+            collision_free = True
+
+        return collision_free
     
