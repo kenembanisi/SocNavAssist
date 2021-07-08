@@ -16,9 +16,13 @@
 
     <!-- Set scenario details-->
     <arg name="scenario" default="approach-01" />
+    <arg name="debug_bars" default="false" />
     <arg name="trial_name" default="test" />
+    <arg name="phase" default="test" />
     <param name="scenario" value="$(arg scenario)" />
     <param name="trial_name" value="$(arg trial_name)" />
+    <param name="debug_bars" value="$(arg debug_bars)" />
+    <param name="study_phase" value="$(arg phase)" />
 
     <!-- Start timer bool flag -->
     <param name="start_timer" value="false" />
@@ -26,7 +30,7 @@
     <!-- Set control and manual mode -->
     <arg name="trial_condition" default="MC" />
     <arg name="manual_mode" default="pos-vel" />
-    <arg name="rvo_planning_horizon" default="2.5" />
+    <arg name="rvo_planning_horizon" default="3" />
     <param name="trial_condition" value="$(arg trial_condition)" />
     <param name="manual_mode" value="$(arg manual_mode)" />
     <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
@@ -69,9 +73,15 @@
     <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" 
         output="screen"/>
 
-    <include file= "$(find socially_aware_rvo)/launch/visual.launch" >
-        <arg name="trial_condition" default="$(arg trial_condition)" />
-    </include>
+    <!-- Launch the visual interface -->
+    <node name="socnavassist_visual_interface" pkg="visual_interface" type="visual_interface_node" 
+        output="screen" respawn="true" />
+
+    <!-- Launch the proxemics evaluation -->
+    <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
+
+    <!-- Launch the augmented visualization -->
+    <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" />
     
 
 </launch>
