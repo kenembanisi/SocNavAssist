@@ -60,7 +60,8 @@ def run(args):
 
 
     ############################ Set agent goal location ############################
-    goal = [-6.5, 8.2]
+    # goal = [-6.5, 8.2]
+    goal = [-6.43, 8.78]
     
     ################### Get control mode from ROS parameter server ##################
     control_mode = rospy.get_param('trial_condition')

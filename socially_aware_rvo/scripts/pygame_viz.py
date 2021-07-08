@@ -184,9 +184,15 @@ def draw_window(idx, data):
         pygame.draw.line(screen, (180,100,100), (agent_x, agent_y), (agent_x + v_desired[idx][0]*scaling, 
                             agent_y - v_desired[idx][1]*scaling))
 
-        # v_opt heading
+        # v_opt_point heading
         pygame.draw.line(screen, (255,0,0), (agent_x, agent_y), (agent_x + v_opt[idx][0][0]*scaling, 
                             agent_y - v_opt[idx][0][1]*scaling), 2)
+
+        # v_opt_constrained heading
+        # agent_v_opt_constrained = [v_opt[idx][1][0], v_opt[idx][1][1]]
+        # agent_v_opt_constrained_point = DD2point_velocity(agent_v_opt_constrained, agent_theta[idx])
+        # pygame.draw.line(screen, (0,240,100), (agent_x, agent_y), (agent_x + agent_v_opt_constrained_point[0]*scaling, 
+        #                     agent_y - agent_v_opt_constrained_point[1]*scaling), 3)
 
         # draw agent
     radius = 40 * 0.25  # agent radius is set to 0.25m
@@ -206,11 +212,17 @@ def draw_window(idx, data):
     pygame.draw.line(screen, (0,0,0), (agent_x, agent_y), (agent_x + np.cos(agent_theta[idx])*scaling, 
                             agent_y - np.sin(agent_theta[idx])*scaling), 2)
 
-    # draw agent commanded velocity
+    # draw agent actual velocity
     agent_vel_DD = [data[8][0][idx], data[9][0][idx]]
     agent_vel_point = DD2point_velocity(agent_vel_DD, agent_theta[idx])
     pygame.draw.line(screen, (0,180,0), (agent_x, agent_y), (agent_x + agent_vel_point[0]*scaling, 
                             agent_y - agent_vel_point[1]*scaling), 2)
+
+    # draw agent commanded velocity
+    agent_vel_cmd = data[16][idx]
+    # agent_vel_point = DD2point_velocity(agent_vel_DD, agent_theta[idx])
+    pygame.draw.line(screen, (180,80,0), (agent_x, agent_y), (agent_x + agent_vel_cmd[0]*scaling, 
+                            agent_y - agent_vel_cmd[1]*scaling), 2)
 
     drawTime(idx, n_frames)
     
@@ -287,7 +299,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualizer")
-    parser.add_argument('--data', default='logs/test_test_approach_[611_124].npy', help='logged data filename')
+    parser.add_argument('--data', default='logs/test_crossing-01_[75_1122].npy', help='logged data filename')
                 
     args = parser.parse_args()
 

@@ -63,6 +63,9 @@ class DataLogger():
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
 
+        # obtain study phase
+        self.study_phase = rospy.get_param('study_phase')
+
     # def store_data(self, v_opt_, v_suitable_, v_admissible_, v_goal_, v_current, time_to_goal, time_delta, sim_states):
     def store_data(self, sim_states, time_to_goal):
         
@@ -132,13 +135,16 @@ class DataLogger():
             for i in range(1, prev_num_active_obstacles+1): # to count from 1 to n+1
                 self.x[i].append(self.pedestrians_list[i-1].x)
                 self.y[i].append(self.pedestrians_list[i-1].y)
+                self.v[i].append(self.pedestrians_list[i-1].v)
             # add new pedestrian/group trajectories for newly detected pedestrians/groups
             #   set previous position values to zero
             for j in range(self.num_active_obstacles - prev_num_active_obstacles):
                 x_data = [0.0] * len(self.x[0]) + [ self.pedestrians_list[j+prev_num_active_obstacles].x ]
                 y_data = [0.0] * len(self.x[0]) + [ self.pedestrians_list[j+prev_num_active_obstacles].y ] 
+                v_data = [0.0, 0.0] * len(self.x[0]) + self.pedestrians_list[j+prev_num_active_obstacles].v
                 self.x.append(x_data)
                 self.y.append(y_data)
+                self.v.append(v_data)
 
             # case #2: check if there has been a decrease in number of pedestrians/groups
         if prev_num_active_obstacles > self.num_active_obstacles:
@@ -146,6 +152,7 @@ class DataLogger():
             for i in range(1, self.num_active_obstacles+1): # to count from 1 to n+1
                 self.x[i].append(self.pedestrians_list[i-1].x)
                 self.y[i].append(self.pedestrians_list[i-1].y)
+                self.v[i].append(self.pedestrians_list[i-1].v)
             # maintain the pedestrian/group trace but set values which would locate it outside the vicinity
             for j in range(prev_num_active_obstacles - self.num_active_obstacles):
                 self.x[j+self.num_active_obstacles+1].append(40.0) # value of 40 is set arbitrarily
@@ -157,7 +164,7 @@ class DataLogger():
             for i in range(1, self.num_active_obstacles + 1): # to count from 1 to n+1
                 self.x[i].append(self.pedestrians_list[i-1].x)
                 self.y[i].append(self.pedestrians_list[i-1].y)
-                # self.v[i].append(self.pedestrians_list[i-1].v[0])
+                self.v[i].append(self.pedestrians_list[i-1].v)
 
         # set time to goal
         self.time_to_goal = time_to_goal
@@ -181,7 +188,7 @@ class DataLogger():
                     str(time_struct.tm_hour) + str(time_struct.tm_min) + ']'
         # filename = self.model_ids[i]+'_'+time_now
         # filename = 'data_'+self.scenario+'_'+time_now
-        filename = self.trial_name+'_'+self.scenario+'_'+time_now
+        filename = self.trial_name+'_'+self.scenario+'_'+self.study_phase+'_'+time_now
 
         if os.path.isdir(self.directory):
             np.save(self.directory+filename+".npy", data)
