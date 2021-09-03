@@ -42,7 +42,8 @@
         <joint name="${prefix}camera_support_joint" type="fixed">
             <parent link="${main_camera_base}"/>
             <child link="${prefix}camera_support"/>
-            <origin xyz="-${0.075-width/2} 0 0.8" rpy="0 0 3.14"/>
+            <!-- <origin xyz="-${0.075-width/2} 0 0.8" rpy="0 0 3.14"/> -->
+            <origin xyz="${0.075-width/2} 0.0 0.8" rpy="0 1.0 0"/> <!-- for downward-facing configuration-->
             <axis xyz="0 0 1"/>
         </joint>
 

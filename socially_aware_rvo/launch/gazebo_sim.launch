@@ -4,14 +4,14 @@
     <arg name="robot_y" default="-5.95" />
     <arg name="robot_z" default="0.0" />
     <arg name="robot_yaw" default="1.55" />
-    <arg name="world_name" default="example.world" />
+    <arg name="world_name" default="$(find socially_aware_rvo)/worlds/debug.world" />
     <arg name="gui" default="true" />
     <arg name="paused" default="true" />
 
     <!-- Load the description for the robot -->
     <arg name="robot_name" default="trina2"/>
     <param name="robot_description" command="$(find xacro)/xacro 
-        $(find sim_robot)/robot/urdf/trina2_base.xacro 
+        $(find sim_robot)/robot/urdf/trina2_base_v2.xacro 
                 ns:=$(arg robot_name) sim:=true --inorder" />
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">

@@ -18,6 +18,7 @@ import numpy as np
 from gazebo_msgs.msg import ModelStates, ModelState
 from geometry_msgs.msg import Twist
 from tf.transformations import euler_from_quaternion
+from nav_msgs.msg import OccupancyGrid
 import time
 
 
@@ -25,7 +26,7 @@ import time
 # Define obstacle class
 #------------------------------------------------------------------------------------
 class ObstacleClass():
-
+    
     # Constructor:
     def __init__(self, obstacle_id):
 
@@ -62,6 +63,10 @@ class ObstacleClass():
         # vel_topic_name = '/' + self.obstacle_id + '/cmd_vel'
         # self.velocity_publisher = rospy.Publisher(vel_topic_name,
         #     Twist, queue_size=1)
+
+        # get initial global cost map
+        self.occ_grid_map = None
+        
 
 
     def update_states(self):
@@ -109,5 +114,36 @@ class ObstacleClass():
         self.prev_time = self.curr_time
 
 
+    def get_map(self):
+        
+        while self.occ_grid_map is None:
+            try:
+                self.occ_grid_map = rospy.wait_for_message('/map', OccupancyGrid, timeout=1)
+            except:
+                pass
+        
+        return self.occ_grid_map
 
 
+
+# --------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
+
+
+class MapClass():
+    
+    # Constructor:
+    def __init__(self):
+        # get initial global cost map
+        self.occ_grid_map = None
+
+    def get_map(self):
+        
+        while self.occ_grid_map is None:
+            try:
+                self.occ_grid_map = rospy.wait_for_message('/map', OccupancyGrid, timeout=1)
+            except:
+                pass
+        
+        return self.occ_grid_map

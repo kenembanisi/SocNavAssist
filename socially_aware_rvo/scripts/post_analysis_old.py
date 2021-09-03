@@ -93,14 +93,12 @@ def DD2point_velocity(vel, agent_theta):
         return vel_point
 
 def calc_ttc(agent_pos, agent_v, agent_theta, pedestrian_pos, pedestrian_v, mode):
-    # check if there is a collision in the horizon for the pedestrian
 
-    # check the inputs
+    # check if there is a collision in the horizon for the pedestrian
     pA = agent_pos
     vA = DD2point_velocity(agent_v, agent_theta)
     pB = pedestrian_pos
-    vB = pedestrian_v if (type(pedestrian_v) is list) else [0.0, 0.0]
-
+    vB = pedestrian_v
 
     # define intrusion mode
     agent_radius = 0.5
@@ -157,46 +155,27 @@ def compute_derivative(val):
 def main(args):
 
     ##################################### ITERATE OVER TRIALS ##############################################
-    log_directory = os.path.dirname(os.path.abspath(__file__))+'/logs/P03/'
+    log_directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
 
     with open(log_directory+"pilot"+'_summary.csv', mode='w') as output:
         
-        dw = csv.DictWriter(output, delimiter='\t', fieldnames=['Condition', 'Path Length (in meters)', 'CHC', 'Time to Complete',
-                     'Avg Minimum Distance', '# Intimate Intrusions', '# Personal Intrusions', '# Social Intrusions'])
+        dw = csv.DictWriter(output, delimiter='\t', fieldnames=['Path Length (in meters)', 'CHC', 'Time to Complete',
+                     'Avg Minimum Distance', '# Intimate Intrusions'])
         dw.writeheader()
         
-        # for r in range(1,5):
-        r = 3
+        for r in range(1,5):
             
-        results_per_condition = {}
+            data_files = []
 
-        participant = "For P0" + str(r)
-        
-        csv_writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        csv_writer.writerow([ participant ])
-        csv_writer.writerow([ '**********', '**********','**********','**********', '**********'])
-
-        conditions = ['MC', 'SNA', 'SNA-VA', 'SNA-VB']
-        
-        for condition in conditions:
+            participant = "For P0" + str(r)
             
-            avg_path_length = []
-            avg_heading_diff_norm = []
-            avg_time_to_complete = []
-            avg_avg_min_dist = []
-            avg_num_intimate = []
-            avg_num_personal = []
-            avg_num_social = []
+            csv_writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            csv_writer.writerow([ participant ])
+            csv_writer.writerow([ '**********', '**********','**********','**********', '**********'])
 
             for filename in os.listdir(log_directory):
-                # check filename
-                if not filename.startswith('P0'):
-                    continue
-
-                # split up filename
-                trial_ID = filename.split('_')
+                if filename.startswith("P0"+str(r)):
             
-                if trial_ID[3] == condition:
                     ########################################### LOAD DATA ##################################################
                     # load stored data
                     # data_filename = args.data
@@ -222,18 +201,15 @@ def main(args):
                     # PATH LENGTH & PATH LENGTH RATIO
                     path_length_list = [ math.sqrt((agent_x[i+1]-agent_x[i])**2 + (agent_y[i+1]-agent_y[i])**2) for i in range(n_frames-1) ]
                     path_length = sum(path_length_list)
-                    avg_path_length.append(path_length)
 
                     # CUMULATIVE HEADING CHANGES
                     # Described by the cumulative heading changes normalized by the trajectory length
                     heading_diff = [ abs(agent_omega[i+1] - agent_omega[i]) for i in range(n_frames-1)]
                     heading_diff_norm = sum(heading_diff) / (n_frames-1)
-                    avg_heading_diff_norm.append(heading_diff_norm)
-
 
                     # TIME TO COMPLETION
-                    completion_time = data[13]
-                    avg_time_to_complete.append(completion_time)
+                    completion_time = data[10]
+
 
                     ######################################## SOCIAL AWARENESS ##############################################
                     # AVG. CLOSEST DISTANCE TO PEDESTRIANS
@@ -241,8 +217,6 @@ def main(args):
                     min_pair_wise_dist = [ min([ dist([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]]) \
                                                             for i in range(num_pedestrians) ]) for j in range(n_frames) ]
                     avg_min_dist = sum(min_pair_wise_dist)/n_frames
-                    avg_avg_min_dist.append(avg_min_dist)
-
                     
                     # PROXEMICS INTRUSIONS
                         # intimate
@@ -251,7 +225,6 @@ def main(args):
                     intimate_int = [ sum([ 1 if (intimate[j+1][i] - intimate[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
                                                             for j in range(n_frames-1) ]
                     num_intimate = sum(intimate_int)
-                    avg_num_intimate.append(num_intimate)
 
                         # personal
                     personal = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "personal") \
@@ -259,7 +232,6 @@ def main(args):
                     personal_int = [ sum([ 1 if (personal[j+1][i] - personal[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
                                                             for j in range(n_frames-1) ]
                     num_personal = sum(personal_int)
-                    avg_num_personal.append(num_personal)
 
                         # social
                     social = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "social") \
@@ -267,19 +239,17 @@ def main(args):
                     social_int = [ sum([ 1 if (social[j+1][i] - social[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
                                                             for j in range(n_frames-1) ]
                     num_social = sum(social_int)
-                    avg_num_social.append(num_social)
-
 
                     # MINIMUM TIME TO INTRUSION (OR COLLISION)
                         # at each timestep, check which pedestrian would lead to a collision
                             # for each potential collision, calculate the time to collision
-                    # min_ttc = [ min([ calc_ttc([agent_x[j], agent_y[j]], [agent_v[j], agent_omega[j]], agent_theta[j], [pedestrian_x[i][j], pedestrian_y[i][j]], \
-                    #                             pedestrian_v[i][j], "collision") for i in range(num_pedestrians) ]) for j in range(n_frames) ]
-                    # tmp = []
-                    # for i in range(n_frames):
-                    #     if min_ttc[i] != 8888:
-                    #         tmp.append(min_ttc[i])
-                    # avg_min_ttc = sum(tmp)/len(tmp)
+                    min_ttc = [ min([ calc_ttc([agent_x[j], agent_y[j]], [agent_v[j], agent_omega[j]], agent_theta[j], [pedestrian_x[i][j], pedestrian_y[i][j]], \
+                                                pedestrian_v[i][j], "collision") for i in range(num_pedestrians) ]) for j in range(n_frames) ]
+                    tmp = []
+                    for i in range(n_frames):
+                        if min_ttc[i] != 8888:
+                            tmp.append(min_ttc[i])
+                    avg_min_ttc = sum(tmp)/len(tmp)
 
 
                     ######################################## MOTION QUALITY ##############################################
@@ -302,44 +272,28 @@ def main(args):
                     avg_angular_jerk = sum(angular_jerk)/len(angular_jerk)
 
 
-            #####################################################################################################
+                    #####################################################################################################
 
-            results_per_condition['avg_path_length'] = sum(avg_path_length)/len(avg_path_length)
-            results_per_condition['avg_heading_diff_norm'] = sum(avg_heading_diff_norm)/len(avg_heading_diff_norm)
-            results_per_condition['avg_time_to_complete'] = sum(avg_time_to_complete)/len(avg_time_to_complete)
-            results_per_condition['avg_min_distance'] = sum(avg_avg_min_dist)/len(avg_avg_min_dist)
-            results_per_condition['total_num_intimate'] = sum(avg_num_intimate)
-            results_per_condition['total_num_personal'] = sum(avg_num_personal)
-            results_per_condition['total_num_social'] = sum(avg_num_social)
+                    print(
+                        "----------------- Path Quality ---------------- \n" +
+                        "Path length (m): " + str(round(path_length, 2)) + "\n" +
+                        "Path roughness(smoothness): " + str(round(heading_diff_norm, 4)) + "\n" +
+                        "Time to complete (secs): " + str(round(completion_time, 2)) + "\n \n" +
+                        "----------------- Social Awareness -------------- \n" +
+                        "Avg. clearance to pedestrians (m): " + str(round(avg_min_dist, 2)) + "\n" +
+                        "Number of intrusions (int | pers | soc): " + str(num_intimate) + " | " + str(num_personal) + " | " + str(num_social) + "\n" +
+                        "Avg. min TTC (secs): " + str(round(avg_min_ttc, 2)) + "\n"
+                        "----------------- Motion Quality -------------- \n" +
+                        "Avg. linear (speed, acc, jerk): " + str(round(avg_linear_speed, 4)) + " | " + str(round(avg_linear_acc, 4)) + " | " + str(round(avg_linear_jerk, 4)) + "\n" +
+                        "Avg. angular (speed, acc, jerk): " + str(round(avg_angular_speed, 4)) + " | " + str(round(avg_angular_acc, 4)) + " | " + str(round(avg_angular_jerk, 4)) + "\n"
+                    )
 
-            #####################################################################################################
+                    ######################################## WRITE IN CSV FILE ##########################################
 
-            print(
-                "----------------- Path Quality ---------------- \n" +
-                "Path length (m): " + str(round(results_per_condition['avg_path_length'], 2)) + "\n" +
-                "Path roughness(smoothness): " + str(round(results_per_condition['avg_heading_diff_norm'], 4)) + "\n" +
-                # "Time to complete (secs): " + str(round(completion_time, 2)) + "\n \n" +
-                "----------------- Social Awareness -------------- \n" +
-                "Avg. clearance to pedestrians (m): " + str(round(results_per_condition['avg_min_distance'], 2)) + "\n" +
-                "Number of intrusions (int | pers | soc): " + str(round(results_per_condition['total_num_intimate'], 2)) + " | " \
-                        + str(round(results_per_condition['total_num_personal'], 2)) + " | " \
-                        + str(round(results_per_condition['total_num_social'], 2)) + "\n"
-                # "Avg. min TTC (secs): " + str(round(avg_min_ttc, 2)) + "\n"
-                # "----------------- Motion Quality -------------- \n" +
-                # "Avg. linear (speed, acc, jerk): " + str(round(avg_linear_speed, 4)) + " | " + str(round(avg_linear_acc, 4)) + " | " + str(round(avg_linear_jerk, 4)) + "\n" +
-                # "Avg. angular (speed, acc, jerk): " + str(round(avg_angular_speed, 4)) + " | " + str(round(avg_angular_acc, 4)) + " | " + str(round(avg_angular_jerk, 4)) + "\n"
-            )
-
-            ######################################## WRITE IN CSV FILE ##########################################
-
-            # csv_writer.writerow([ round(path_length, 2), round(heading_diff_norm, 4), round(completion_time, 2), 
-            #                     round(avg_min_dist, 2), num_intimate])
-            csv_writer.writerow([ condition, round(results_per_condition['avg_path_length'], 2), round(results_per_condition['avg_heading_diff_norm'], 4),
-                                round(results_per_condition['avg_time_to_complete'], 2),
-                                round(results_per_condition['avg_min_distance'], 2), round(results_per_condition['total_num_intimate'], 2), 
-                                round(results_per_condition['total_num_personal'], 2), round(results_per_condition['total_num_social'], 2) ])
-        
-        
+                    csv_writer.writerow([ round(path_length, 2), round(heading_diff_norm, 4), round(completion_time, 2), 
+                                        round(avg_min_dist, 2), num_intimate])
+                    
+                    
 
         
 

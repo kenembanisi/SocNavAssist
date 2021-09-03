@@ -470,6 +470,25 @@ class VisualInterface
                     cv::Scalar( 195, 195, 195, 0.4 ), cv::FILLED);
     }
 
+    void drawRobotFootprint(){
+
+        // temp:
+        cv::Point p1(650, 800), p2(1050, 800), p3(800, 600), p4(900, 600);
+        int thickness = 3;
+
+        cv::line(this->fwd_img_ptr->image, 
+                 p1, p3, cv::Scalar(255, 0, 0),
+                 thickness, cv::LINE_8);
+
+        cv::line(this->fwd_img_ptr->image, 
+                 p2, p4, cv::Scalar(255, 0, 0),
+                 thickness, cv::LINE_8);
+
+        cv::line(this->fwd_img_ptr->image, 
+                 p3, p4, cv::Scalar(255, 0, 0),
+                 thickness, cv::LINE_8);
+    }
+
     void displayVisual() 
     {
         // retrieve the start_timer & rear view bool state
@@ -481,6 +500,9 @@ class VisualInterface
 
             // draw top down map
             // this->drawTopViewMap();
+
+            // draw robot boundaries
+            this->drawRobotFootprint();
 
             // draw the scenario title
             this->drawScenarioTitle();

@@ -1,0 +1,26 @@
+<launch>
+  
+  <!-- Arguments -->
+  <arg name="set_base_frame" default="base_link"/>
+  <!-- <arg name="set_odom_frame" default="/base_controller/odom"/> -->
+  <arg name="set_odom_frame" default="odom"/>
+  <arg name="set_map_frame"  default="map"/>
+
+  <!-- slam_karto -->
+  <!-- <node pkg="slam_karto" type="slam_karto" name="slam_karto" output="screen">
+    <remap from="scan" to="base_scan" />
+  </node> -->
+
+  <!-- Gmapping -->
+  <node pkg="gmapping" type="slam_gmapping" name="build_map" output="screen">
+    <param name="base_frame" value="$(arg set_base_frame)"/>
+    <param name="odom_frame" value="$(arg set_odom_frame)"/>
+    <param name="map_frame"  value="$(arg set_map_frame)"/>
+    <rosparam command="load" file="$(find socially_aware_rvo)/config/gmapping_params.yaml" />
+    <remap from="scan" to="base_scan" />
+  </node>
+ 
+  <!-- RViz -->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find socially_aware_rvo)/rviz/mapping.rviz" />
+
+</launch>

@@ -62,8 +62,8 @@ class FalconNovintControl():
         self.max_angular_vel = 1.5
 
         # control mode (i.e. car-like control, pos-vel control, pos-vel-buffer control)
-        # self.manual_mode = args[1]
-        self.manual_mode = rospy.get_param("/manual_mode")
+        self.manual_mode = 'pos-vel'
+        # self.manual_mode = rospy.get_param("/manual_mode")
 
         # instantiate the node
         rospy.init_node('falcon_teleop_control')

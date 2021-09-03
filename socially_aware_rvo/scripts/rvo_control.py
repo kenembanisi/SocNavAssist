@@ -39,7 +39,7 @@ class RvoControl():
 
     """
     
-    def __init__(self, agent, pedestrians, D=0, tau=0):
+    def __init__(self, agent, pedestrians, static_map, D=0, tau=0):
         """
         Constructor
 
@@ -68,6 +68,8 @@ class RvoControl():
         #     self.obstacle_radius.append(self.active_obstacle_dict[i].bounding_radius)
 
         self.pedestrians = pedestrians
+
+        self.static_map = static_map
 
         self.prev_V_opt_point = [0.0, 0.0]
 
@@ -137,6 +139,12 @@ class RvoControl():
         ### forward simulation
         # if self.num_obstacles > 0:
         #     self.compute_future_states()
+
+        map = self.static_map.get_map()
+
+        if map != None:
+            rospy.loginfo("size: %f", len(map.data))
+
 
         ###
 
