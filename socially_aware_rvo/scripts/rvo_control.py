@@ -2,9 +2,7 @@
 
 """
 rvo_control.py
-
 Describes the reciprocal velocity obstacle implementation class.
-
 """
 
 #------------------------------------------------------------------------------------
@@ -36,13 +34,11 @@ class SimulationStates():
 class RvoControl():
     """
     Class defining the RVO control. 
-
     """
     
-    def __init__(self, agent, pedestrians, static_map, D=0, tau=0):
+    def __init__(self, agent, pedestrians, D=0, tau=0):
         """
         Constructor
-
         Arguments:
             - agent (object): the instantiated vehicleClass object
             - active_obstacle_dict (dict): dict containing instantiated obstacleClass objects for
@@ -68,8 +64,6 @@ class RvoControl():
         #     self.obstacle_radius.append(self.active_obstacle_dict[i].bounding_radius)
 
         self.pedestrians = pedestrians
-
-        self.static_map = static_map
 
         self.prev_V_opt_point = [0.0, 0.0]
 
@@ -139,12 +133,6 @@ class RvoControl():
         ### forward simulation
         # if self.num_obstacles > 0:
         #     self.compute_future_states()
-
-        map = self.static_map.get_map()
-
-        if map != None:
-            rospy.loginfo("size: %f", len(map.data))
-
 
         ###
 
@@ -459,7 +447,6 @@ class RvoControl():
         """
         Checks if the candidate velocity vector has a magnitude above the minimum value for
         an imminent collision based on the time horizon
-
         Arguments:
             - vAB (list): relative velocity vector of agent A and obstacle B
             - dist_BA (float): magniude of vector pAB, i.e. pA - pB
@@ -508,7 +495,6 @@ class RvoControl():
         """
         This function returns a vector based on the current robot heading and
         (1) max_linear_velocity, or (2) the operator's inputted linear velocity
-
         Arguments: None
         Returns:
             - v_operator (list)
@@ -551,12 +537,10 @@ class RvoControl():
     def reach_goal(self, pose1, pose2, bound=1):
         """
         Checks if two positions are very close (i.e. distance below a bound)
-
         Arguments:
             - pose1 & pose2 (list, [px, py])
             - bound (float): distance tolerance to classify closeness
         Returns (bool)
-
         Credit:
             Adapted from Meng's code - https://github.com/MengGuo/RVO_Py_MAS
         """
@@ -666,7 +650,6 @@ class RvoControl():
         """
         Computes the admissible range of velocity headings given the current heading and
         the maximum angular velocity
-
         Arguments: None
         Returns: phi_range = [phi_min, phi_max]
         """
@@ -725,9 +708,9 @@ class RvoControl():
             heading_delta = 0.0
 
             # in case v_commanded[1] < 0.0, i.e. robot is moving backwards, use agent heading
-        elif self.sim_states.v_commanded[1] <= 0.0:
-            # operator_theta = self.agent_theta
-            heading_delta = 0.0
+        # elif self.sim_states.v_commanded[1] <= 0.0:
+        #     # operator_theta = self.agent_theta
+        #     heading_delta = 0.0
         
         else:
             heading_delta = math.fmod(optimal_theta - operator_theta, 2*math.pi)
@@ -1057,4 +1040,3 @@ class RvoControl():
             collision_free = True
 
         return collision_free
-    

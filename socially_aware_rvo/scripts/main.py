@@ -2,10 +2,7 @@
 
 """
 main_control.py
-
 [...]
-
-
 """
 
 
@@ -21,7 +18,6 @@ from agent import AgentClass
 from rvo_control import RvoControl
 from data_logger import DataLogger
 from pedestrians import PedestriansClass
-from obstacles import MapClass
 
 #####################################################################################
 # run function
@@ -47,13 +43,12 @@ def run(args):
 
     ######################### Define pedestrians as obstacles #######################
     pedestrians = PedestriansClass()
-    static_map = MapClass()
 
 
     ################ Initiate RVO controller for agent & obstacle set ###############
     D = 0.2 # radius extension for differential drive condition
     tau = float(rospy.get_param("rvo_planning_horizon"))
-    rvo_agent = RvoControl(agent, pedestrians, static_map, D=D, tau=tau)
+    rvo_agent = RvoControl(agent, pedestrians, D=D, tau=tau)
 
 
     ################ Initialize data logger (for active objects only) ###############
@@ -145,6 +140,3 @@ if __name__ == "__main__":
 
     finally:
         pass
-        
-
-
