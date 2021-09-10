@@ -36,7 +36,8 @@ class RvoControl():
     Class defining the RVO control. 
     """
     
-    def __init__(self, agent, pedestrians, D=0, tau=0):
+    # def __init__(self, agent, pedestrians, D=0, tau=0):
+    def __init__(self, agent, pedestrians, static_map, D=0, tau=0):
         """
         Constructor
         Arguments:
@@ -64,6 +65,7 @@ class RvoControl():
         #     self.obstacle_radius.append(self.active_obstacle_dict[i].bounding_radius)
 
         self.pedestrians = pedestrians
+        self.static_map = static_map.get_map()
 
         self.prev_V_opt_point = [0.0, 0.0]
 
@@ -192,6 +194,7 @@ class RvoControl():
 
         # compute the heading_delta between current heading and optimal heading
         heading_delta = self.compute_heading_delta(V_opt_point)
+        control_delta = self.compute_control_delta(V_opt_point)
 
         V_opt_DD = [0, 0] 
 
@@ -218,7 +221,8 @@ class RvoControl():
         self.sim_states.v_goal = self.agent_vel
         
 
-        return V_opt, V_suitable, V_admissible, heading_delta, self.dt
+        # return V_opt, V_suitable, V_admissible, heading_delta, self.dt
+        return V_opt, V_suitable, V_admissible, heading_delta, control_delta, self.dt
 
     def check_intersection(self, pA, vA, RVO_all):
         """
@@ -276,6 +280,7 @@ class RvoControl():
 
                 if self.num_obstacles > 0:
                     admissible = self.static_collision_check(candidate_v)
+                    # admissible = self.static_map_based_collision_check(candidate_v)
 
                     if not admissible: # if not admissible, skip the candidate velocity
                         n_not_admissible += 1
@@ -719,6 +724,26 @@ class RvoControl():
 
         return heading_delta
 
+    def compute_control_delta(self, v_opt):
+        """
+        Computes the 2D (x,y) difference between operator's commanded control velocity and the optimal control
+        velocity defined by rvo.
+        Arguments:
+            - 
+        Returns: 
+            - control_delta
+        """
+
+        control_delta = [0.0, 0.0]
+        # control_delta[0] = v_opt[0] - self.sim_states.v_commanded[0]
+        # control_delta[1] = v_opt[1] - self.sim_states.v_commanded[1]
+        control_delta[0] = self.sim_states.v_commanded[0] - v_opt[0]
+        control_delta[1] = self.sim_states.v_commanded[1] - v_opt[1]
+
+        # rospy.loginfo("control_delta is: [%f, %f]", control_delta[0], control_delta[1])
+
+        return control_delta
+
     def get_goal_velocity(self):
         """
         Gets the agent goal/desired velocity, i.e. velocity towards the agent goal.
@@ -1040,3 +1065,132 @@ class RvoControl():
             collision_free = True
 
         return collision_free
+
+    def static_map_based_collision_check(self, vel):
+        """
+        Checks if the velocity sampled would collide with static features in the environment
+        based on the static map
+        Arguments: vel
+        Returns: bool
+        """
+
+        if self.static_map == None:
+            rospy.logerr("No static map received!")
+        else:
+            rospy.loginfo_once("Available map size: %f", len(self.static_map.data))
+
+        collision_free = True
+        horizon = 2.5
+
+        # STEP 1: obtain future position state
+        future_state_gazebo = np.array([0, 0])
+            # ---
+        future_state_gazebo[0] = self.agent.x + vel[0] * horizon 
+        future_state_gazebo[1] = self.agent.y + vel[1] * horizon
+            # NB: use the true position (self.agent.x) instead of augmented position self.agent_pos
+            # future_state_gazebo[0] = self.agent_pos[0] + vel[0] * horizon
+            # future_state_gazebo[1] = self.agent_pos[1] + vel[1] * horizon
+
+        # STEP 2: convert position state from the gazebo frame to the map frame
+        yaw = -90 * math.pi/180
+        # R = [cos(yaw)  -sin(yaw)
+        #      sin(yaw)   cos(yaw)]
+        map_to_gazebo_rot_matrix = np.array([[math.cos(yaw), -math.sin(yaw)],
+                                            [math.sin(yaw), math.cos(yaw)]])
+        map_to_gazebo_position = np.array([9.55, -6.31])
+            # ---
+        future_state_map = map_to_gazebo_rot_matrix.dot(future_state_gazebo) + map_to_gazebo_position
+
+        # STEP 3: convert from 2D pose in map frame to pixel frame
+        cell_pos = self.map_to_pixel(future_state_map)
+
+        # ------------------------------------------------------------------------------------------------
+        # TESTING!
+        # ------------------------------------------------------------------------------------------------
+        # X = np.array([ self.agent.x, self.agent.y ])
+        # future_state_map = map_to_gazebo_rot_matrix.dot(X) + map_to_gazebo_position
+        # cell_pos = self.map_to_pixel(future_state_map)
+
+        # rospy.loginfo_throttle(1.5, "Gazebo: [ %f, %f ]", X[0], X[1])
+        # rospy.loginfo_throttle(1.5, "Map: [ %f, %f ]", future_state_map[0], future_state_map[1])
+        # rospy.loginfo_throttle(1.5, "Cell position: [ %d, %d ]", cell_pos[0], cell_pos[1])
+        # ------------------------------------------------------------------------------------------------
+    
+        # STEP 4: check for collision
+            # robot radius in cells
+        inflation_radius = 0.2
+        radius_in_cells = inflation_radius / self.static_map.info.resolution # use 0.25 instead of set radius
+            # get cell position for N->E->S->W
+        surrounding_cells = [ cell_pos,     # include the actual robot center cell
+                              [ cell_pos[0] + radius_in_cells, cell_pos[1] ],
+                              [ cell_pos[0] - radius_in_cells, cell_pos[1] ],
+                              [ cell_pos[0], cell_pos[1] + radius_in_cells ],
+                              [ cell_pos[0], cell_pos[1] - radius_in_cells ],
+                              [ cell_pos[0] + radius_in_cells*0.75, cell_pos[1] + radius_in_cells*0.75 ],
+                              [ cell_pos[0] - radius_in_cells*0.75, cell_pos[1] + radius_in_cells*0.75 ],
+                              [ cell_pos[0] + radius_in_cells*0.75, cell_pos[1] - radius_in_cells*0.75 ],
+                              [ cell_pos[0] - radius_in_cells*0.75, cell_pos[1] - radius_in_cells*0.75 ] ]
+            # Tuning: 0.75 instead of 0.5
+
+        # rospy.loginfo_throttle(1.5, "Cell position: [ %d, %d ]", cell_pos[0], cell_pos[1])
+
+            # check each costmap value for each surrounding cell
+        agent_obstacle_cost = []
+        try:
+            for i in range(0, len(surrounding_cells)):
+                cell_cost = self.static_map.data[self.get_cell_index(surrounding_cells[i])]
+                if cell_cost == 100:
+                    collision_free = False
+                    # rospy.loginfo_throttle(1, "Collision in [%d]", i)
+                    # return collision_free
+        except IndexError as e:
+            rospy.logerr("Index Error is: [%d] at cell [%d, %d]", self.get_cell_index(surrounding_cells[i]), cell_pos[0], cell_pos[1])
+
+
+        # ------------------------------------------------------------------------------------------------
+        # TESTING!
+        # ------------------------------------------------------------------------------------------------
+        # if cell_cost == 100:
+        #     collision_free = False
+        #     rospy.loginfo_throttle(1.5, "Collision!!! at cell [%d, %d] with index [%d], cost [%d]", 
+        #                         cell_pos[0], cell_pos[1], self.get_cell_index(cell_pos), cell_cost)
+        #     return collision_free
+        # ------------------------------------------------------------------------------------------------
+
+        #TODO: Index error when get_cell_index returns a value outside the mapsize
+        #TODO: Further troubleshooting is required for how admissible velocities are evaluated. I observed that
+               # in SNA-VA mode, we weren't getting much collision free trajectory suggestions. 
+
+
+
+
+        return collision_free
+
+    def map_to_pixel(self, pos):
+
+        map_resolution = self.static_map.info.resolution
+        map_origin_x = self.static_map.info.origin.position.x
+        map_origin_y = self.static_map.info.origin.position.y
+
+        cell_pos = [0,0]
+        cell_pos[0] = int((pos[0] - map_origin_x) / map_resolution)
+        cell_pos[1] = int((pos[1] - map_origin_y) / map_resolution)
+        
+        # if pos[0] < map_origin_x:
+        #     cell_pos[0] = 0
+        # elif (pos[0] >= map_resolution * self.static_map.info.width + map_origin_x):
+        #     cell_pos[0] = self.static_map.info.width - 1
+        # else:
+        #     cell_pos[0] = int((pos[0] - map_origin_x) / map_resolution)
+
+        # if pos[1] < map_origin_y:
+        #     cell_pos[1] = 0
+        # elif (pos[1] >= map_resolution * self.static_map.info.height + map_origin_y):
+        #     cell_pos[1] = self.static_map.info.height - 1
+        # else:
+        #     cell_pos[1] = int((pos[1] - map_origin_y) / map_resolution)
+
+        return cell_pos
+
+    def get_cell_index(self, cell_pos):
+        return int(cell_pos[1]) * self.static_map.info.width + int(cell_pos[0])

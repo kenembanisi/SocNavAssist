@@ -75,6 +75,10 @@ class AgentClass():
         self.heading_delta_publisher = rospy.Publisher('/heading_delta', 
                             Float32, queue_size=1)
 
+            # publisher for control_delta data
+        self.control_delta_publisher = rospy.Publisher('/control_delta', 
+                            Float64MultiArray, queue_size=1)
+
 
     def update_pos_states_callback(self, data):
         """
@@ -218,3 +222,12 @@ class AgentClass():
 
         # Publish array data
         self.heading_delta_publisher.publish(heading_delta)
+
+    def publish_control_delta(self, control_delta):
+
+        # Instantiate Float64MultiArray
+        self.array = Float64MultiArray()
+        self.array.data = [control_delta[0], control_delta[1]]
+
+        # Publish array data
+        self.control_delta_publisher.publish(self.array)

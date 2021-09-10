@@ -17,20 +17,22 @@
 
     <!-- Set scenario details-->
     <arg name="scenario" default="static_crowd" />
-    <arg name="num_pedestrians" default="5" />
+    <arg name="debug_bars" default="false" />
     <arg name="trial_name" default="test" />
+    <arg name="phase" default="test" />
     <param name="scenario" value="$(arg scenario)" />
-    <param name="num_pedestrians" value="$(arg num_pedestrians)" />
     <param name="trial_name" value="$(arg trial_name)" />
+    <param name="debug_bars" value="$(arg debug_bars)" />
+    <param name="study_phase" value="$(arg phase)" />
 
     <!-- Start timer bool flag -->
     <param name="start_timer" value="false" />
 
     <!-- Set control and manual mode -->
-    <arg name="control_mode" default="manual" />
+    <arg name="trial_condition" default="MC" />
     <arg name="manual_mode" default="pos-vel" />
     <arg name="rvo_planning_horizon" default="4" />
-    <param name="control_mode" value="$(arg control_mode)" />
+    <param name="trial_condition" value="$(arg trial_condition)" />
     <param name="manual_mode" value="$(arg manual_mode)" />
     <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
 
@@ -86,12 +88,16 @@
 
     <!-- serve up a map -->
     <arg name="map_file" default="$(find socially_aware_rvo)/maps/static-crowd-global-map.yaml" />
+    <!-- <arg name="map_file" default="$(find socially_aware_rvo)/maps/static-crowd.yaml" /> -->
     
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
     <!-- Place map frame at odometry frame -->
     <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster"
       args="0 0 0 0 0 0 map odom 100"/>
+
+    <!-- Launch Rviz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find socially_aware_rvo)/rviz/mapping.rviz" />
     
 
 </launch>

@@ -1,4 +1,4 @@
-image: /home/kenembanisi/research_ws/src/SocNavAssist/socially_aware_rvo/maps/static-crowd-global-map.pgm
+image: /home/kenembanisi/workspaces/research_ws/src/SocNavAssist/socially_aware_rvo/maps/static-crowd-global-map.pgm
 resolution: 0.050000
 # origin: [-9.55, -6.31, 0.000000]
 origin: [-10.0, -10.0, 0.000000]

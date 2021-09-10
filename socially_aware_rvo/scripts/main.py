@@ -18,6 +18,7 @@ from agent import AgentClass
 from rvo_control import RvoControl
 from data_logger import DataLogger
 from pedestrians import PedestriansClass
+from obstacles import MapClass
 
 #####################################################################################
 # run function
@@ -43,12 +44,14 @@ def run(args):
 
     ######################### Define pedestrians as obstacles #######################
     pedestrians = PedestriansClass()
+    static_map = MapClass()
 
 
     ################ Initiate RVO controller for agent & obstacle set ###############
     D = 0.2 # radius extension for differential drive condition
     tau = float(rospy.get_param("rvo_planning_horizon"))
-    rvo_agent = RvoControl(agent, pedestrians, D=D, tau=tau)
+    # rvo_agent = RvoControl(agent, pedestrians, D=D, tau=tau)
+    rvo_agent = RvoControl(agent, pedestrians, static_map, D=D, tau=tau)
 
 
     ################ Initialize data logger (for active objects only) ###############
@@ -80,7 +83,8 @@ def run(args):
         # Update simulation -------------------------------------------------------
         alpha = 1 # collision avoidance responsibility, 1 means the agent 
                   # takes full responsibility
-        v_opt, v_suitable, v_admissible, heading_delta, delta_t = rvo_agent.compute_V_opt(goal, alpha=alpha)
+        # v_opt, v_suitable, v_admissible, heading_delta, delta_t = rvo_agent.compute_V_opt(goal, alpha=alpha)
+        v_opt, v_suitable, v_admissible, heading_delta, control_delta, delta_t = rvo_agent.compute_V_opt(goal, alpha=alpha)
         # -------------------------------------------------------------------------
 
         # check goal reached ------------------------------------------------------
@@ -99,6 +103,7 @@ def run(args):
         # publish heading_delta ---------------------------------------------------
         agent.publish_heading_delta(heading_delta) # this is for shared control in manual
                                                    # control mode
+        agent.publish_control_delta(control_delta)
 
         # publish optimal velocity data -------------------------------------------
         agent.publish_optimal_vel_data(v_opt[2]) # puclishing the unconstrained vel (v_opt_dd)
