@@ -7,6 +7,7 @@
 #include "tf/tf.h"
 #include "sensor_msgs/Joy.h"
 #include "std_msgs/Float32.h"
+#include "std_msgs/Float64MultiArray.h"
 
 
 #define PI 3.142
@@ -66,12 +67,17 @@ class FalconNovintControl
         float max_angular_vel_;
 
         // force variable
-        float Ks_ = 3.0f; // 20
-        float Kf_ = 1.20f; // 0.75
+        float Ks_ = 12.0f; // 20
+        // float Ks_ = 20.0f;
+        // float Kf_ = 0.8f; // 0.75 or 1.20
+        // float Kf_ = 1.2f;
+        float Kf_x_ = 1.2f;
+        float Kf_z_ = 0.5f;
         ros_falcon::falconForces force_fbk_;
         std::vector<float> centering_force_ = {0,0,0} ;
         std::vector<float> guidance_force_ = {0,0,0} ;
         float heading_delta_ = 0.0f;
+        std::vector<float> control_delta_ = {0.0f,0.0f} ;
 
         // ros publishers and subscribers
         ros::Subscriber odom_subscriber_;
@@ -79,6 +85,7 @@ class FalconNovintControl
         ros::Subscriber falcon_joy_subscriber_;
         ros::Publisher force_publisher_;
         ros::Subscriber heading_delta_subscriber_;
+        ros::Subscriber control_delta_subscriber_;
 
         // ros services
         ros::ServiceClient unpause_sim_;
@@ -105,6 +112,8 @@ class FalconNovintControl
         void falconCallback(const sensor_msgs::Joy::ConstPtr& falcon_data);
 
         void headingdeltaCallback(const std_msgs::Float32& heading_delta);
+
+        void controldeltaCallback(const std_msgs::Float64MultiArray& control_delta);
         
         // Compute functions
 

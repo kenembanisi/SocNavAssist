@@ -24,8 +24,11 @@ FalconNovintControl::FalconNovintControl(ros::NodeHandle &nh) : nh_(nh){
     // initialize joystick subscriber
     falcon_joy_subscriber_ = nh_.subscribe("/falcon/joystick", 5, &FalconNovintControl::falconCallback, this);
 
-    // initialize joystick subscriber
+    // initialize heading_delta subscriber
     heading_delta_subscriber_ = nh_.subscribe("/heading_delta", 5, &FalconNovintControl::headingdeltaCallback, this);
+
+    // initialize control_delta subscriber
+    control_delta_subscriber_ = nh_.subscribe("/control_delta", 5, &FalconNovintControl::controldeltaCallback, this);
 
     // initialize force publisher
     force_publisher_ = nh_.advertise<ros_falcon::falconForces>("/falconForce", 5);
@@ -79,6 +82,16 @@ void FalconNovintControl::headingdeltaCallback(const std_msgs::Float32& heading_
     // clip the value of heading delta
     heading_delta_ = (abs(heading_delta_) > PI) ? 0.0f : heading_delta_;
 }
+
+void FalconNovintControl::controldeltaCallback(const std_msgs::Float64MultiArray& control_delta)
+{   
+    control_delta_[0] = control_delta.data[0];
+    control_delta_[1] = control_delta.data[1];
+
+    // // clip the value of heading delta
+    // heading_delta_ = (abs(heading_delta_) > PI) ? 0.0f : heading_delta_;
+}
+
 
 // Compute functions
 
@@ -201,9 +214,13 @@ void FalconNovintControl::commandForce()
         
         if (force_enabled_){
             // compute the guidance forces
-            this->guidance_force_[0] = this->Kf_ * -this->heading_delta_;
+            // this->guidance_force_[0] = this->Kf_ * -this->heading_delta_;
             // this->guidance_force_[0] = 0.1;
             // ROS_INFO("Heading delta: [ %f ]", this->heading_delta_);
+
+            this->guidance_force_[0] = -this->Kf_x_ * this->control_delta_[0];
+            this->guidance_force_[2] = -this->Kf_z_ * this->control_delta_[1];
+            // ROS_INFO("Control delta: [ %f, %f ]", this->control_delta_[0], this->control_delta_[1]);
         }
         else {
             // compute centering force using f = K*(distance to center)
