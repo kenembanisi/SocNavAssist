@@ -34,17 +34,17 @@ struct RobotConfig {
 
 // struct for robot state
 struct RobotState {
-    float x;        // m
-    float y;        // m
-    float z;        // m
-    float theta;    // rad
+    float x=0.0f;        // m
+    float y=0.0f;        // m
+    float z=0.0f;        // m
+    float theta=0.0f;    // rad
 };
 
 
 // struct for control
 struct Control {
-    float v;  // m/s
-    float w;  // rad/s
+    float v=0.0f;  // m/s
+    float w=0.0f;  // rad/s
 };
 
 

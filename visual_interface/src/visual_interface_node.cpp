@@ -70,6 +70,8 @@ class VisualInterface
     bool show_debug_bars = false;
     int proxemics_state_[2];
     std::string trial_condition;
+    std::string trial_condition_name;
+    std::string trial_number;
     visual_interface::trajectory user_pred_traj_;
     visual_interface::trajectory optimal_pred_traj_;
     int pred_trajectory_size_;
@@ -109,7 +111,32 @@ class VisualInterface
         nh_.getParam("base_controller/angular/z/max_velocity", this->max_angular_vel);
         nh_.getParam("base_controller/angular/z/min_velocity", this->min_angular_vel);
         nh_.getParam("toggle_rear_camera", this->show_rearview);
+        nh_.getParam("trial_number", this->trial_number);
         nh_.getParam("trial_condition", this->trial_condition);
+
+        // Set the trial condition
+        // switch(this->trial_condition) 
+        // {
+        //     case "MC":
+        //         this->trial_condition_name = "MC";
+        //         break;
+        //     case "H":
+        //         this->trial_condition_name = "Haptic";
+        //         break;
+        //     case "V-T":
+        //         this->trial_condition_name = "Visual (Traj)";
+        //         break;
+        //     case "V-B":
+        //         this->trial_condition_name = "Visual (Bars)";
+        //         break;
+        //     case "HV-B":
+        //         this->trial_condition_name = "Haptic + Visual (Bars)";
+        //         break;
+        //     case "HV-T":
+        //         this->trial_condition_name = "Haptic + Visual (Traj)";  
+        //         break; 
+        // }
+
 
         cv::namedWindow(OPENCV_WINDOW);
 
@@ -223,21 +250,30 @@ class VisualInterface
     void headingDeltaCb( const std_msgs::Float32& msg){
         heading_delta_ = msg.data;
 
-        if (std::abs(heading_delta_) > 0.1) {
-            if (heading_delta_ <= 0.0)  {
-                // right angular velocity
-                this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1 - (OPTIMAL_RIGHT_BASE_VERTEX_X2 - OPTIMAL_RIGHT_BASE_VERTEX_X1) * (heading_delta_/1.732); 
-                this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
-                // ROS_INFO("Angular pixel value to the right is %d ", this->optimal_angular_vel_right);
-                }
+        if (operator_vel_[0] > 0.0) 
+        {
+            if (std::abs(heading_delta_) > 0.1) 
+            {
+                if (heading_delta_ <= 0.0)  
+                {
+                    // right angular velocity
+                    this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1 - (OPTIMAL_RIGHT_BASE_VERTEX_X2 - OPTIMAL_RIGHT_BASE_VERTEX_X1) * (heading_delta_/1.732); 
+                    this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
+                    // ROS_INFO("Angular pixel value to the right is %d ", this->optimal_angular_vel_right);
+                    }
 
-            else { 
-                // left angular velocity
-                this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2 - (OPTIMAL_LEFT_BASE_VERTEX_X2 - OPTIMAL_LEFT_BASE_VERTEX_X1) * (heading_delta_/1.732); 
+                else { 
+                    // left angular velocity
+                    this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2 - (OPTIMAL_LEFT_BASE_VERTEX_X2 - OPTIMAL_LEFT_BASE_VERTEX_X1) * (heading_delta_/1.732); 
+                    this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1; 
+                    // ROS_INFO("Angular pixel value to the left is %d ", this->optimal_angular_vel_left);
+                    };    
+                }
+            else {
                 this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1; 
-                // ROS_INFO("Angular pixel value to the left is %d ", this->optimal_angular_vel_left);
-                };    
+                this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
             }
+        }
         else {
             this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1; 
             this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
@@ -354,7 +390,14 @@ class VisualInterface
     void drawScenarioTitle() {
 
         // display scenario title
-        cv::putText(this->fwd_img_ptr->image, this->trial_condition, cv::Point(100, 65), cv::FONT_HERSHEY_DUPLEX, 2, cv::Scalar( 0, 0, 0 ), 2, false);
+        cv::putText(this->fwd_img_ptr->image, this->trial_condition, cv::Point(100, 65), 
+                            cv::FONT_HERSHEY_DUPLEX, 1.7, 
+                            cv::Scalar( 0, 0, 0 ), 2, false);
+
+        // display trial number
+        cv::putText(this->fwd_img_ptr->image, this->trial_number, cv::Point(800, 65), 
+                            cv::FONT_HERSHEY_DUPLEX, 1.7, 
+                            cv::Scalar( 0, 0, 0 ), 2, false);
     }
 
     void drawSideIndicators() {
@@ -400,19 +443,21 @@ class VisualInterface
 
         if (operator_vel_[0] > 0.0) {   // show trajectories only if linear velocity is +ve
         // float x = 5.0f, y = 0.f;
-            for (int i = 0; i < pred_trajectory_size_; ++i) {
-                
-                float threshold = 0.05; // formerly 0.1
+            for (int i = 0; i < pred_trajectory_size_; ++i) 
+            {  
+                float threshold = 0.035; // formerly 0.1 and 0.05
 
-                if (this->trial_condition == "SNA-VA") {
-                // v_opt predicted trajectories
-                    if (abs(heading_delta_) > threshold){
+                if (this->trial_condition == "HV-T" || this->trial_condition == "V-T") 
+                {
+                    // v_opt predicted trajectories
+                    if (abs(heading_delta_) > threshold)
+                    {
                         cv::circle(this->fwd_img_ptr->image, 
-                                    tranformToPixel(optimal_pred_traj_.x[i], 
-                                                    optimal_pred_traj_.y[i], 
-                                                    optimal_pred_traj_.z[i]), 
-                                    computePointSize(optimal_pred_traj_.z[i]), 
-                                    cv::Scalar( 20, 15, 245, 0.6 ), cv::FILLED);
+                            tranformToPixel(optimal_pred_traj_.x[i], 
+                                            optimal_pred_traj_.y[i], 
+                                            optimal_pred_traj_.z[i]), 
+                            computePointSize(optimal_pred_traj_.z[i]), 
+                            cv::Scalar( 20, 15, 245, 0.6 ), cv::FILLED);
                         // ROS_INFO("Getting in here!");
                     }
                 }    
@@ -509,7 +554,7 @@ class VisualInterface
 
             // draw the optimal speedbars
             // if (this->show_debug_bars)
-            if (this->trial_condition == "SNA-VB")
+            if (this->trial_condition == "HV-B" || this->trial_condition == "V-B")
                 this->drawOptimalSpeedBars();
 
             // draw the operatpor speedbars
@@ -519,8 +564,12 @@ class VisualInterface
             this->drawSideIndicators();
 
             // draw predicted trajectories
-            if (this->trial_condition == "SNA-VB" || this->trial_condition == "SNA-VA")
+            if (this->trial_condition == "V-T" || this->trial_condition == "HV-T" || 
+                this->trial_condition == "V-B" || this->trial_condition == "HV-B" )
+            {
                 this->drawPredictedTrajectories();
+            }
+                
 
             // draw the rearview camera 
             if (this->show_rearview) this->drawRearView();
