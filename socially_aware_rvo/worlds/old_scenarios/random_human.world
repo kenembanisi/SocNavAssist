@@ -185,7 +185,7 @@
 
 
     <include>
-      <uri>model://goal_location</uri>
+      <uri>model://goal_position</uri>
       <pose>-6.5 8.2 0.7 0 0 0</pose>
     </include>
 

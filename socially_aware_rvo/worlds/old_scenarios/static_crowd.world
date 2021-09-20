@@ -60,7 +60,7 @@
       </attenuation>
       <direction>-0.5 0.1 -0.9</direction>
     </light>
-    <model name='goal_location'>
+    <model name='goal_position'>
       <link name='link_0'>
         <inertial>
           <mass>0.0001</mass>
@@ -2773,7 +2773,7 @@
           <wrench>19.7858 -2.82561 -0.213879 0 -0 0</wrench>
         </link>
       </model>
-      <model name='goal_location'>
+      <model name='goal_position'>
         <pose frame=''>-11.1617 6.42949 0.7 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>

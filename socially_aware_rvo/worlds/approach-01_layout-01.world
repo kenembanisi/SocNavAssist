@@ -655,7 +655,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose frame=''>-9.71 -0.75 0 0 -0 0</pose>
+      <pose frame=''>-9.53 -1.12 0 0 -0 0</pose>
     </model>
 
     <model name='table-04'>
@@ -851,7 +851,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose frame=''>-9.71 -0.058 0 0 -0 0</pose>
+      <pose frame=''>-9.52 -0.32 0 0 -0 0</pose>
     </model>
 
     <model name='table-05'>
@@ -1047,7 +1047,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose frame=''>-3.59 2.85 0 0 -0 0</pose>
+      <pose frame=''>-3.87 2.85 0 0 -0 0</pose>
     </model>
 
     <model name='table-06'>
@@ -1243,14 +1243,406 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose frame=''>-3.59 3.64 0 0 -0 0</pose>
+      <pose frame=''>-3.88 3.64 0 0 -0 0</pose>
+    </model>
+
+    <model name='table-07'>
+      <static>1</static>
+      <link name='link'>
+        <collision name='surface'>
+          <pose frame=''>0 0 1 0 -0 0</pose>
+          <geometry>
+            <box>
+              <size>1.5 0.8 0.03</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>0.6</mu>
+                <mu2>0.6</mu2>
+              </ode>
+              <torsional>
+                <ode/>
+              </torsional>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+          </surface>
+          <max_contacts>10</max_contacts>
+        </collision>
+        <visual name='visual1'>
+          <pose frame=''>0 0 1 0 -0 0</pose>
+          <geometry>
+            <box>
+              <size>1.5 0.8 0.03</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Wood</name>
+            </script>
+          </material>
+        </visual>
+        <collision name='front_left_leg'>
+          <pose frame=''>0.68 0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='front_left_leg'>
+          <pose frame=''>0.68 0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
+        </visual>
+        <collision name='front_right_leg'>
+          <pose frame=''>0.68 -0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='front_right_leg'>
+          <pose frame=''>0.68 -0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
+        </visual>
+        <collision name='back_right_leg'>
+          <pose frame=''>-0.68 -0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='back_right_leg'>
+          <pose frame=''>-0.68 -0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
+        </visual>
+        <collision name='back_left_leg'>
+          <pose frame=''>-0.68 0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='back_left_leg'>
+          <pose frame=''>-0.68 0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose frame=''>-8.79 3.78 0 0 -0 0</pose>
+    </model>
+
+    <model name='table-08'>
+      <static>1</static>
+      <link name='link'>
+        <collision name='surface'>
+          <pose frame=''>0 0 1 0 -0 0</pose>
+          <geometry>
+            <box>
+              <size>1.5 0.8 0.03</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>0.6</mu>
+                <mu2>0.6</mu2>
+              </ode>
+              <torsional>
+                <ode/>
+              </torsional>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+          </surface>
+          <max_contacts>10</max_contacts>
+        </collision>
+        <visual name='visual1'>
+          <pose frame=''>0 0 1 0 -0 0</pose>
+          <geometry>
+            <box>
+              <size>1.5 0.8 0.03</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Wood</name>
+            </script>
+          </material>
+        </visual>
+        <collision name='front_left_leg'>
+          <pose frame=''>0.68 0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='front_left_leg'>
+          <pose frame=''>0.68 0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
+        </visual>
+        <collision name='front_right_leg'>
+          <pose frame=''>0.68 -0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='front_right_leg'>
+          <pose frame=''>0.68 -0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
+        </visual>
+        <collision name='back_right_leg'>
+          <pose frame=''>-0.68 -0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='back_right_leg'>
+          <pose frame=''>-0.68 -0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
+        </visual>
+        <collision name='back_left_leg'>
+          <pose frame=''>-0.68 0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='back_left_leg'>
+          <pose frame=''>-0.68 0.38 0.5 0 -0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.02</radius>
+              <length>1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Grey</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose frame=''>-8.78 4.56 0 0 -0 0</pose>
     </model>
 
 
 
     <!-- actor 1 -->
     <actor name="actor1">
-      <pose>-10.6 6.5 0.0 0 0 0</pose>
+      <pose>-10.6 6.9 0.0 0 0 0</pose>
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -1260,7 +1652,7 @@
       </animation>
 
       <plugin name="actor1_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>1.35</velocity>
+        <velocity>1.2</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -1274,11 +1666,13 @@
         <ignore_obstacles>
           <!-- <model>cafe</model> -->
           <model>ground_plane</model>
+          <model>open_hall3</model>
+          <model>trina2</model>
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-10.6 6.5 0.0</waypoint>
-          <waypoint>-11.1 -6.7 0.0</waypoint>
+          <waypoint>-10.6 6.9 0.0</waypoint>
+          <waypoint>-11.1 -6.81 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -1286,7 +1680,7 @@
 
     <!-- actor 2 (grouped with actor 3) -->
     <actor name="actor2">
-      <pose>-4.52 6.49 0.0 0 0 0</pose>
+      <pose>-8.3 6.4 0.0 0 0 0</pose>
       <skin>
         <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
         <scale>1.0</scale>
@@ -1298,7 +1692,7 @@
       </animation>
 
       <plugin name="actor5_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>1.0</velocity>
+        <velocity>1.2</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -1316,11 +1710,12 @@
         <ignore_obstacles>
           <!-- <model>cafe</model> -->
           <model>ground_plane</model>
+          <model>open_hall3</model>
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-4.52 6.49 0.0</waypoint>
-          <waypoint>-4.45 -6.37 0.0</waypoint>
+          <waypoint>-8.3 6.4 0.0</waypoint>
+          <waypoint>-8.45 -6.81 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -1328,7 +1723,7 @@
 
     <!-- actor 3 (grouped with actor 2) -->
     <actor name="actor3">
-      <pose>-3.57 6.6 0.0 0 0 0</pose>
+      <pose>-6.6 6.6 0.0 0 0 0</pose>
       <skin>
         <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
         <scale>1.0</scale>
@@ -1340,7 +1735,7 @@
       </animation>
 
       <plugin name="actor6_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>1.05</velocity>
+        <velocity>1.2</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -1358,11 +1753,12 @@
         <ignore_obstacles>
           <!-- <model>cafe</model> -->
           <model>ground_plane</model>
+          <model>open_hall3</model>
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-3.57 6.6 0.0</waypoint>
-          <waypoint>-3.45 -6.37 0.0</waypoint>
+          <waypoint>-6.6 6.6 0.0</waypoint>
+          <waypoint>-6.9 -6.81 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -1370,7 +1766,7 @@
 
     <!-- actor 4 (grouped with actor 5) -->
     <actor name="actor4">
-      <pose>-8.65 7.57 0.0 0 0 0</pose>
+      <pose>-5.9 8.55 0.0 0 0 0</pose>
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -1380,7 +1776,7 @@
       </animation>
 
       <plugin name="actor1_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>1.3</velocity>
+        <velocity>1.2</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -1398,11 +1794,12 @@
         <ignore_obstacles>
           <!-- <model>cafe</model> -->
           <model>ground_plane</model>
+          <model>open_hall3</model>
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-8.65 7.57 0.0</waypoint>
-          <waypoint>-8.65 -6.57 0.0</waypoint>
+          <waypoint>-5.9 8.55 0.0</waypoint>
+          <waypoint>-5.9 -6.81 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -1410,7 +1807,7 @@
 
     <!-- actor 5 (grouped with actor 4) -->
     <actor name="actor5">
-      <pose>-6.87 7.49 0 0 0</pose>
+      <pose>-4.72 8.31 0 0 0</pose>
       <skin>
         <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
         <scale>1.0</scale>
@@ -1422,7 +1819,7 @@
       </animation>
 
       <plugin name="actor5_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>1.3</velocity>
+        <velocity>1.2</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -1440,11 +1837,12 @@
         <ignore_obstacles>
           <!-- <model>cafe</model> -->
           <model>ground_plane</model>
+          <model>open_hall3</model>
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-6.87 7.49 0.0</waypoint>
-          <waypoint>-6.87 -6.49 0.0</waypoint>
+          <waypoint>-4.72 8.31 0.0</waypoint>
+          <waypoint>-4.72 -6.81 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -1452,7 +1850,7 @@
 
     <!-- actor 6 -->
     <actor name="actor6">
-      <pose>-6.58 10.9 0.0 0 0 0</pose>
+      <pose>-5.18 10.9 0.0 0 0 0</pose>
       <skin>
         <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
         <scale>1.0</scale>
@@ -1464,7 +1862,7 @@
       </animation>
 
       <plugin name="actor6_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>1.1</velocity>
+        <velocity>1.2</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -1482,8 +1880,8 @@
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-6.58 10.9 0.0</waypoint>
-          <waypoint>-6.58 -6.59 0.0</waypoint>
+          <waypoint>-5.18 10.9 0.0</waypoint>
+          <waypoint>-5.32 -6.81 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -1491,7 +1889,7 @@
 
     <!-- actor 7 -->
     <actor name="actor7">
-      <pose>-8.86 9.11 0.0 0 0 0</pose>
+      <pose>-7.7 10.0 0.0 0 0 0</pose>
       <skin>
         <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
         <scale>1.0</scale>
@@ -1503,7 +1901,7 @@
       </animation>
 
       <plugin name="actor7_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>0.95</velocity>
+        <velocity>1.0</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -1521,16 +1919,16 @@
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-8.86 9.11 0.0</waypoint>
-          <waypoint>-8.86 -6.65 0.0</waypoint>
+          <waypoint>-7.7 10.0 0.0</waypoint>
+          <waypoint>-6.7 -6.81 0.0</waypoint>
         </trajectory>
       </plugin>
 
     </actor>
 
-    <!-- actor 8 (grouped with actor 9) -->
+    <!-- actor 8 -->
     <actor name="actor8">
-      <pose>-6.2 12.14 0.0 0 0 0</pose>
+      <pose>-6.2 11.4 0.0 0 0 0</pose>
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -1540,7 +1938,7 @@
       </animation>
 
       <plugin name="actor8_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>0.9</velocity>
+        <velocity>0.75</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -1553,24 +1951,24 @@
         <group_rep_weight>1.0</group_rep_weight>
         <!-- groups -->
         <group>
-          <!-- <model>actor9</model> -->
         </group>
         <ignore_obstacles>
           <!-- <model>cafe</model> -->
           <model>ground_plane</model>
+          <model>open_hall3</model>
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-6.2 12.14 0.0</waypoint>
-          <waypoint>-6.2 -6.54 0.0</waypoint>
+          <waypoint>-6.2 11.4 0.0</waypoint>
+          <waypoint>-6.2 -6.81 0.0</waypoint>
         </trajectory>
       </plugin>
 
     </actor>
 
-    <!-- actor 9 (grouped with actor 8) -->
+    <!-- actor 9 -->
     <actor name="actor9">
-      <pose>-3.9 11.4 0.0 0 0 0</pose>
+      <pose>-2.5 11.4 0.0 0 0 0</pose>
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -1580,7 +1978,7 @@
       </animation>
 
       <plugin name="actor9_plugin" filename="libPedestrianSFMPlugin.so">
-        <velocity>0.9</velocity>
+        <velocity>0.75</velocity>
         <radius>0.4</radius>
         <animation_factor>5.1</animation_factor>
         <people_distance>6.0</people_distance>
@@ -1597,11 +1995,13 @@
         <ignore_obstacles>
           <!-- <model>cafe</model> -->
           <model>ground_plane</model>
+          <model>open_hall3</model>
+          <model>trina2</model>
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-3.9 11.4 0.0</waypoint>
-          <waypoint>-3.9 -6.81 0.0</waypoint>
+          <waypoint>-2.5 11.4 0.0</waypoint>
+          <waypoint>-2.5 -6.81 0.0</waypoint>
         </trajectory>
       </plugin>
 

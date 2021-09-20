@@ -2980,6 +2980,28 @@
       </animation>
     </actor>
 
+    <!-- actor 4 -->
+    <actor name="actor4">
+      <skin>
+        <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
+      </skin>
+      <animation name="animation">
+        <filename>model://actor/meshes/ANIMATION_walking.dae</filename>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+    </actor>
+
+    <!-- actor 5 -->
+    <actor name="actor5">
+      <skin>
+        <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
+      </skin>
+      <animation name="animation">
+        <filename>model://actor/meshes/ANIMATION_walking.dae</filename>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+    </actor>
+
 
     <gui fullscreen='0'>
       <camera name='user_camera'>
