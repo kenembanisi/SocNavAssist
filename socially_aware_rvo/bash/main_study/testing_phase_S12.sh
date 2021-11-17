@@ -6,14 +6,14 @@ source ~/workspaces/research_ws/devel/setup.bash
 
 echo "Starting the user study, kindly wait!"
 
-PARTICIPANT_ID="S05"
+PARTICIPANT_ID="S12"
 
 PHASE="test"
 
 ########################################## testing phase #############################################
 
 # block 1 ---------------------------------------------------------------------------------------------
-CONDITION="V-T"
+CONDITION="HV-T"
 
 # 1
 roslaunch socially_aware_rvo trial.launch scenario:="approach-01" scenario_layout:="layout-01" \
@@ -33,7 +33,7 @@ roslaunch socially_aware_rvo trial.launch scenario:="random-02" scenario_layout:
 
 
 
-# -----------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------
  
  echo "
  -------------------Block 1 complete---------------------
@@ -94,7 +94,7 @@ sleep 1m # waits for 1 minute
 
 
  # block 4 ---------------------------------------------------------------------------------------------
-CONDITION="HV-T"
+CONDITION="MC"
 
 # 1
 roslaunch socially_aware_rvo trial.launch scenario:="crossing-01" scenario_layout:="layout-01" \
@@ -121,7 +121,7 @@ sleep 1m # waits for 1 minute
 
 
  # block 5 ---------------------------------------------------------------------------------------------
-CONDITION="MC"
+CONDITION="HV-T"
 
 # 1
 roslaunch socially_aware_rvo trial.launch scenario:="random-02" scenario_layout:="layout-01" \
@@ -148,7 +148,7 @@ echo "
 
 # block 6 ---------------------------------------------------------------------------------------------
 
-CONDITION="HV-B"
+CONDITION="V-T"
 
 # 1
 roslaunch socially_aware_rvo trial.launch scenario:="random-01" scenario_layout:="layout-01" \

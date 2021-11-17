@@ -6,30 +6,30 @@ source ~/workspaces/research_ws/devel/setup.bash
 
 echo "Starting the user study, kindly wait!"
 
-PARTICIPANT_ID="S05"
+PARTICIPANT_ID="S08"
 
 PHASE="test"
 
 ########################################## testing phase #############################################
 
 # block 1 ---------------------------------------------------------------------------------------------
-CONDITION="V-T"
+# CONDITION="HV-B"
 
-# 1
-roslaunch socially_aware_rvo trial.launch scenario:="approach-01" scenario_layout:="layout-01" \
-                                          trial_name:=$PARTICIPANT_ID \
-                                          phase:=$PHASE trial_condition:=$CONDITION \
-                                          trial_number:="1/18" case4:="1"
-# 2
-roslaunch socially_aware_rvo trial.launch scenario:="crossing-03" scenario_layout:="layout-01" \
-                                          trial_name:=$PARTICIPANT_ID \
-                                          phase:=$PHASE trial_condition:=$CONDITION \
-                                          trial_number:="2/18" case5:="1"
-# 3
-roslaunch socially_aware_rvo trial.launch scenario:="random-02" scenario_layout:="layout-01" \
-                                          trial_name:=$PARTICIPANT_ID \
-                                          phase:=$PHASE trial_condition:=$CONDITION \
-                                          trial_number:="3/18" case1:="1"
+# # 1
+# roslaunch socially_aware_rvo trial.launch scenario:="approach-01" scenario_layout:="layout-01" \
+#                                           trial_name:=$PARTICIPANT_ID \
+#                                           phase:=$PHASE trial_condition:=$CONDITION \
+#                                           trial_number:="1/18" case4:="1"
+# # 2
+# roslaunch socially_aware_rvo trial.launch scenario:="crossing-03" scenario_layout:="layout-01" \
+#                                           trial_name:=$PARTICIPANT_ID \
+#                                           phase:=$PHASE trial_condition:=$CONDITION \
+#                                           trial_number:="2/18" case5:="1"
+# # 3
+# roslaunch socially_aware_rvo trial.launch scenario:="random-02" scenario_layout:="layout-01" \
+#                                           trial_name:=$PARTICIPANT_ID \
+#                                           phase:=$PHASE trial_condition:=$CONDITION \
+#                                           trial_number:="3/18" case1:="1"
 
 
 
@@ -148,7 +148,7 @@ echo "
 
 # block 6 ---------------------------------------------------------------------------------------------
 
-CONDITION="HV-B"
+CONDITION="V-T"
 
 # 1
 roslaunch socially_aware_rvo trial.launch scenario:="random-01" scenario_layout:="layout-01" \
