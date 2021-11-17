@@ -29,6 +29,7 @@ class SimulationStates():
         self.actual_acc = []
         self.dt = 0.0
         self.heading_delta = 0.0
+        self.control_delta = []
 
 
 class RvoControl():
@@ -220,6 +221,7 @@ class RvoControl():
         self.sim_states.v_suitable = V_suitable
         self.sim_states.v_admissible = V_admissible
         self.sim_states.heading_delta = heading_delta
+        self.sim_states.control_delta = control_delta
         self.sim_states.v_goal = self.agent_vel
         
 
@@ -351,7 +353,7 @@ class RvoControl():
             # WT = 0.5
             # WT = 0.0
             WT = [1.0,  # distance to operator's velocity
-                  0.5, # distance to previous v_opt
+                  0.6, # distance to previous v_opt
                   0.3] # distance to goal velocity
 
             # check if this is the first iteration
@@ -742,6 +744,11 @@ class RvoControl():
         control_delta[0] = self.sim_states.v_commanded[0] - v_opt[0]
         control_delta[1] = self.sim_states.v_commanded[1] - v_opt[1]
 
+        # if v_opt is zero, set control_delta to zero
+        # if v_opt[0] == 0.0 and v_opt[1] == 0.0:
+        #     control_delta[0] = 0.0
+        #     control_delta[1] = 0.0
+
         # rospy.loginfo("control_delta is: [%f, %f]", control_delta[0], control_delta[1])
 
         return control_delta
@@ -1043,125 +1050,139 @@ class RvoControl():
 
         collision_free = True
 
-        horizon = 2.5
+        horizon = [ 1.0, 2.5 ]
 
-        # obtain future position state
-        future_state_x = self.agent_pos[0] + vel[0]* horizon
-        future_state_y = self.agent_pos[1] + vel[1]* horizon
+        for i in range(len(horizon)):
+            # obtain future position state
+            future_state_x = self.agent_pos[0] + vel[0]* horizon[i]
+            future_state_y = self.agent_pos[1] + vel[1]* horizon[i]
 
-        ## Limits for the walls -----------------------------------------------------------
-            # check collision
-        # wall_x_limits = [-12.7, 0.0]
-        # wall_y_limits = [-10.1, 8.0]
-        wall_x_limits = [-12.0, -0.70]
-        wall_y_limits = [-7.29, 8.27]
-
-        if not (wall_x_limits[0] < future_state_x < wall_x_limits[1]):
-            collision_free = False
-            # rospy.loginfo("X position is in collision")
-
-        if not (wall_y_limits[0] < future_state_y < wall_y_limits[1]):
-            collision_free = False
-            # rospy.loginfo("Y position is in collision")
-        ## --------------------------------------------------------------------------------
-
-        # check for the layout type:
-        if self.layout == "layout-01": # if layout = 1
-            ## Limits for the table 1 ---------------------------------------------------------
+            ## Limits for the walls -----------------------------------------------------------
                 # check collision
-            table1_x_limits = [-5.75, -3.90]
-            table1_y_limits = [-4.15, -2.45]
+            # wall_x_limits = [-12.7, 0.0]
+            # wall_y_limits = [-10.1, 8.0]
+            wall_x_limits = [-12.0, -0.70]
+            wall_y_limits = [-7.29, 8.27]
 
-            if (table1_x_limits[0] < future_state_x < table1_x_limits[1]) and  \
-                (table1_y_limits[0] < future_state_y < table1_y_limits[1]):
+            if not (wall_x_limits[0] < future_state_x < wall_x_limits[1]):
                 collision_free = False
                 # rospy.loginfo("X position is in collision")
+
+            if not (wall_y_limits[0] < future_state_y < wall_y_limits[1]):
+                collision_free = False
+                # rospy.loginfo("Y position is in collision")
             ## --------------------------------------------------------------------------------
 
-            ## Limits for the table 2 ---------------------------------------------------------
-                # check collision
-            table2_x_limits = [-10.45, -8.64]
-            table2_y_limits = [-1.57, 0.18]
+            # check for the layout type:
+            if self.layout == "layout-01": # if layout = 1
+                ## Limits for the table 1 ---------------------------------------------------------
+                    # check collision
+                table1_x_limits = [-5.77, -3.88]
+                table1_y_limits = [-4.17, -2.42]
 
-            if (table2_x_limits[0] < future_state_x < table2_x_limits[1]) and \
-                (table2_y_limits[0] < future_state_y < table2_y_limits[1]):
-                collision_free = False
-                # rospy.loginfo("X position is in collision")
-            ## --------------------------------------------------------------------------------
+                if (table1_x_limits[0] < future_state_x < table1_x_limits[1]) and  \
+                    (table1_y_limits[0] < future_state_y < table1_y_limits[1]):
+                    collision_free = False
+                    # rospy.loginfo("X position is in collision")
+                ## --------------------------------------------------------------------------------
 
-            ## Limits for the table 3 ---------------------------------------------------------
-                # check collision
-            table3_x_limits = [-4.75, -3.00]
-            table3_y_limits = [2.32, 4.15]
+                ## Limits for the table 2 ---------------------------------------------------------
+                    # check collision
+                table2_x_limits = [-10.48, -8.61]
+                table2_y_limits = [-1.60, 0.16]
 
-            if (table3_x_limits[0] < future_state_x < table3_x_limits[1]) and \
-                (table3_y_limits[0] < future_state_y < table3_y_limits[1]):
-                collision_free = False
-                # rospy.loginfo("X position is in collision")
+                if (table2_x_limits[0] < future_state_x < table2_x_limits[1]) and \
+                    (table2_y_limits[0] < future_state_y < table2_y_limits[1]):
+                    collision_free = False
+                    # rospy.loginfo("X position is in collision")
+                ## --------------------------------------------------------------------------------
 
-            ## Limits for the table 4 ---------------------------------------------------------
-                # check collision
-            table4_x_limits = [-9.95, -8.02]
-            table4_y_limits = [3.36, 5.22]
+                ## Limits for the table 3 ---------------------------------------------------------
+                    # check collision
+                table3_x_limits = [-4.78, -3.00]
+                table3_y_limits = [2.30, 4.18]
 
-            if (table4_x_limits[0] < future_state_x < table4_x_limits[1]) and \
-                (table4_y_limits[0] < future_state_y < table4_y_limits[1]):
-                collision_free = False
-                # rospy.loginfo("X position is in collision")
-            ## --------------------------------------------------------------------------------
+                if (table3_x_limits[0] < future_state_x < table3_x_limits[1]) and \
+                    (table3_y_limits[0] < future_state_y < table3_y_limits[1]):
+                    collision_free = False
+                    # rospy.loginfo("X position is in collision")
 
-        elif self.layout == "layout-02": # if layout = 0
-            ## Limits for the table 1 ---------------------------------------------------------
-                # check collision
-            table1_x_limits = [-7.06, -5.23]
-            table1_y_limits = [-4.02, -2.30]
+                ## Limits for the table 4 ---------------------------------------------------------
+                    # check collision
+                table4_x_limits = [-9.98, -8.00]
+                table4_y_limits = [3.33, 5.25]
 
-            if (table1_x_limits[0] < future_state_x < table1_x_limits[1]) and  \
-                (table1_y_limits[0] < future_state_y < table1_y_limits[1]):
-                collision_free = False
-                # rospy.loginfo("X position is in collision")
-            ## --------------------------------------------------------------------------------
+                if (table4_x_limits[0] < future_state_x < table4_x_limits[1]) and \
+                    (table4_y_limits[0] < future_state_y < table4_y_limits[1]):
+                    collision_free = False
+                    # rospy.loginfo("X position is in collision")
+                ## --------------------------------------------------------------------------------
 
-            ## Limits for the table 2 ---------------------------------------------------------
-                # check collision
-            table2_x_limits = [-10.22, -8.45]
-            table2_y_limits = [-0.20, 1.60]
+            elif self.layout == "layout-02": # if layout = 0
+                ## Limits for the table 1 ---------------------------------------------------------
+                    # check collision
+                table1_x_limits = [-7.08, -5.20]
+                table1_y_limits = [-4.05, -2.27]
 
-            if (table2_x_limits[0] < future_state_x < table2_x_limits[1]) and \
-                (table2_y_limits[0] < future_state_y < table2_y_limits[1]):
-                collision_free = False
-                # rospy.loginfo("X position is in collision")
-            ## --------------------------------------------------------------------------------
+                if (table1_x_limits[0] < future_state_x < table1_x_limits[1]) and  \
+                    (table1_y_limits[0] < future_state_y < table1_y_limits[1]):
+                    collision_free = False
+                    # rospy.loginfo("X position is in collision")
+                ## --------------------------------------------------------------------------------
 
-            ## Limits for the table 3 ---------------------------------------------------------
-                # check collision
-            table3_x_limits = [-4.78, -3.05]
-            table3_y_limits = [0.00, 1.80]
+                ## Limits for the table 2 ---------------------------------------------------------
+                    # check collision
+                table2_x_limits = [-10.25, -8.42]
+                table2_y_limits = [-0.23, 1.62]
 
-            if (table3_x_limits[0] < future_state_x < table3_x_limits[1]) and \
-                (table3_y_limits[0] < future_state_y < table3_y_limits[1]):
-                collision_free = False
-                # rospy.loginfo("X position is in collision")
-            ## --------------------------------------------------------------------------------
+                if (table2_x_limits[0] < future_state_x < table2_x_limits[1]) and \
+                    (table2_y_limits[0] < future_state_y < table2_y_limits[1]):
+                    collision_free = False
+                    # rospy.loginfo("X position is in collision")
+                ## --------------------------------------------------------------------------------
 
-            ## Limits for the table 4 ---------------------------------------------------------
-                # check collision
-            table4_x_limits = [-7.47, -5.58]
-            table4_y_limits = [3.68, 5.47]
+                ## Limits for the table 3 ---------------------------------------------------------
+                    # check collision
+                table3_x_limits = [-4.80, -3.02]
+                table3_y_limits = [-0.02, 1.82]
 
-            if (table4_x_limits[0] < future_state_x < table4_x_limits[1]) and \
-                (table4_y_limits[0] < future_state_y < table4_y_limits[1]):
-                collision_free = False
-                # rospy.loginfo("X position is in collision")
-            ## --------------------------------------------------------------------------------
+                if (table3_x_limits[0] < future_state_x < table3_x_limits[1]) and \
+                    (table3_y_limits[0] < future_state_y < table3_y_limits[1]):
+                    collision_free = False
+                    # rospy.loginfo("X position is in collision")
+                ## --------------------------------------------------------------------------------
+
+                ## Limits for the table 4 ---------------------------------------------------------
+                    # check collision
+                table4_x_limits = [-7.50, -5.56]
+                table4_y_limits = [3.65, 5.50]
+
+                if (table4_x_limits[0] < future_state_x < table4_x_limits[1]) and \
+                    (table4_y_limits[0] < future_state_y < table4_y_limits[1]):
+                    collision_free = False
+                    # rospy.loginfo("X position is in collision")
+                ## --------------------------------------------------------------------------------
 
 
-        # correct for goal area/passage
-        # if future_state_y > 8.2 and (-8 < future_state_x < -5): 
-        if future_state_y > 8.2 and (-8.7 < future_state_x < -4.3): 
-            collision_free = True
-        if future_state_x > -0.67 and (7.00 < future_state_y < 8.4): 
-            collision_free = True
+            # correct for exits ---------------------------------------------------------------
+                # main exit
+            if future_state_y > 8.2 and (-8.7 < future_state_x < -4.3): 
+                collision_free = True
+            #     # exit 1
+            # if future_state_x > -0.7 and (-6.23 < future_state_y < -5.0): 
+            #     collision_free = True
+            #     # exit 2
+            # if future_state_x > -0.7 and (6.95 < future_state_y < 8.20): 
+            #     collision_free = True
+            #     # exit 3
+            # if future_state_x < -12.02 and (-4.60 < future_state_y < -2.60): 
+            #     collision_free = True
+            #     # exit 3
+            # if future_state_x < -12.02 and (4.0 < future_state_y < 5.8): 
+            #     collision_free = True
+
+            # if future_state_x > -0.67 and (7.00 < future_state_y < 8.4): 
+            #     collision_free = True
 
         return collision_free
 
