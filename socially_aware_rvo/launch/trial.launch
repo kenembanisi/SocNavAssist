@@ -4,25 +4,82 @@
     <!--%%%%%%%%%%%%%%%%%%%%%%%%%%% Parameter and Argument Setting %%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 
-    <!-- Initial robot pose -->
-    <arg name="robot_x" default="-6.31" />
-    <arg name="robot_y" default="-9.55" />
-    <arg name="robot_z" default="0.0" />
-    <arg name="robot_yaw" default="1.55" />
-
     <!-- Gazebo settings -->
     <arg name="gui" default="false" />
     <arg name="paused" default="true" />
 
     <!-- Set scenario details-->
     <arg name="scenario" default="approach-01" />
+    <arg name="scenario_layout" default="layout-01" />
+    <arg name="case1" default="0" />
+    <arg name="case2" default="0" />
+    <arg name="case3" default="0" />
+    <arg name="case4" default="0" />
+    <arg name="case5" default="0" />
+    <arg name="case6" default="0" />
+    <arg name="trial_number" default="0/0" />
     <arg name="debug_bars" default="false" />
     <arg name="trial_name" default="test" />
     <arg name="phase" default="test" />
     <param name="scenario" value="$(arg scenario)" />
+    <param name="scenario_layout" value="$(arg scenario_layout)" />
+    <param name="trial_number" value="$(arg trial_number)" />
     <param name="trial_name" value="$(arg trial_name)" />
     <param name="debug_bars" value="$(arg debug_bars)" />
     <param name="study_phase" value="$(arg phase)" />
+
+    <!-- Initial robot pose and goal pose-->
+        <!-- if trial_case is case1 -->
+    <arg name="robot_x" default="-5.52" if="$(eval arg('case1'))" />
+    <arg name="robot_y" default="-6.80" if="$(eval arg('case1'))" />
+    <arg name="robot_z" default="0.0" if="$(eval arg('case1'))" />
+    <arg name="robot_yaw" default="1.55" if="$(eval arg('case1'))" />
+    <arg name="goal_x" default="-6.48" if="$(eval arg('case1'))" />
+    <arg name="goal_y" default="8.22" if="$(eval arg('case1'))" />
+
+        <!-- if trial_case is case2 -->
+    <arg name="robot_x" default="-11.30" if="$(eval arg('case2'))" />
+    <arg name="robot_y" default="-6.64"  if="$(eval arg('case2'))" />
+    <arg name="robot_z" default="0.00"  if="$(eval arg('case2'))" />
+    <arg name="robot_yaw" default="0.90"  if="$(eval arg('case2'))" />
+    <arg name="goal_x" default="-0.69"  if="$(eval arg('case2'))" />
+    <arg name="goal_y" default="7.56"  if="$(eval arg('case2'))" />
+
+        <!-- if trial_case is case3 -->
+    <arg name="robot_x" default="-6.48" if="$(eval arg('case3'))" />
+    <arg name="robot_y" default="8.22" if="$(eval arg('case3'))" />
+    <arg name="robot_z" default="0.0" if="$(eval arg('case3'))" />
+    <arg name="robot_yaw" default="-1.55" if="$(eval arg('case3'))" />
+    <arg name="goal_x" default="-12.41" if="$(eval arg('case3'))" />
+    <arg name="goal_y" default="-3.83" if="$(eval arg('case3'))" />
+
+        <!-- if trial_case is case4 -->
+    <arg name="robot_x" default="-12.42" if="$(eval arg('case4'))" />
+    <arg name="robot_y" default="-3.91"  if="$(eval arg('case4'))" />
+    <arg name="robot_z" default="0.0"  if="$(eval arg('case4'))" />
+    <arg name="robot_yaw" default="0.5"  if="$(eval arg('case4'))" />
+    <arg name="goal_x" default="-0.75"  if="$(eval arg('case4'))" />
+    <arg name="goal_y" default="7.53"  if="$(eval arg('case4'))" />
+
+        <!-- if trial_case is case5 -->
+    <arg name="robot_x" default="-12.14" if="$(eval arg('case5'))" />
+    <arg name="robot_y" default="4.92"  if="$(eval arg('case5'))" />
+    <arg name="robot_z" default="0.0"  if="$(eval arg('case5'))" />
+    <arg name="robot_yaw" default="0.0"  if="$(eval arg('case5'))" />
+    <arg name="goal_x" default="-0.53"  if="$(eval arg('case5'))" />
+    <arg name="goal_y" default="-5.49" if="$(eval arg('case5'))" />
+
+        <!-- if trial_case is case6 -->
+    <arg name="robot_x" default="-0.83" if="$(eval arg('case6'))" />
+    <arg name="robot_y" default="-5.56"  if="$(eval arg('case6'))" />
+    <arg name="robot_z" default="0.0"  if="$(eval arg('case6'))" />
+    <arg name="robot_yaw" default="3.00"  if="$(eval arg('case6'))" />
+    <arg name="goal_x" default="-12.30"  if="$(eval arg('case6'))" />
+    <arg name="goal_y" default="4.94"  if="$(eval arg('case6'))" />
+
+    <!-- set goal pos as param -->
+    <param name="goal_x" value="$(arg goal_x)" />
+    <param name="goal_y" value="$(arg goal_y)" />
 
     <!-- Start timer bool flag -->
     <param name="start_timer" value="false" />
@@ -36,7 +93,7 @@
     <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
 
     <!-- Set world -->
-    <arg name="world_name" default="$(find socially_aware_rvo)/worlds/$(arg scenario).world" />
+    <arg name="world_name" default="$(find socially_aware_rvo)/worlds/$(arg scenario)_$(arg scenario_layout).world" />
 
     
     <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
@@ -50,6 +107,8 @@
         <arg name="robot_y" value="$(arg robot_y)" />
         <arg name="robot_z" value="$(arg robot_z)" />
         <arg name="robot_yaw" value="$(arg robot_yaw)" />
+        <arg name="goal_x" value="$(arg goal_x)" />
+        <arg name="goal_y" value="$(arg goal_y)" />
         <arg name="gui" value="$(arg gui)" />
         <arg name="paused" value="$(arg paused)" />
     </include>

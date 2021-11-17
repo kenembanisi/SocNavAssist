@@ -1,0 +1,119 @@
+<launch>
+
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%% Parameter and Argument Setting %%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+    <!-- Gazebo settings -->
+    <arg name="gui" default="false" />
+    <arg name="paused" default="true" />
+
+    <!-- Set scenario details-->
+    <arg name="scenario" default="approach-01" />
+    <arg name="trial_case" default="case1" />
+    <arg name="trial_number" default="0/0" />
+    <arg name="debug_bars" default="false" />
+    <arg name="trial_name" default="test" />
+    <arg name="phase" default="test" />
+    <param name="scenario" value="$(arg scenario)" />
+    <param name="trial_case" value="$(arg trial_case)" />
+    <param name="trial_number" value="$(arg trial_number)" />
+    <param name="trial_name" value="$(arg trial_name)" />
+    <param name="debug_bars" value="$(arg debug_bars)" />
+    <param name="study_phase" value="$(arg phase)" />
+
+    <!-- Initial robot pose and goal pose-->
+        <!-- if trial_case is case1 -->
+    <arg name="robot_x" default="-5.52" if="$(eval trial_case=='case1')" />
+    <arg name="robot_y" default="-6.80" if="$(eval trial_case=='case1')" />
+    <arg name="robot_z" default="0.0" if="$(eval trial_case=='case1')" />
+    <arg name="robot_yaw" default="1.55" if="$(eval trial_case=='case1')" />
+    <arg name="goal_x" default="-6.48" if="$(eval trial_case=='case1')" />
+    <arg name="goal_y" default="8.22" if="$(eval trial_case=='case1')" />
+
+        <!-- if trial_case is case2 -->
+    <arg name="robot_x" default="-11.30" unless="$(eval trial_case=='case1')" />
+    <arg name="robot_y" default="-6.64" unless="$(eval trial_case=='case1')" />
+    <arg name="robot_z" default="0.0" unless="$(eval trial_case=='case1')" />
+    <arg name="robot_yaw" default="1.55" unless="$(eval trial_case=='case1')" />
+    <arg name="goal_x" default="-0.69" unless="$(eval trial_case=='case1')" />
+    <arg name="goal_y" default="7.56" unless="$(eval trial_case=='case1')" />
+
+    <!-- Start timer bool flag -->
+    <param name="start_timer" value="false" />
+
+    <!-- Set control and manual mode -->
+    <arg name="trial_condition" default="MC" />
+    <arg name="manual_mode" default="pos-vel" />
+    <arg name="rvo_planning_horizon" default="4" />
+    <param name="trial_condition" value="$(arg trial_condition)" />
+    <param name="manual_mode" value="$(arg manual_mode)" />
+    <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
+
+    <!-- Set world -->
+    <arg name="world_name" default="$(find socially_aware_rvo)/worlds/$(arg scenario).world" />
+
+    
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Gazebo Simulator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+    <!-- Include Gazebo simulation launch file -->
+    <include file="$(find socially_aware_rvo)/launch/gazebo_sim.launch" >
+        <arg name="world_name" value="$(arg world_name)" />
+        <arg name="robot_x" value="$(arg robot_x)" />
+        <arg name="robot_y" value="$(arg robot_y)" />
+        <arg name="robot_z" value="$(arg robot_z)" />
+        <arg name="robot_yaw" value="$(arg robot_yaw)" />
+        <arg name="goal_x" value="$(arg goal_x)" />
+        <arg name="goal_y" value="$(arg goal_y)" />
+        <arg name="gui" value="$(arg gui)" />
+        <arg name="paused" value="$(arg paused)" />
+    </include>
+
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% People & Group Tracking %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+    <include file="$(find gazebo_group_tracking)/launch/group_tracking.launch" />
+
+
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SocNavAssist %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+    <!-- Launch rvo agent -->
+    <node name="socnavassist" pkg="socially_aware_rvo" type="main.py" output="screen" args="$(arg scenario)"
+        required="true" /> 
+
+    <!-- <group if="$(eval control_mode == 'manual')"> -->
+        <!-- Launch the visual interface -->
+        <node name="socnavassist_visual_interface" pkg="visual_interface" type="visual_interface_node" output="screen" />
+
+        <!-- Launch the proxemics evaluation -->
+        <!-- <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" /> -->
+
+        <!-- Launch the augmented visualization -->
+        <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" />
+
+        <!-- Launch the falcon novint haptic interface -->
+        <!-- <node name="socnavassist_haptic_interface" pkg="socially_aware_rvo" type="haptic_interface.py" output="screen" 
+            if="$(eval control_mode == 'manual')"/> -->
+        <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" output="screen" />
+    <!-- </group> -->
+
+    <!-- serve up a map -->
+    <arg name="map_file" default="$(find socially_aware_rvo)/maps/static-crowd-global-map.yaml" />
+    <!-- <arg name="map_file" default="$(find socially_aware_rvo)/maps/static-crowd.yaml" /> -->
+    
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+    <!-- Place map frame at odometry frame -->
+    <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster"
+      args="0 0 0 0 0 0 map odom 100"/>
+
+    <!-- Launch Rviz -->
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find socially_aware_rvo)/rviz/mapping.rviz" /> -->
+    
+
+</launch>

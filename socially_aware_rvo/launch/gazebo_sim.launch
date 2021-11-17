@@ -4,6 +4,8 @@
     <arg name="robot_y" default="-5.95" />
     <arg name="robot_z" default="0.0" />
     <arg name="robot_yaw" default="1.55" />
+    <arg name="goal_x" default="-6.48" />
+    <arg name="goal_y" default="8.22" />
     <arg name="world_name" default="$(find socially_aware_rvo)/worlds/debug.world" />
     <arg name="gui" default="true" />
     <arg name="paused" default="true" />
@@ -31,6 +33,14 @@
             -y $(arg robot_y) 
             -z $(arg robot_z) 
             -Y $(arg robot_yaw)"/> 
+    
+    <!-- Spawn the goal in Gazebo -->
+    <node name="spawn_goal_position" pkg="gazebo_ros" type="spawn_model" respawn="false" 
+        output="screen" args="-file $(find socially_aware_rvo)/models/goal_position/model.sdf -sdf 
+            -model goal_position
+            -x  $(arg goal_x)
+            -y  $(arg goal_y)
+            -z  0.7" />
 
     <!-- Load controller configuration files from trina2_control package -->
     <rosparam file="$(find sim_robot)/config/freight_controller.yaml" command="load" />
