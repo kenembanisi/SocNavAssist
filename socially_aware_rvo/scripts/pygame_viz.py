@@ -195,7 +195,7 @@ def draw_window(idx, data):
         #                     agent_y - agent_v_opt_constrained_point[1]*scaling), 3)
 
         # draw agent
-    radius = 40 * 0.25  # agent radius is set to 0.25m
+    radius = 40 * 0.4  # agent radius is set to 0.25m
     color = (60,40,240)
     pygame.draw.circle(screen, color, (round(agent_x), round(agent_y)), round(radius))
 
@@ -299,7 +299,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualizer")
-    parser.add_argument('--data', default='logs/test_crossing-01_[75_1122].npy', help='logged data filename')
+    parser.add_argument('--data', default='logs/test_crossing-01_test_[911_1121].npy', help='logged data filename')
                 
     args = parser.parse_args()
 

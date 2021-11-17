@@ -20,7 +20,7 @@ data_logger.py
 
 class DataLogger():
 
-    def __init__(self, scenario, trial_name, pedestrians):
+    def __init__(self, scenario, trial_name, trial_condition, layout, pedestrians):
 
         self.pedestrians = pedestrians
         self.pedestrians_list = self.pedestrians.total_pedestrian_list
@@ -38,6 +38,8 @@ class DataLogger():
         self.n_models = self.num_active_obstacles + 1 # plus one is for the agent
         self.scenario = scenario
         self.trial_name = trial_name
+        self.trial_condition = trial_condition
+        self.layout = layout
 
         self.time_to_goal = 0
         self.time_delta = []
@@ -59,6 +61,7 @@ class DataLogger():
         self.actual_acc = [[0,0]]
 
         self.heading_delta = []
+        self.control_delta = []
 
         # define path
         self.directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'
@@ -175,20 +178,24 @@ class DataLogger():
         # update heading delta
         self.heading_delta.append(sim_states.heading_delta)
 
+        # update control delta
+        self.control_delta.append(sim_states.control_delta)
+
 
     def save_data(self):
  
         # data = np.array([self.model_ids, self.x, self.y, self.theta, self.v, self.omega, self.v_opt, self.v_suitable])
         data = np.array([self.pedestrian_ids, self.x, self.y, self.theta, self.v_opt, self.v_suitable, 
                         self.v_admissible, self.v_goal, self.v, self.omega, self.optimal_acc, self.optimal_acc_constrained,
-                        self.actual_acc, self.time_to_goal, self.time_delta, self.heading_delta, self.v_commanded])
+                        self.actual_acc, self.time_to_goal, self.time_delta, self.heading_delta, self.control_delta, self.v_commanded])
            
         time_struct = time.localtime(time.time())
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
                     str(time_struct.tm_hour) + str(time_struct.tm_min) + ']'
         # filename = self.model_ids[i]+'_'+time_now
         # filename = 'data_'+self.scenario+'_'+time_now
-        filename = self.trial_name+'_'+self.scenario+'_'+self.study_phase+'_'+time_now
+        filename = self.trial_name+'_'+self.scenario+'_'+self.layout+'_'+self.study_phase \
+                        +'_'+self.trial_condition+'_'+time_now
 
         if os.path.isdir(self.directory):
             np.save(self.directory+filename+".npy", data)
