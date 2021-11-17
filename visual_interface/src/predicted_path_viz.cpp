@@ -89,9 +89,15 @@ void PathPredictor::optimalCmdCallback(const std_msgs::Float64MultiArray& veloci
     float filter_threshold = 0.2f;
 
     // compare the current optimal_velocities with the new ones
-    if (std::abs(velocities.data[1] - optimal_control_.w) > filter_threshold){
+    if (std::abs(velocities.data[1] - optimal_control_.w) > filter_threshold)
+    {
         optimal_control_.w = velocities.data[1];
     }
+    // ROS_INFO("Optimal velocity command, (v, w) : [%f, %f]", velocities.data[0], velocities.data[1]);
+    // if (isnan(velocities.data[1]))
+    // {
+    //     optimal_control_.w = 0.0f;
+    // }
     optimal_control_.v = velocities.data[0];
 
 }
@@ -140,6 +146,12 @@ TrajectoryPair PathPredictor::computePredictedTraj(void) {
         // transform states to robot frame
         next_state_user_trans = transformStates(next_state_user);
         next_state_optimal_trans = transformStates(next_state_optimal);
+
+        // ROS_INFO("Optimal: [%f, %f, %f, %f, %f]", next_state_optimal_trans.x, 
+        //                                             next_state_optimal_trans.y, 
+        //                                             next_state_optimal_trans.z,
+        //                                             optimal_control_.v,
+        //                                             optimal_control_.w);
 
         // add new state to trajectory
         addStateToTrajectory(next_state_user_trans, user_traj);
@@ -230,8 +242,10 @@ int main(int argc, char** argv)
     // instantiating ROS node handle
     ros::NodeHandle nh;
 
-    float prediction_time = 1.0f;
+    // float prediction_time = 1.0f;
+    float prediction_time = 0.8f;
     float dt = 0.1f;
+    // float dt = 0.15f;
 
     // instantiate the PathPredictor object
     PathPredictor path_predictor(nh, prediction_time, dt);
