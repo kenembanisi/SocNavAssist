@@ -46,7 +46,12 @@ FalconNovintControl::FalconNovintControl(ros::NodeHandle &nh) : nh_(nh){
     nh_.getParam("base_controller/angular/z/max_velocity", max_angular_vel_);
 
     // set force_enabled
-    force_enabled_ = (trial_condition_ == "MC") ? false : true;
+    // force_enabled_ = (trial_condition_ == "MC") ? false : true;
+    force_enabled_ = false;
+    if (trial_condition_ == "H" || trial_condition_ == "HV-T" || trial_condition_ == "HV-B" )
+    {
+        force_enabled_ = true;
+    }
 
     // log info
     ROS_INFO("Novint Falcon Controller Initialized");
@@ -213,14 +218,15 @@ void FalconNovintControl::commandForce()
     {
         
         if (force_enabled_){
-            // compute the guidance forces
-            // this->guidance_force_[0] = this->Kf_ * -this->heading_delta_;
-            // this->guidance_force_[0] = 0.1;
-            // ROS_INFO("Heading delta: [ %f ]", this->heading_delta_);
+            if (cmd_vel_.linear.x > 0.0) { // apply force only when moving forward
+                // compute the guidance forces
+                // this->guidance_force_[0] = this->Kf_ * -this->heading_delta_;
+                // ROS_INFO("Heading delta: [ %f ]", this->heading_delta_);
 
-            this->guidance_force_[0] = -this->Kf_x_ * this->control_delta_[0];
-            this->guidance_force_[2] = -this->Kf_z_ * this->control_delta_[1];
-            // ROS_INFO("Control delta: [ %f, %f ]", this->control_delta_[0], this->control_delta_[1]);
+                this->guidance_force_[0] = -this->Kf_x_ * this->control_delta_[0];
+                this->guidance_force_[2] = -this->Kf_z_ * this->control_delta_[1];
+                // ROS_INFO("Control delta: [ %f, %f ]", this->control_delta_[0], this->control_delta_[1]);
+            }
         }
         else {
             // compute centering force using f = K*(distance to center)

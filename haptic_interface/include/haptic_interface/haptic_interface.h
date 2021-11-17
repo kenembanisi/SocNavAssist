@@ -69,10 +69,10 @@ class FalconNovintControl
         // force variable
         float Ks_ = 12.0f; // 20
         // float Ks_ = 20.0f;
-        // float Kf_ = 0.8f; // 0.75 or 1.20
+        float Kf_ = 1.0f; // 0.75 or 1.20
         // float Kf_ = 1.2f;
-        float Kf_x_ = 1.2f;
-        float Kf_z_ = 0.5f;
+        float Kf_x_ = 0.9f; // 1.2
+        float Kf_z_ = 0.3f; // 0.5
         ros_falcon::falconForces force_fbk_;
         std::vector<float> centering_force_ = {0,0,0} ;
         std::vector<float> guidance_force_ = {0,0,0} ;
