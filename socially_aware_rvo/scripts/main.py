@@ -18,7 +18,7 @@ from agent import AgentClass
 from rvo_control import RvoControl
 from data_logger import DataLogger
 from pedestrians import PedestriansClass
-from obstacles import MapClass
+# from obstacles import MapClass
 
 #####################################################################################
 # run function
@@ -44,30 +44,35 @@ def run(args):
 
     ######################### Define pedestrians as obstacles #######################
     pedestrians = PedestriansClass()
-    static_map = MapClass()
+    # static_map = MapClass()
+    layout = rospy.get_param("scenario_layout") # for now, layout-01 or 02
 
 
     ################ Initiate RVO controller for agent & obstacle set ###############
     D = 0.2 # radius extension for differential drive condition
     tau = float(rospy.get_param("rvo_planning_horizon"))
-    # rvo_agent = RvoControl(agent, pedestrians, D=D, tau=tau)
-    rvo_agent = RvoControl(agent, pedestrians, static_map, D=D, tau=tau)
+    rvo_agent = RvoControl(agent, pedestrians, layout, D=D, tau=tau)
+    # rvo_agent = RvoControl(agent, pedestrians, static_map, D=D, tau=tau)
+
+
+    ################### Get trial_condition from ROS parameter server ##################
+    trial_condition = rospy.get_param('trial_condition')
+    AUTO = False
+    if trial_condition == 'auto':
+        AUTO = True
 
 
     ################ Initialize data logger (for active objects only) ###############
     trial_name = rospy.get_param("trial_name")
-    logger = DataLogger(scenario, trial_name, pedestrians)
+    logger = DataLogger(scenario, trial_name, trial_condition, layout, pedestrians)
 
 
     ############################ Set agent goal location ############################
-    # goal = [-6.5, 8.2]
-    goal = [-6.43, 8.78]
+    # goal = [-6.43, 8.78]
+    goal_x = float(rospy.get_param("goal_x"))
+    goal_y = float(rospy.get_param("goal_y"))
+    goal = [goal_x, goal_y]
     
-    ################### Get control mode from ROS parameter server ##################
-    control_mode = rospy.get_param('trial_condition')
-    AUTO = False
-    if control_mode == 'auto':
-        AUTO = True
 
     ################################### Set timer ###################################
     t_start = time.time()
@@ -109,6 +114,7 @@ def run(args):
         agent.publish_optimal_vel_data(v_opt[2]) # puclishing the unconstrained vel (v_opt_dd)
 
 
+        # rospy.loginfo("The heading delta is: %s", str(heading_delta))
         # rospy.loginfo("The computed optimal control is: %s", str([round(v_opt[1][0],2), round(v_opt[1][1],2)]))
 
         # Set stop time -----------------------------------------------------------
@@ -123,12 +129,13 @@ def run(args):
         
         # Terminate simulation (all nodes) once goal is reached -------------------
         if rvo_agent.reached:
+            rospy.loginfo("<<<<<<<<<<<< Goal Reached! >>>>>>>>>>>")
+            rospy.loginfo("<<<<<<<<<<<< Saving Data... >>>>>>>>>>>")
             logger.save_data()
-            rospy.loginfo("<<<<< Goal Reached! >>>>>")
             rospy.signal_shutdown("<<<<< Shutting Down Simulation >>>>>")
 
-        if scenario == "practice":
-            rospy.on_shutdown(logger.save_data)
+        # if scenario == "practice":
+        #     rospy.on_shutdown(logger.save_data)
 
 #####################################################################################
 # main
