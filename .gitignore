@@ -9,3 +9,5 @@ logs/
 
 # python virtual environment
 py-env/
+
+py_env/

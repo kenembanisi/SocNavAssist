@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <sdf version='1.6'>
-  <model name='goal_location'>
+  <model name='goal_position'>
 
     <link name='link_0'>
         <inertial>
