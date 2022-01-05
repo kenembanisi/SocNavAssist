@@ -1,0 +1,5 @@
+sarvo_local_planner:
+  objective_name: 'cautious'
+  objective_weights_cautious: [0.1, 0.2, 0.1, 0.2, 0.0]
+  objective_weights_neutral: [0.1, 0.2, 0.1, 0.2, 0.0]
+  objective_weights_assertive: [0.1, 0.2, 0.1, 0.2, 0.0]

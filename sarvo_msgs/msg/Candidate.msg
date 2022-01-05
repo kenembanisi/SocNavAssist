@@ -1,0 +1,4 @@
+Point2D velocity
+Trajectory2D traj
+CandidateScore score
+Twist2D twist

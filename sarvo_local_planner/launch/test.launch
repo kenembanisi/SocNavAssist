@@ -1,0 +1,121 @@
+<launch>
+
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%% Parameter and Argument Setting %%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+    <!-- Gazebo settings -->
+    <arg name="gui" default="false" />
+    <arg name="paused" default="true" />
+
+    <!-- Set scenario details-->
+    <arg name="scenario" default="crossing-02" />
+    <arg name="scenario_layout" default="layout-01" />
+    <arg name="trial_number" default="0/0" />
+    <arg name="debug_bars" default="false" />
+    <arg name="trial_name" default="test" />
+    <arg name="phase" default="test" />
+    <param name="scenario" value="$(arg scenario)" />
+    <param name="scenario_layout" value="$(arg scenario_layout)" />
+    <param name="trial_number" value="$(arg trial_number)" />
+    <param name="trial_name" value="$(arg trial_name)" />
+    <param name="debug_bars" value="$(arg debug_bars)" />
+    <param name="study_phase" value="$(arg phase)" />
+
+    <!-- Initial robot pose and goal pose-->
+    <arg name="robot_x" default="-5.52" />
+    <arg name="robot_y" default="-6.80" />
+    <arg name="robot_z" default="0.0" />
+    <arg name="robot_yaw" default="1.55" />
+    <arg name="goal_x" default="-6.48" />
+    <arg name="goal_y" default="7.22" />
+    <!-- <arg name="goal_y" default="8.22" /> -->
+
+
+    <!-- set goal pos as param -->
+    <param name="goal_x" value="$(arg goal_x)" />
+    <param name="goal_y" value="$(arg goal_y)" />
+
+    <!-- Start timer bool flag -->
+    <param name="start_timer" value="false" />
+
+    <!-- Set control and manual mode -->
+    <arg name="trial_condition" default="MC" />
+    <arg name="manual_mode" default="pos-vel" />
+    <arg name="rvo_planning_horizon" default="3" />
+    <param name="trial_condition" value="$(arg trial_condition)" />
+    <param name="manual_mode" value="$(arg manual_mode)" />
+    <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
+
+    <!-- Set world -->
+    <!-- <arg name="world_name" default="$(find socially_aware_rvo)/worlds/$(arg scenario)_$(arg scenario_layout).world" /> -->
+    <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario)_$(arg scenario_layout).world" />
+    <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/debug.world" /> -->
+    <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/debug2.world" /> -->
+
+    
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Gazebo Simulator %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+    <!-- Include Gazebo simulation launch file -->
+    <include file="$(find socially_aware_rvo)/launch/gazebo_sim.launch" >
+        <arg name="world_name" value="$(arg world_name)" />
+        <arg name="robot_x" value="$(arg robot_x)" />
+        <arg name="robot_y" value="$(arg robot_y)" />
+        <arg name="robot_z" value="$(arg robot_z)" />
+        <arg name="robot_yaw" value="$(arg robot_yaw)" />
+        <arg name="goal_x" value="$(arg goal_x)" />
+        <arg name="goal_y" value="$(arg goal_y)" />
+        <arg name="gui" value="$(arg gui)" />
+        <arg name="paused" value="$(arg paused)" />
+    </include>
+
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% People & Group Tracking %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+    <include file="$(find gazebo_group_tracking)/launch/group_tracking.launch" />
+
+
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SocNavAssist %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+    <!-- Launch rvo agent -->
+    <!-- <node name="socnavassist" pkg="socially_aware_rvo" type="main.py" output="screen" args="$(arg scenario)"
+        required="true" />  -->
+
+    <!-- Launch the falcon novint haptic interface -->
+    <!-- <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" 
+        output="screen"/> -->
+
+    <!-- Launch the visual interface -->
+    <node name="socnavassist_visual_interface" pkg="visual_interface" type="visual_interface_node" 
+        output="screen" respawn="true" />
+
+    <!-- Launch the proxemics evaluation -->
+    <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
+
+    <!-- Launch the augmented visualization -->
+    <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" />
+    
+
+    <!-- Localize the robot -->
+    <arg name="map_file" default="$(find sarvo_local_planner)/maps/hall_map.yaml" />
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+    <node name="amcl" pkg="amcl" type="amcl">
+        <remap from="scan" to="base_scan"/>
+        <rosparam file="$(find sarvo_local_planner)/config/amcl.yaml" command="load" />
+    </node>
+
+    <node pkg="sarvo_local_planner" type="sarvo_local_planner" name="sarvo_planner" output="screen" >
+        <rosparam file="$(find sarvo_local_planner)/config/costmap_params.yaml" command="load" ns="static_costmap" />
+        <rosparam file="$(find sarvo_local_planner)/config/behaviors.yaml" command="load" />
+    </node>
+
+    <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo.rviz" />
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" />
+
+</launch>
