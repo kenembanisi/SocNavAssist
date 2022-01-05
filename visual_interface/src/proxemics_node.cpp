@@ -138,6 +138,9 @@ class Proxemics {
             m.getRPY(roll, pitch, yaw);
             agent_pose_.theta = yaw;
 
+
+            publishProxemics();
+
         }
 
         void checkIntrusion(void) {
@@ -167,11 +170,15 @@ int main(int argc, char** argv)
     // instantiate the Proxemics object
     Proxemics prox(nh);
 
-    while (ros::ok())
-    {
-        prox.publishProxemics();
-        ros::spinOnce();
-    }
+    // while (ros::ok())
+    // {
+    //     prox.publishProxemics();
+    //     ros::spinOnce();
+    // }
+
+    // prox.publishProxemics();
+
+    ros::spin();
     
     return 0;
 }

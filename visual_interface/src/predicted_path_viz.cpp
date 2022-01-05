@@ -71,6 +71,8 @@ void PathPredictor::odomCallback(const nav_msgs::Odometry::ConstPtr& odom_data) 
          ROS_ERROR("%s",ex.what());
         ros::Duration(1.0).sleep();
       }
+
+    publishTrajectories();
 }
 
 
@@ -250,11 +252,13 @@ int main(int argc, char** argv)
     // instantiate the PathPredictor object
     PathPredictor path_predictor(nh, prediction_time, dt);
 
-    while (ros::ok())
-    {
-        path_predictor.publishTrajectories();
-        ros::spinOnce();
-    }
+    // while (ros::ok())
+    // {
+    //     path_predictor.publishTrajectories();
+    //     ros::spinOnce();
+    // }
+
+    ros::spin();
     
     return 0;
 }

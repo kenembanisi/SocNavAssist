@@ -245,6 +245,8 @@ class VisualInterface
         pred_trajectory_size_ = msg.count;
 
         // ROS_INFO("Size of traj: [%d]", pred_trajectory_size_);
+
+        // displayVisual();
     }
 
     void headingDeltaCb( const std_msgs::Float32& msg){
@@ -586,7 +588,7 @@ class VisualInterface
 
             // Update GUI Window
             cv::imshow(OPENCV_WINDOW, this->fwd_img_ptr->image);
-            cv::waitKey(1);
+            cv::waitKey(5); // previously set to 1
 
         }
     }
@@ -604,6 +606,8 @@ int main(int argc, char** argv)
         intf.displayVisual();
         ros::spinOnce();
     }
+
+    // ros::spin();
     
     return 0;
 }

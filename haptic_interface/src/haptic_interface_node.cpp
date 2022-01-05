@@ -78,6 +78,9 @@ void FalconNovintControl::falconCallback(const sensor_msgs::Joy::ConstPtr& falco
     raw_y_pos_ = falcon_data->axes[1];
     raw_z_pos_ = falcon_data->axes[2];
     button_pressed_ = falcon_data->buttons[0];
+
+    commandVelocity();
+    commandForce();
 }
 
 void FalconNovintControl::headingdeltaCallback(const std_msgs::Float32& heading_delta)
@@ -95,6 +98,7 @@ void FalconNovintControl::controldeltaCallback(const std_msgs::Float64MultiArray
 
     // // clip the value of heading delta
     // heading_delta_ = (abs(heading_delta_) > PI) ? 0.0f : heading_delta_;
+
 }
 
 
@@ -260,15 +264,18 @@ int main(int argc, char **argv){
     ros::NodeHandle n;
 
     // instantiate haptic control object
-    FalconNovintControl base_control = FalconNovintControl(n);
+    // FalconNovintControl base_control = FalconNovintControl(n);
+    FalconNovintControl base_control(n);
 
-     while (ros::ok())
-    {
-        // run control
-        base_control.commandVelocity();
-        base_control.commandForce();
-        ros::spinOnce();
-    }
+    //  while (ros::ok())
+    // {
+    //     // run control
+    //     base_control.commandVelocity();
+    //     base_control.commandForce();
+    //     ros::spinOnce();
+    // }
+
+    ros::spin();
     
     return 0;
 
