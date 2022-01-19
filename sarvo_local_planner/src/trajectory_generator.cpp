@@ -65,6 +65,7 @@ void TrajectoryGenerator::startNewIteration(const Pose2D pose,
 
 }
 
+
 double TrajectoryGenerator::projectVelocity(const double target_vel, const double current_vel,
     const double max_accel, const double dt)
 {
@@ -114,8 +115,15 @@ Trajectory2D TrajectoryGenerator::generateTrajectory(const Pose2D start_pose,
     for (auto dt : time_steps)
     {
         traj.poses.push_back(pose);
+
+        // ROS_INFO("Old Current Velocity: [%f, %f]", vel.vx, vel.w);
         // compute new trajectory based on acceleration
         vel = computeNewVelocity(target_vel, vel, dt);
+
+        // ROS_INFO("New Current Velocity: [%f, %f]",vel.vx, vel.w);
+
+        // ROS_INFO("////////////////////////");
+
         // advance the pose based on the latest velocity
         pose = computeNextPose(pose, vel, dt);
     }

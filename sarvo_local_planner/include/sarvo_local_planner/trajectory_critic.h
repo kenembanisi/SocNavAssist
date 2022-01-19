@@ -54,6 +54,8 @@ class TrajectoryCritic {
 
         void computeTotalScore(Candidate& candidate);
 
+        void calculateFeatureCounts(Candidate optimal_candidate);
+
     private:
 
         std::vector<double> weights_;
@@ -61,6 +63,11 @@ class TrajectoryCritic {
         double clearance_threshold_;
         double sim_granularity_;
         costmap_2d::Costmap2D* static_costmap_;
+    
+    public:
+
+        std::vector<double> feature_counts_;
+        int iteration_count_ = 0;
         
 
 };

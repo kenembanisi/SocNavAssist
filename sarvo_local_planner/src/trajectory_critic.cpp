@@ -16,7 +16,11 @@ TrajectoryCritic::TrajectoryCritic(
     weights_(weights), 
     horizon_(horizon),
     clearance_threshold_(clearance_thr),
-    sim_granularity_(sim_granularity) {}
+    sim_granularity_(sim_granularity) 
+{
+    // initialize feature counts
+    feature_counts_ = std::vector<double>(weights_.size(), 0.0);
+}
 
 
 void TrajectoryCritic::computeCandidateScore(Candidate& candidate, 
@@ -26,7 +30,7 @@ void TrajectoryCritic::computeCandidateScore(Candidate& candidate,
     double obstacle_score = baseObstacleScore(candidate);
 
     // Update the candidate's raw scores
-    std::vector<double> raw_scores(6, 0.0);
+    std::vector<double> raw_scores(weights_.size(), 0.0);
     candidate.score.raw_scores = raw_scores;
     candidate.score.raw_scores[0] = obstacle_score;
 
@@ -56,7 +60,8 @@ double TrajectoryCritic::socialDisturbanceScore(const Candidate& candidate,
         // ROS_INFO("dt is: [%f]", dt);
     }
 
-    return score;
+    return score / (double)num_steps;
+    // return score;
 }
 
 
@@ -68,9 +73,12 @@ double TrajectoryCritic::socialDisturbanceScore(const Pose2D& robot_pose,
     for (const auto& p : pedestrians)
     {
         double dist = abs(robot_pose, p.pose);
+        double sigma = 0.1;
         if (dist < clearance_threshold_)
             score += (clearance_threshold_ - dist);     // include a decay here to account for position uncertainty?
+            // score += gaussianPDF(dist, 0.0, sigma);
     }
+    // return score / (double)pedestrians.size();
     return score;
 }
         
@@ -116,7 +124,16 @@ Person TrajectoryCritic::constantVelocityProjection(const Person& person,
 
 void TrajectoryCritic::computeTotalScore(Candidate& candidate)
 {
-    // candidate.score.total;
+    // std::cout << "Size of raw_scores: " << candidate.score.raw_scores.size() << std::endl;
+    candidate.score.total = vdot(candidate.score.raw_scores, weights_);
+}
+
+
+void TrajectoryCritic::calculateFeatureCounts(Candidate optimal_candidate)
+{
+    for (size_t i = 0; i < optimal_candidate.score.raw_scores.size(); ++i)
+        feature_counts_[i] += optimal_candidate.score.raw_scores[i];
+    iteration_count_++;
 }
 
 }
