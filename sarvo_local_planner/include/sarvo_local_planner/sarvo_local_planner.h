@@ -6,6 +6,8 @@
 #include "tf/transform_listener.h"
 #include <tf2_ros/transform_listener.h>
 #include <vector>
+#include <stack>
+#include <unordered_map>
 #include "sarvo_msgs/Point2D.h"
 #include "sarvo_msgs/Candidate.h"
 #include "sarvo_msgs/Person.h"
@@ -23,11 +25,11 @@
 #include <gazebo_msgs/ModelStates.h>
 #include <sarvo_local_planner/trajectory_generator.h>
 #include <sarvo_local_planner/trajectory_critic.h>
+#include <sarvo_local_planner/path_planner.h>
 
 
 // Other includes
 #include <cmath>
-#include <iostream>
 
 using namespace sarvo_msgs;
 
@@ -67,7 +69,7 @@ namespace sarvo_local_planner {
 			 * @brief  Checks to see if the robot is in the goal location
 			 * @return True if the robot is within the threshold of the goal location
 			 */
-			bool isGoalReached();
+			bool isFinalGoalReached();
 
 			/**
 			 * @brief  Checks to see if the robot is in the goal location
@@ -127,7 +129,7 @@ namespace sarvo_local_planner {
 			/**
 			 * @brief  ~
 			 */
-			Point2D computeGoalVelocity();
+			Point2D computeGoalVelocity(Pose2D& goal);
 
 			/**
 			 * @brief  ~
@@ -179,6 +181,9 @@ namespace sarvo_local_planner {
 				const double radius);
 
 
+			sarvo_msgs::Candidate computeOperatorVelocityCost(const Point2D operator_vel_);
+
+
 		private:
 			// member variables:
 
@@ -201,6 +206,7 @@ namespace sarvo_local_planner {
 
             // goal pose
             Pose2D goal_location_;
+			Pose2D start_location_;
 			Twist2D operator_twist_;
 			Point2D operator_vel_;
 
@@ -224,6 +230,13 @@ namespace sarvo_local_planner {
 			std::vector<double> neutral_;
 			std::vector<double> assertive_;
 			std::string objective_name_;
+			std::vector<double> prm_samples_x_;
+			std::vector<double> prm_samples_y_;
+			// std::vector< std::vector<double> > prm_roadmap_;
+			double robot_fov_;
+			double config_space_step_size_;
+			double connecting_node_dist_thr_;
+			XmlRpc::XmlRpcValue prm_roadmap_;
             
             // subs and pubs
             ros::Subscriber persons_subs_;
@@ -247,9 +260,17 @@ namespace sarvo_local_planner {
 
 			TrajectoryGenerator* traj_generator_;
 			TrajectoryCritic* traj_critic_;
+			PathPlanner* path_planner_;
 
 			Point2D prev_v_optimal_;
 			Point2D goal_vel_;
+			std::vector<double> operator_feature_count_ 
+				= std::vector<double>(5);
+			
+			geometry_msgs::Twist zero_twist_;
+			bool isInitPathDefined_ = false;
+			std::stack<Pose2D> path_to_goal_;
+			Pose2D current_wp_;
     };
 
 }

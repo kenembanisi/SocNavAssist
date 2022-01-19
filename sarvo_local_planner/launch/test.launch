@@ -15,6 +15,7 @@
     <arg name="debug_bars" default="false" />
     <arg name="trial_name" default="test" />
     <arg name="phase" default="test" />
+    <arg name="record" default="false" />
     <param name="scenario" value="$(arg scenario)" />
     <param name="scenario_layout" value="$(arg scenario_layout)" />
     <param name="trial_number" value="$(arg trial_number)" />
@@ -40,7 +41,8 @@
     <param name="start_timer" value="false" />
 
     <!-- Set control and manual mode -->
-    <arg name="trial_condition" default="MC" />
+    <!-- <arg name="trial_condition" default="MC" /> -->
+    <arg name="trial_condition" default="AUTO" />
     <arg name="manual_mode" default="pos-vel" />
     <arg name="rvo_planning_horizon" default="3" />
     <param name="trial_condition" value="$(arg trial_condition)" />
@@ -110,12 +112,27 @@
         <rosparam file="$(find sarvo_local_planner)/config/amcl.yaml" command="load" />
     </node>
 
-    <node pkg="sarvo_local_planner" type="sarvo_local_planner" name="sarvo_planner" output="screen" >
+    <node pkg="sarvo_local_planner" type="sarvo_local_planner" name="sarvo_planner" output="screen" required="true" >
         <rosparam file="$(find sarvo_local_planner)/config/costmap_params.yaml" command="load" ns="static_costmap" />
         <rosparam file="$(find sarvo_local_planner)/config/behaviors.yaml" command="load" />
     </node>
 
     <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo.rviz" />
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" />
+
+
+    <node pkg="rosbag" type="record" name="recorder" output="screen" 
+        args=" -O $(find sarvo_local_planner)/rosbags/session.bag
+            /base_controller/cmd_vel /base_controller/odom /gazebo/model_states 
+            /pedestrian_pose_markers /pedestrian_viz_markers
+            /sarvo_planner/static_costmap/costmap
+            /spencer/perception/tracked_groups
+            /spencer/perception/tracked_persons 
+            /suitable_trajectory_cloud 
+            /suitable_velocities
+            /unsuitable_trajectory_cloud
+            /unsuitable_velocities
+            /map /map_metadata" if="$(eval record=='true')"/>
+
 
 </launch>
