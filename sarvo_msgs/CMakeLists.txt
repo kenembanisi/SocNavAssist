@@ -18,6 +18,7 @@ add_message_files(
   Pose2D.msg
   Trajectory2D.msg
   Twist2D.msg
+  SimulationStates.msg
 )
 
 generate_messages(

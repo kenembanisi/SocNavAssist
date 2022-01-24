@@ -12,6 +12,7 @@
 #include "sarvo_msgs/Candidate.h"
 #include "sarvo_msgs/Person.h"
 #include "sarvo_msgs/Twist2D.h"
+#include "sarvo_msgs/SimulationStates.h"
 #include "costmap_2d/costmap_2d.h"
 #include <costmap_2d/costmap_2d_ros.h>
 #include <spencer_tracking_msgs/TrackedPersons.h>
@@ -170,6 +171,13 @@ namespace sarvo_local_planner {
 			void pedestrianPosePublisher();
 
 
+			void simulationStatesPublisher(const Candidate& candidate);
+
+
+			void simulationStatesPublisher(const Candidate& candidate_optimal,
+    			const Candidate& candidate_operator);
+
+
 			std::vector<double> selectWeights();
 
 
@@ -201,6 +209,7 @@ namespace sarvo_local_planner {
             std::vector<Person> pedestrians_, groups_, ped_groups_;
 			spencer_tracking_msgs::TrackedPersons tracked_persons_msg_;
 			spencer_tracking_msgs::TrackedGroups tracked_groups_msg_;
+			SimulationStates sim_states_;
             // std::map<int, Person> pedestrians_map_;
 			// std::unset<Person> pedestrians_set_;
 
@@ -217,6 +226,8 @@ namespace sarvo_local_planner {
 
             // parameters
             std::string scenario_;
+			std::string feature_filename_;
+			std::string b_weights_;
             float radius_ext_;
             float rvo_planning_horizon_;
             float alpha_;
@@ -250,6 +261,7 @@ namespace sarvo_local_planner {
 			ros::Publisher ped_pose_pub_;
 			ros::Publisher ped_viz_pub_;
 			ros::Publisher cmd_vel_pub_;
+			ros::Publisher sim_states_pub_;
 
 			ros::Subscriber state_subs_;
 

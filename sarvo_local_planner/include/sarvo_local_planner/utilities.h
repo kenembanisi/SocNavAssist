@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 
-const double PI = 3.14159;
+const double PI = 3.14159265358979323846;
 const double ROOT_2PI = 2.50662;
 const double INF = std::numeric_limits<double>::max();
 
@@ -61,7 +61,7 @@ namespace sarvo_local_planner {
     double wrapToPi(const double angle)
     {
         double x = std::fmod(angle + PI, 2*PI);
-        if (x < 0) x += 2*PI;
+        if (x <= 0) x += 2*PI;
         return x - PI;
     }
 
@@ -151,13 +151,43 @@ namespace sarvo_local_planner {
 
     double magnitudeDifference(const Point2D& vector1, const Point2D& vector2)
     {
-        return abs(vector2) - abs(vector1);
+        return std::pow(abs(vector2) - abs(vector1), 2);
     }
 
     double gaussianPDF(const double& x, const double& mu = 0.0, const double& sigma = 1.0)
     {
         const double a = 1.0 / (sigma * ROOT_2PI);
         return a * std::exp(-((x - mu)*(x - mu)) / (2.0 * sigma * sigma));
+    }
+
+    std::vector<double> parseWeightString(const std::string& weight_str)
+    {
+        std::vector<double> result;
+        std::string w;
+        try {
+            for (char c : weight_str){
+                if (c == '/' || c == ','){
+                    result.push_back(std::stod(w));
+                    w.clear();
+                }
+                else w.push_back(c);
+            }    
+            result.push_back(std::stod(w));
+            return result;
+        }
+        catch (std::exception& e){
+            std::cerr << "[ERROR] Error occurred with parsing weight string: " << e.what() << "\n";
+            // std::cout << "String error here \n";
+            return result;
+        }
+    }
+
+    std::vector<double> multiply(const std::vector<double>& vec, const double val)
+    {
+        std::vector<double> result;
+        for (size_t i = 0; i < vec.size(); ++i)
+            result.push_back(vec[i] * val);
+        return result;
     }
 
 

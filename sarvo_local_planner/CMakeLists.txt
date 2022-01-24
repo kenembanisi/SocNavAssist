@@ -44,16 +44,18 @@ add_library(trajectory_critic include/sarvo_local_planner/trajectory_critic.h
 add_library(path_planner include/sarvo_local_planner/path_planner.h
                               src/path_planner.cpp)
 
-# target_link_libraries(sarvo_local_planner ${catkin_LIBRARIES})
-# add_dependencies(sarvo_local_planner ${catkin_EXPORTED_TARGETS})
 
 # add_executable(sarvo_local_planner_node src/sarvo_local_planner_node.cpp)
 add_executable(${PROJECT_NAME} src/sarvo_local_planner.cpp)
 
-# add_dependencies(predicted_path_viz visual_interface_generate_messages_cpp)
-# add_dependencies(${PROJECT_NAME} spencer_tracking_msgs)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} trajectory_generator trajectory_critic path_planner)
-# target_link_libraries(${PROJECT_NAME} PRIVATE trajectory_generator)
 
+
+#############
+## Testing ##
+#############
+
+catkin_add_gtest(sarvo_planner_test test/test_sarvo.cpp)
+target_link_libraries(sarvo_planner_test ${catkin_LIBRARIES})

@@ -11,12 +11,18 @@ TrajectoryCritic::TrajectoryCritic(
     const std::vector<double> weights,
     const double horizon,
     const double clearance_thr,
-    const double sim_granularity) :
+    const double sim_granularity,
+    const bool sum_obs_scores_,
+    const bool sum_social_dis_scores_,
+    const bool decay_social_dis_scores_) :
     static_costmap_(costmap),
     weights_(weights), 
     horizon_(horizon),
     clearance_threshold_(clearance_thr),
-    sim_granularity_(sim_granularity) 
+    sim_granularity_(sim_granularity),
+    sum_obstacle_scores_(sum_obs_scores_),
+    sum_social_disturbance_scores_(sum_social_dis_scores_),
+    decay_social_disturbance_scores_(decay_social_dis_scores_)
 {
     // initialize feature counts
     feature_counts_ = std::vector<double>(weights_.size(), 0.0);
@@ -47,21 +53,26 @@ double TrajectoryCritic::socialDisturbanceScore(const Candidate& candidate,
     for (int i = 0; i < num_steps; i++)
     {
         pedestrians_proj.clear();
-        dt += sim_granularity_;
         for (const auto& p : ped_groups) {
             pedestrians_proj.push_back( constantVelocityProjection(p, dt) );
         }
 
         double sc = socialDisturbanceScore(candidate.traj.poses[i], pedestrians_proj);
 
-        // score += scoreDecay(sc, horizon, i);
-        score += sc;
+        // 
+        if (decay_social_disturbance_scores_)
+            score += scoreDecay(sc, horizon_, dt);
+            // score += scoreDecay(sc, horizon_, i * sim_granularity_);
+        else
+            score += sc;
         
         // ROS_INFO("dt is: [%f]", dt);
+
+        dt += sim_granularity_;
     }
 
-    return score / (double)num_steps;
-    // return score;
+    // return score / (double)num_steps;
+    return score;
 }
 
 
@@ -74,9 +85,11 @@ double TrajectoryCritic::socialDisturbanceScore(const Pose2D& robot_pose,
     {
         double dist = abs(robot_pose, p.pose);
         double sigma = 0.1;
-        if (dist < clearance_threshold_)
-            score += (clearance_threshold_ - dist);     // include a decay here to account for position uncertainty?
-            // score += gaussianPDF(dist, 0.0, sigma);
+        if (dist < clearance_threshold_) {
+            double ped_score = (clearance_threshold_ - dist);     // include a decay here to account for position uncertainty?
+            // double ped_score += gaussianPDF(dist, 0.0, sigma);
+            score = std::max(score, ped_score);
+        }
     }
     // return score / (double)pedestrians.size();
     return score;
@@ -92,8 +105,11 @@ double TrajectoryCritic::baseObstacleScore(const Candidate& candidate)
     {
         double pose_score = scorePose(costmap, pose);
         // check if any pose collides
-        if (pose_score > 250) return 255;
-        score += pose_score;
+        // if (pose_score > 250) return 255;
+        if (sum_obstacle_scores_)
+            score += pose_score;
+        else
+            score = std::max(score, pose_score);
     }
     return score;
 }
@@ -127,6 +143,14 @@ void TrajectoryCritic::computeTotalScore(Candidate& candidate)
     // std::cout << "Size of raw_scores: " << candidate.score.raw_scores.size() << std::endl;
     candidate.score.total = vdot(candidate.score.raw_scores, weights_);
 }
+
+
+double TrajectoryCritic::scoreDecay(const double score, 
+    const int horizon, const double dt)
+{
+    return (1 - (dt / (2.0*horizon)));
+}
+
 
 
 void TrajectoryCritic::calculateFeatureCounts(Candidate optimal_candidate)

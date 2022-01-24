@@ -25,7 +25,10 @@ class TrajectoryCritic {
             const std::vector<double> weights,
             const double horizon,
             const double clearance_thr,
-            const double sim_granularity);
+            const double sim_granularity,
+            const bool sum_obstacle_scores_,
+            const bool sum_social_disturbance_scores_,
+            const bool decay_social_disturbance_scores_);
 
         ~TrajectoryCritic() {}
 
@@ -50,7 +53,7 @@ class TrajectoryCritic {
 
         Person constantVelocityProjection(const Person& person, const double dt);
 
-        double scoreDecay(const double score, const int horizon, const int i);
+        double scoreDecay(const double score, const int horizon, const double dt);
 
         void computeTotalScore(Candidate& candidate);
 
@@ -62,6 +65,9 @@ class TrajectoryCritic {
         double horizon_;
         double clearance_threshold_;
         double sim_granularity_;
+        bool sum_obstacle_scores_;
+        bool sum_social_disturbance_scores_;
+        bool decay_social_disturbance_scores_;
         costmap_2d::Costmap2D* static_costmap_;
     
     public:

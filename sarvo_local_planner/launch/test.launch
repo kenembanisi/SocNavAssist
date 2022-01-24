@@ -16,12 +16,14 @@
     <arg name="trial_name" default="test" />
     <arg name="phase" default="test" />
     <arg name="record" default="false" />
+    <arg name="feature_filename" default="data/demos_features.csv" />
     <param name="scenario" value="$(arg scenario)" />
     <param name="scenario_layout" value="$(arg scenario_layout)" />
     <param name="trial_number" value="$(arg trial_number)" />
     <param name="trial_name" value="$(arg trial_name)" />
     <param name="debug_bars" value="$(arg debug_bars)" />
     <param name="study_phase" value="$(arg phase)" />
+    <param name="feature_filename" value="$(arg feature_filename)" />
 
     <!-- Initial robot pose and goal pose-->
     <arg name="robot_x" default="-5.52" />
@@ -32,6 +34,9 @@
     <arg name="goal_y" default="7.22" />
     <!-- <arg name="goal_y" default="8.22" /> -->
 
+    <!-- Weights -->
+    <arg name="behavior_weights" default="0.1, 0.1, 0.0, 0.1, 0.1" />
+    <param name="behavior_weights" value="$(arg behavior_weights)" />
 
     <!-- set goal pos as param -->
     <param name="goal_x" value="$(arg goal_x)" />
@@ -133,6 +138,8 @@
             /unsuitable_trajectory_cloud
             /unsuitable_velocities
             /map /map_metadata" if="$(eval record=='true')"/>
+
+    <node pkg="sarvo_local_planner" type="data_logger.py" name="data_logger" />
 
 
 </launch>

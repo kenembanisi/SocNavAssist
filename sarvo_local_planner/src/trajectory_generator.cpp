@@ -37,10 +37,15 @@ void TrajectoryGenerator::startNewIteration(const Pose2D pose,
     max_vel_x = std::max( std::min( max_vel_x, distance / sim_time_ ), -max_vel_x_ );
 
     // using trajectory rollout approach, sampling the maximum velocity reachable in sim_time_
-    max_vel.vx = projectVelocity(max_vel_x_, vel_.vx, max_acc_x_, sim_time_);
-    max_vel.w = projectVelocity(max_vel_theta_, vel_.w, max_acc_theta_, sim_time_);
-    min_vel.vx = projectVelocity(-max_vel_x_, vel_.vx, max_acc_x_, sim_time_);
-    min_vel.w = projectVelocity(-max_vel_theta_, vel_.w, max_acc_theta_, sim_time_);
+    // max_vel.vx = projectVelocity(max_vel_x_, vel_.vx, max_acc_x_, sim_time_);
+    // max_vel.w = projectVelocity(max_vel_theta_, vel_.w, max_acc_theta_, sim_time_);
+    // min_vel.vx = projectVelocity(-max_vel_x_, vel_.vx, max_acc_x_, sim_time_);
+    // min_vel.w = projectVelocity(-max_vel_theta_, vel_.w, max_acc_theta_, sim_time_);
+
+    max_vel.vx = projectVelocity(max_vel_x_, vel_.vx, max_acc_x_, dt);
+    max_vel.w = projectVelocity(max_vel_theta_, vel_.w, max_acc_theta_, dt);
+    min_vel.vx = projectVelocity(-max_vel_x_, vel_.vx, max_acc_x_, dt);
+    min_vel.w = projectVelocity(-max_vel_theta_, vel_.w, max_acc_theta_, dt);
 
     // ROS_INFO("Curr_vel: [%f, %f] | Ori_Max_vel: [%f, %f] | Max_vel: [%f, %f] | Min_vel: [%f, %f]", 
     //     vel_.vx, vel_.w, max_vel_x_, max_vel_theta_, max_vel.vx, max_vel.w, min_vel.vx, min_vel.w);
