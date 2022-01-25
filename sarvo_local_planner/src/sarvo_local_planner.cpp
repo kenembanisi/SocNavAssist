@@ -239,7 +239,7 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
     /* Compute agent reference velocity */
     // goal_vel_ = computeGoalVelocity(goal_location_);
 
-    ROS_INFO("*******************************Got here: 1*******************************");
+    // ROS_INFO("*******************************Got here: 1*******************************");
 
     if (isFinalGoalReached()){
         ROS_INFO_STREAM_ONCE("***************************************************");
@@ -309,8 +309,8 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
     }
 
 
-    std::cout << "[SARVO_PLANNER]: Waypoint is: [" << current_wp_.x << ", " 
-        << current_wp_.y << "]" << std::endl;
+    // std::cout << "[SARVO_PLANNER]: Waypoint is: [" << current_wp_.x << ", " 
+    //     << current_wp_.y << "]" << std::endl;
     // ROS_INFO("PointVel: [%f, %f]", goal_vel_.x, goal_vel_.y);
 
     /* Compute agent reference velocity */
@@ -408,7 +408,7 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
         optimal_twist.angular.z = candidate_optimal.twist.w;
         cmd_vel_pub_.publish(optimal_twist);
 
-        ROS_INFO("*******************************Got here: 2*******************************");
+        // ROS_INFO("*******************************Got here: 2*******************************");
 
     }
     else {
@@ -1040,7 +1040,7 @@ void SARVOLocalPlanner::simulationStatesPublisher(const Candidate& candidate_opt
     // publish
     sim_states_pub_.publish(sim_states);
 
-    ROS_INFO("Time is: %0.3f", time.toSec());
+    // ROS_INFO("Time is: %0.3f", time.toSec());
 }
 
 
@@ -1270,7 +1270,7 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
                 if (candidate_cost < min_cost) {
                     min_cost = candidate_cost;
                     optimal_candidate = candidate;
-                    ROS_INFO("[SARVO_PLANNER]: Min cost is: %f", min_cost);
+                    // ROS_INFO("[SARVO_PLANNER]: Min cost is: %f", min_cost);
                 }
 
             }

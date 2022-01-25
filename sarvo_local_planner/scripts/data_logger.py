@@ -35,11 +35,16 @@ class DataLogger():
             try:
                 data = rospy.wait_for_message('sarvo_simulation_states', 
                                 SimulationStates, timeout=1)
-            except:
-                pass
-        self.num_active_pedestrians = len(data.ped_groups)
+                self.num_active_pedestrians = len(data.ped_groups)
+            except BaseException:
+                self.num_active_pedestrians = 11 # this is hard-coded incase the subscriber fails
+                continue
+        
+        # self.num_active_pedestrians = 11 # this is hard-coded incase the subscriber fails
 
+        print("The num active pedestrians is {}".format(self.num_active_pedestrians))
 
+        
         # initialize variables
         self.x = [[] for i in range(self.num_active_pedestrians+1)]
         self.y = [[] for i in range(self.num_active_pedestrians+1)]
@@ -60,6 +65,8 @@ class DataLogger():
         self.operator_feature_count = []
 
         self.time = []
+
+        rospy.loginfo("DataLogger is initiated!")
 
     
     def dataCallback(self, msg):
@@ -137,7 +144,7 @@ class DataLogger():
                 self.v[i].append([self.pedestrians_list[i-1].velocity.x,
                                   self.pedestrians_list[i-1].velocity.y])
 
-        rospy.loginfo("Logging data")
+        # rospy.loginfo("Logging data")
 
 
     def saveData(self):

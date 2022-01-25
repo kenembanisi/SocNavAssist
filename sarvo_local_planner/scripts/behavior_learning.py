@@ -11,9 +11,11 @@ import csv
 # Step 0. Set parameters
 ####################################################################################
 learning_rate = 0.001
-num_iterations = 5
-num_repetitions = 3
+num_iterations = 3
+num_repetitions = 1
+display_flag = 'false'
 
+rounder = lambda lst, decimal_places: str([round(e, decimal_places) for e in lst])
 
 ####################################################################################
 # Step 1. Load feature count data for human demonstration data from a file
@@ -44,6 +46,23 @@ weights = np.array([0.05, 0.75, 0.0, 1.0, 0.03])
 print('---- Initial weights: {} \n'.format(str(weights)))
 
 
+time_struct = time.localtime(time.time())
+time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
+            str(time_struct.tm_hour) + str(time_struct.tm_min) + ']'
+log_filename = '../data/learning_logs/'+behavior+'_learning_log_'+time_now+'.txt'  
+
+with open(log_filename, 'w') as log_file_obj:
+    log_file_obj.write("*********************************************************** \n")
+    log_file_obj.write(behavior+'_learning_log_'+time_now+ "txt \n")
+    log_file_obj.write("*********************************************************** \n \n")
+    log_file_obj.write("Scenario: [" + scenario +"] \n")
+    log_file_obj.write("Behavior: [" + behavior +"] \n")
+    log_file_obj.write("Learning rate: [" + str(learning_rate) +"] \n")
+    log_file_obj.write("Num iterations and repetitions: [" + str(num_iterations) +"/" + str(num_repetitions)+"] \n \n")
+    log_file_obj.write("Human avg feature counts: " + rounder(human_features_exp, 4) +" \n \n")
+    log_file_obj.write("Initial weights, w0: " + rounder(weights, 4) +" \n \n \n")
+
+
 # 2.2. Setup the iteration -----------------------------------------------------
 for iteration in range(num_iterations):
     print('iteration: {}/{} \n'.format(iteration+1, num_iterations))
@@ -55,7 +74,7 @@ for iteration in range(num_iterations):
     time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
                 str(time_struct.tm_hour) + str(time_struct.tm_min) + ']'
     current_filename = 'data/'+behavior+'_demo_features_'+time_now+'.csv'  
-    with open('../'+current_filename, 'w')  as file:
+    with open('../'+current_filename, 'a')  as file:
         csvwriter = csv.writer(file)
         csvwriter.writerow(columns)
     
@@ -64,7 +83,7 @@ for iteration in range(num_iterations):
     for weight in weights:
         w += str(round(weight, 2)) + '/'
     w = w[:-1]
-    arg_list = [ exec_file, scenario, current_filename, w ]
+    arg_list = [ exec_file, scenario, current_filename, w, display_flag ]
 
     #  2.3.3. Run the simulation for the defined number of repetitions
     #       This will store the feature counts in the current open file
@@ -91,3 +110,14 @@ for iteration in range(num_iterations):
 
     print('---- Gradient: {}'.format(str(grad)))
     print('---- Weight update: {} \n'.format(str(weights)))
+
+
+    with open(log_filename, 'a') as log_file_obj:
+        log_file_obj.write("*********************************************************** \n")
+        log_file_obj.write("Iteration: " + str(iteration+1) + " / " + str(num_iterations)+" \n")
+        log_file_obj.write("*********************************************************** \n")
+        log_file_obj.write("Feature count file: " + current_filename +" \n")
+        log_file_obj.write("Num demos: " + str(num_demos) +" \n \n")
+        log_file_obj.write("Sarvo avg feature count: " + rounder(sarvo_features_exp, 4) +" \n")
+        log_file_obj.write("Gradient: " + rounder(grad, 4) +" \n")
+        log_file_obj.write("Updated weights: " + rounder(weights, 4) +" \n \n \n")

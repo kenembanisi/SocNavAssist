@@ -210,7 +210,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plotter")
-    parser.add_argument('--data', default='logs/test_crossing-01_layout-01_test_AUTO_[120_1132].npy', help='logged data filename')
+    parser.add_argument('--data', default='logs/test_crossing-01_layout-01_test_AUTO_[124_1711].npy', help='logged data filename')
                 
     args = parser.parse_args()
 

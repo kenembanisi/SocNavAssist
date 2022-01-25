@@ -15,7 +15,8 @@
     <arg name="debug_bars" default="false" />
     <arg name="trial_name" default="test" />
     <arg name="phase" default="test" />
-    <arg name="record" default="false" />
+    <arg name="record_rosbag" default="false" />
+    <arg name="display_viz" default="false" />
     <arg name="feature_filename" default="data/demos_features.csv" />
     <param name="scenario" value="$(arg scenario)" />
     <param name="scenario_layout" value="$(arg scenario_layout)" />
@@ -97,16 +98,21 @@
     <!-- <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" 
         output="screen"/> -->
 
-    <!-- Launch the visual interface -->
-    <node name="socnavassist_visual_interface" pkg="visual_interface" type="visual_interface_node" 
-        output="screen" respawn="true" />
+    <group if="$(eval display_viz=='true')">
+        <!-- Launch the visual interface -->
+        <node name="socnavassist_visual_interface" pkg="visual_interface" type="visual_interface_node" 
+            output="screen" respawn="true" />
 
-    <!-- Launch the proxemics evaluation -->
-    <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
+        <!-- Launch the proxemics evaluation -->
+        <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
 
-    <!-- Launch the augmented visualization -->
-    <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" />
-    
+        <!-- Launch the augmented visualization -->
+        <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" />
+
+        <!-- Launch rviz -->
+        <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo.rviz" />
+        <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" />
+    </group>
 
     <!-- Localize the robot -->
     <arg name="map_file" default="$(find sarvo_local_planner)/maps/hall_map.yaml" />
@@ -117,15 +123,13 @@
         <rosparam file="$(find sarvo_local_planner)/config/amcl.yaml" command="load" />
     </node>
 
+    <!-- Launch main sarvo_local_planner -->
     <node pkg="sarvo_local_planner" type="sarvo_local_planner" name="sarvo_planner" output="screen" required="true" >
         <rosparam file="$(find sarvo_local_planner)/config/costmap_params.yaml" command="load" ns="static_costmap" />
         <rosparam file="$(find sarvo_local_planner)/config/behaviors.yaml" command="load" />
     </node>
 
-    <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo.rviz" />
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" />
-
-
+    <!-- Launch rosbag to store data -->
     <node pkg="rosbag" type="record" name="recorder" output="screen" 
         args=" -O $(find sarvo_local_planner)/rosbags/session.bag
             /base_controller/cmd_vel /base_controller/odom /gazebo/model_states 
@@ -137,9 +141,9 @@
             /suitable_velocities
             /unsuitable_trajectory_cloud
             /unsuitable_velocities
-            /map /map_metadata" if="$(eval record=='true')"/>
+            /map /map_metadata" if="$(eval record_rosbag=='true')"/>
 
-    <node pkg="sarvo_local_planner" type="data_logger.py" name="data_logger" />
+    <node pkg="sarvo_local_planner" type="data_logger.py" name="data_logger" output="screen" />
 
 
 </launch>
