@@ -9,14 +9,14 @@
     <arg name="paused" default="true" />
 
     <!-- Set scenario details-->
-    <arg name="scenario" default="crossing-02" />
+    <arg name="scenario" default="crossing-01" />
     <arg name="scenario_layout" default="layout-01" />
     <arg name="trial_number" default="0/0" />
     <arg name="debug_bars" default="false" />
     <arg name="trial_name" default="test" />
     <arg name="phase" default="test" />
     <arg name="record_rosbag" default="false" />
-    <arg name="display_viz" default="false" />
+    <arg name="display_viz" default="true" />
     <arg name="feature_filename" default="data/demos_features.csv" />
     <param name="scenario" value="$(arg scenario)" />
     <param name="scenario_layout" value="$(arg scenario_layout)" />
@@ -36,7 +36,7 @@
     <!-- <arg name="goal_y" default="8.22" /> -->
 
     <!-- Weights -->
-    <arg name="behavior_weights" default="0.1, 0.1, 0.0, 0.1, 0.1" />
+    <arg name="behavior_weights" default="0.05, 0.75, 0.0, 1.0, 0.03" />
     <param name="behavior_weights" value="$(arg behavior_weights)" />
 
     <!-- set goal pos as param -->
@@ -95,11 +95,11 @@
         required="true" />  -->
 
     <!-- Launch the falcon novint haptic interface -->
-    <!-- <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" 
-        output="screen"/> -->
+    <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" 
+        output="screen" if="$(eval trial_condition!='AUTO')"/>/>
 
-    <group if="$(eval display_viz=='true')">
-        <!-- Launch the visual interface -->
+    <group if="$(eval display_viz==true)">
+            <!-- Launch the visual interface -->
         <node name="socnavassist_visual_interface" pkg="visual_interface" type="visual_interface_node" 
             output="screen" respawn="true" />
 

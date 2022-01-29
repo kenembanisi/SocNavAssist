@@ -26,12 +26,39 @@ PathPlanner::PathPlanner(costmap_2d::Costmap2D* costmap,
     worldToMap();
 
     // // generate prm
-    prm_roadmap_ = generateRoadMap(adjacency_list);
+    // prm_roadmap_ = generateRoadMap(adjacency_list);
+
+    auto [samples_x, samples_y] = generateSamples();
+
+    new_samples_x_ = samples_x;
+    new_samples_y_ = samples_y;
+
+
+    auto road_map = generateRoadMap(samples_x, samples_y);
+
+    printVectorOfVector(road_map);
+
+    prm_roadmap_ = generateRoadMap(road_map);
+
+    // printVectorOfNode(prm_roadmap_);
+
+    ROS_INFO("/////////////////////////////");
+
+    updateRoadMapwithGoal();
 
     // ROS_INFO("Size: [%d]; %d : [%f, %f]", (int)prm_roadmap_.size(), 
     //     prm_roadmap_[2][0].idx, prm_roadmap_[2][0].x, prm_roadmap_[2][0].y);
+    // for (size_t i = 0; i < samples_x.size(); ++i)
+    //     std::cout << "[ " << samples_x[i] << ", " << samples_y[i] << " ] , \n";
+
+    // printVectorOfNode(prm_roadmap_);
 }
 
+PathPlanner::~PathPlanner()
+{
+    ROS_ERROR("Destroying the path planner object");
+    delete sample_kdtree_;
+}
 
 std::vector<std::vector<Node>> PathPlanner::generateRoadMap(
     std::vector< std::vector<int> > adjacency_list)
@@ -43,12 +70,150 @@ std::vector<std::vector<Node>> PathPlanner::generateRoadMap(
         std::vector<Node> temp = {};
         for (int idx : v)
         {
-            temp.push_back(Node(sample_x_[idx], 
-                sample_y_[idx], INF, idx, -1));
+            temp.push_back(Node(new_samples_x_[idx], 
+                new_samples_y_[idx], INF, idx, -1));
         }
         result.push_back(temp);
     }
     return result;
+}
+
+
+std::vector<std::vector<int>> PathPlanner::generateRoadMap(
+    std::vector<float>& samples_x, std::vector<float>& samples_y)
+{    
+    // for each sampled point, find the n nearest neighbors
+    size_t n_samples = samples_x.size();
+    std::vector<std::vector<int>> road_map;
+    road_map.reserve(n_samples);
+
+    // generate kd-tree from samples
+    // KDTree sample_kdtree(samples_x, samples_y);
+    sample_kdtree_ = new KDTree(samples_x, samples_y);
+
+    for (int i = 0; i < n_samples; ++i) {
+        float x = samples_x[i];
+        float y = samples_y[i];
+
+        // sort all other samples by distance to current sample
+        auto [indices, dists] = sample_kdtree_->knnSearch(x, y, n_samples);
+
+        // find the n closest neighbors with valid edges
+        std::vector<int> edge_id;
+        edge_id.reserve(max_num_neighbors_);
+        for (size_t j = 0; j < indices.size(); ++j) {
+            float nx = samples_x[indices[j]];
+            float ny = samples_y[indices[j]];
+
+            // check if valid edge exists
+            if (validEdge(x, y, nx, ny) && i != indices[j])
+                edge_id.push_back(indices[j]);
+
+            // check if max number of neighbors is reached
+            if (edge_id.size() >= max_num_neighbors_)
+                break;
+        }
+
+        road_map.push_back(edge_id);
+    }
+
+    // // compute neighbors for the goal node and add to road_map
+    //     // sort all other samples by distance to current sample
+    // auto [indices, dists] = sample_kdtree_->knnSearch((float)goal_.x, (float)goal_.y, n_samples);
+
+    // // find the n closest neighbors with valid edges
+    // std::vector<int> edge_id;
+    // edge_id.reserve(max_num_neighbors_);
+    // for (size_t j = 0; j < indices.size(); ++j) {
+    //     float nx = samples_x[indices[j]];
+    //     float ny = samples_y[indices[j]];
+
+    //     // check if valid edge exists
+    //     if (validEdge((float)goal_.x, (float)goal_.y, nx, ny))
+    //         edge_id.push_back(indices[j]);
+
+    //     // check if max number of neighbors is reached
+    //     if (edge_id.size() >= max_num_neighbors_)
+    //         break;
+    // }
+    
+    return road_map;
+}
+
+
+std::pair<std::vector<float>, std::vector<float>> 
+    PathPlanner::generateSamples()
+{
+
+    // create vectors for samples
+    std::vector<float> samples_x;
+    std::vector<float> samples_y;
+    samples_x.reserve(num_sample_points_);
+    samples_y.reserve(num_sample_points_);
+
+    // get the boundaries of the world
+    // double min_x = static_costmap_->getOriginX();
+    // double min_y = static_costmap_->getOriginY();
+    // double max_x = static_costmap_->getSizeInMetersX() + min_x;
+    // double max_y = static_costmap_->getSizeInMetersY() + min_y;
+    float min_x = -0.15f;
+    float min_y = -4.20f;
+    float max_x = 14.60f;
+    float max_y = 5.86f; // these are values for the hall_map. Will be different for other maps
+
+    std::vector<float> samples_x_tmp, samples_y_tmp;
+
+    for (int i = 0; i < int(std::abs(max_x - min_x)/2); ++i)
+        samples_x_tmp.push_back(min_x + 1 + 2*i);
+    for (int i = 0; i < int(std::abs(max_y - min_y)/2); ++i)
+        samples_y_tmp.push_back(min_y + 1 + 2*i);
+
+    for (auto tx : samples_x_tmp) {
+        for (auto ty : samples_y_tmp) {
+            // check that sample is collision-free
+            if (!checkCollision(tx, ty)) {
+                samples_x.push_back(tx);
+                samples_y.push_back(ty);
+            }
+        }
+    }
+
+
+    return {samples_x, samples_y};
+
+}
+
+
+void PathPlanner::updateRoadMapwithGoal()
+{
+    float x = float(goal_.x);
+    float y = float(goal_.y);
+
+    int goal_idx = new_samples_x_.size();
+
+    // sort all other samples by distance to current sample
+    auto [indices, dists] = sample_kdtree_->knnSearch(x, y, max_num_neighbors_);
+
+    // find the n closest neighbors with valid edges
+    int n_goal_neighbors = 0;
+    for (size_t j = 0; j < indices.size(); ++j) {
+        float nx = new_samples_x_[indices[j]];
+        float ny = new_samples_y_[indices[j]];
+
+        // check if valid edge exists
+        if (validEdge(x, y, nx, ny)) {
+            prm_roadmap_[indices[j]].push_back(Node(goal_.x, 
+                    goal_.y, 0.0, goal_idx, -1));
+            n_goal_neighbors++;
+        }
+
+        // check if max number of neighbors is reached
+        if (n_goal_neighbors >= max_num_neighbors_)
+            break;
+    }
+
+    // prm_roadmap_.push_back({}); // no need to add the goal now
+
 }
 
 
@@ -61,38 +226,69 @@ std::stack<Pose2D> PathPlanner::computePathToGoal(
     bool found_waypoint = false;
     double dist_to_waypoint, waypoint_to_goal;
     int node_idx;
-    for (int idx = 0; idx < sample_y_.size(); ++idx)
-    {
-        /* TODO: Use a KD-Tree here to reduce the complexity from O(n) to O(log n)? 
-            A query function can be used to return all samples within a distance r */
-            
-        Pose2D node_pose;
-        node_pose.x = sample_x_[idx];
-        node_pose.y = sample_y_[idx];
 
-        dist_to_waypoint = abs(robot_pose, node_pose);
+    /* TODO: Use a KD-Tree here to reduce the complexity from O(n) to O(log n)? 
+        A query function can be used to return all samples within a distance r */
+
+    auto [indices, dists] = sample_kdtree_->knnSearch(robot_pose.x, robot_pose.y, 8); 
+        // 8 is set as an arbitrary number to search around
+
+    // printVector(indices);
+
+    for (size_t idx = 0; idx < indices.size(); ++idx)
+    {
+        Pose2D node_pose;
+        node_pose.x = new_samples_x_[indices[idx]];
+        node_pose.y = new_samples_y_[indices[idx]];
+
+        dist_to_waypoint = std::sqrt(dists[indices[idx]]);
         waypoint_to_goal = abs(goal_, node_pose);
 
-        // ROS_INFO("[computePathToGoal]: Waypoint [%d] checked...", idx);
-
         // check distance to way_point is under threshold
-        if (dist_to_waypoint > connecting_dist_threshold_) continue;
-        
-        /* TODO: Include orientation to the heuristic of waypoints?  */
+        if (dist_to_waypoint > connecting_dist_threshold_) break;
+
+        // std::cout << "Index: " << indices[idx] << ", has cost: " << dist_to_waypoint + waypoint_to_goal << "\n";
+
+        // check if it is visible, i.e. a valid edge exists
         if (isWayPointVisible(robot_pose, node_pose) 
             && (dist_to_waypoint + waypoint_to_goal) < min_dist)
         {
             next_waypoint = node_pose;
             min_dist = dist_to_waypoint + waypoint_to_goal;
-            node_idx = idx;
+            node_idx = indices[idx];
             found_waypoint = true;
         }
     }
 
+    // for (int idx = 0; idx < sample_y_.size(); ++idx)
+    // {
+    //     Pose2D node_pose;
+    //     node_pose.x = sample_x_[idx];
+    //     node_pose.y = sample_y_[idx];
+
+    //     dist_to_waypoint = abs(robot_pose, node_pose);
+    //     waypoint_to_goal = abs(goal_, node_pose);
+
+    //     // ROS_INFO("[computePathToGoal]: Waypoint [%d] checked...", idx);
+
+    //     // check distance to way_point is under threshold
+    //     if (dist_to_waypoint > connecting_dist_threshold_) continue;
+        
+    //     /* TODO: Include orientation to the heuristic of waypoints?  */
+    //     if (isWayPointVisible(robot_pose, node_pose) 
+    //         && (dist_to_waypoint + waypoint_to_goal) < min_dist)
+    //     {
+    //         next_waypoint = node_pose;
+    //         min_dist = dist_to_waypoint + waypoint_to_goal;
+    //         node_idx = idx;
+    //         found_waypoint = true;
+    //     }
+    // }
+
     if (found_waypoint) {
         // append roadmap with new start vertex and edge
-        prm_roadmap_.push_back( {Node(next_waypoint.x, 
-                    next_waypoint.y, INF, node_idx, -1)} );
+        // prm_roadmap_.push_back( {Node(next_waypoint.x, 
+        //             next_waypoint.y, INF, node_idx, -1)} );
 
         std::cout << "[computePathToGoal]: Next Waypoint is: " << node_idx << ": [" << next_waypoint.x << ", " 
         << next_waypoint.y << "]" << std::endl;
@@ -128,7 +324,8 @@ std::stack<Pose2D> PathPlanner::dijkstraPlanner(const Pose2D& next_wp,
     // add the start node into the open set
     // Node start_node = Node(next_wp.x, next_wp.y, 0.0, (int)sample_x_.size(), -1);
     Node start_node = Node(next_wp.x, next_wp.y, 0.0, next_wp_idx, -1);
-    Node goal_node = Node(goal_.x, goal_.y, 0.0, (int)sample_x_.size()-1, -1);
+    // Node goal_node = Node(goal_.x, goal_.y, 0.0, (int)sample_x_.size()-1, -1);
+    Node goal_node = Node(goal_.x, goal_.y, 0.0, (int)new_samples_x_.size(), -1);
 
     std::cout << "[dijkstraPlanner]: Goal node is: " << goal_node.idx << ": [" << goal_node.x << ", " 
         << goal_node.y << "]" << std::endl;
@@ -163,10 +360,10 @@ std::stack<Pose2D> PathPlanner::dijkstraPlanner(const Pose2D& next_wp,
             // calculate the edge cost
             double edge_cost = nodeDist(current_node, next_node);
             
-            // std::cout << "[dijkstraPlanner]: 'Current node': " << current_node.idx 
-            //     << ", checking 'Next node' : " << next_node.idx << ", cost: "
-            //     << next_node.cost << " , push cond : "
-            //     << (next_node.cost > (current_node.cost + edge_cost)) << std::endl;
+            std::cout << "[dijkstraPlanner]: 'Currnode': " << current_node.idx << ", cost: "
+                << current_node.cost  << ",  'Nxtnode' : " << next_node.idx << ", cost: "
+                << next_node.cost << " , push cond : "
+                << (next_node.cost > (current_node.cost + edge_cost)) << std::endl;
 
             // update the cost of next node and place in priority queue 
             // if its cost is higher than current path
@@ -250,8 +447,8 @@ bool PathPlanner::isWayPointVisible(const Pose2D& robot_pose,
         return false;
     }
 
-    std::vector<double> van_der_corput_seq = {1, 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 0.875, 0.0625, 0.5625};
-    double config_space_step_size = 0.6;
+    // std::vector<double> van_der_corput_seq = {1, 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 0.875, 0.0625, 0.5625};
+    // double config_space_step_size_ = 0.6;
 
     double mag = abs(robot_pose, waypoint);
     std::vector<double> vec_dir = { (waypoint.x-robot_pose.x)/mag, (waypoint.y-robot_pose.y)/mag };
@@ -289,6 +486,36 @@ Pose2D PathPlanner::projectPosition(const Pose2D& pose,
 }
 
 
+std::pair<float, float> PathPlanner::projectPosition(const float& x,
+    const float &y, const std::vector<double>& dir, const double mag)
+{
+    float next_x = x + dir[0] * mag;
+    float next_y = y + dir[1] * mag;
+    return {next_x, next_y};
+}
+
+
+bool PathPlanner::validEdge(const float& current_x, const float& current_y,
+    const float& next_x, const float& next_y)
+{
+    double mag = std::hypot(current_x-next_x, current_y-next_y);
+
+    std::vector<double> vec_dir = { (next_x-current_x)/mag, (next_y-current_y)/mag };
+
+    int n_steps = mag / step_size_;
+    
+    for (int i = 0; i < std::min(n_steps, (int)van_der_corput_seq_.size()); ++i) {
+        auto [nx, ny] = projectPosition(current_x, current_y, vec_dir, mag * van_der_corput_seq_[i]);
+
+        if (checkCollision(nx, ny)) {
+            // ROS_INFO("[isWayPointVisible]: Check complete: Waypoint is NOT visible (Collision)...");
+            return false;
+        }
+    }
+    return true;
+}
+
+
 bool PathPlanner::checkCollision(const Pose2D& pose)
 {
     unsigned int mx, my;
@@ -296,6 +523,18 @@ bool PathPlanner::checkCollision(const Pose2D& pose)
     unsigned char pose_cost = static_costmap_->getCost(mx, my);
 
     if (pose_cost > 200) return true;
+
+    return false;
+}
+
+
+bool PathPlanner::checkCollision(const float& x, const float& y)
+{
+    unsigned int mx, my;
+    static_costmap_->worldToMap(x, y, mx, my);
+    unsigned char pose_cost = static_costmap_->getCost(mx, my);
+
+    if (pose_cost > 10) return true;
 
     return false;
 }

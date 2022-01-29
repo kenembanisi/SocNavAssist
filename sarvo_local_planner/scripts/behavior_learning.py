@@ -13,7 +13,7 @@ import csv
 learning_rate = 0.001
 num_iterations = 3
 num_repetitions = 1
-display_flag = 'false'
+display_flag = "true"
 
 rounder = lambda lst, decimal_places: str([round(e, decimal_places) for e in lst])
 

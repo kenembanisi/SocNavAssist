@@ -9,14 +9,14 @@ echo "Starting the user study, kindly wait!"
 SCENARIO=$1
 FILENAME=$2
 WEIGHTS=$3
-DISPLAY=$4
+DISP=$4
 
 # 1
 roslaunch sarvo_local_planner test.launch scenario:=$SCENARIO \
                                           feature_filename:=$FILENAME \
                                           behavior_weights:=$WEIGHTS \
-                                          paused:="false" \
-                                          display_viz:=$DISPLAY
+                                          paused:="false" 
+                                          display_viz:=$DISP
 
 # -----------------------------------------------------------------------------------------------------
 

@@ -89,6 +89,8 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     unsuitable_velocity_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/unsuitable_velocities", 5);
     cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>(cmd_topic, 1);
     sim_states_pub_ = nh_.advertise<sarvo_msgs::SimulationStates>("/sarvo_simulation_states", 1);
+    optimal_cmd_vel_pub_ = nh_.advertise<std_msgs::Float64MultiArray>("/velocity_data", 1);
+    heading_delta_pub_ = nh_.advertise<std_msgs::Float32>("/heading_delta", 1);
 
     
     /* Set transform from world (Gazebo) to map frames */
@@ -145,6 +147,15 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     zero_twist_.linear.x = 0.0;
     zero_twist_.angular.z = 0.0;
 
+}
+
+
+SARVOLocalPlanner::~SARVOLocalPlanner()
+{
+    delete costmap_ros_;
+    delete traj_critic_;
+    delete traj_generator_;
+    delete path_planner_;
 }
 
 
@@ -392,6 +403,12 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
     /* Compute the optimal 2D velocity */
     Candidate candidate_optimal = chooseOptimalVelocity(v_suitable, v_unsuitable);
 
+    /* Publish optimal twist */
+    optimalTwistPublisher(candidate_optimal);
+
+    /* Publish heading delta */
+    headingDeltaPublisher(candidate_optimal.velocity, operator_vel_);
+
     // ROS_INFO("Optimal velocity: Point[%0.2f,%0.2f] Twist[%0.2f,%0.2f]", 
     //     candidate_optimal.velocity.x, candidate_optimal.velocity.y,
     //     candidate_optimal.twist.vx, candidate_optimal.twist.w);
@@ -468,9 +485,9 @@ void SARVOLocalPlanner::updateRobotState()
     robot_pose_tmp.z = robot_global_pose.pose.position.z;
     robot_pose_tmp.theta = yaw;
 
-    // ROS_INFO("Robot pose is x: [%f], y: [%f], theta: [%f]",
+    // ROS_INFO("Robot pose is x: [%f], y: [%f]",
     //     robot_global_pose.pose.position.x, 
-    //     robot_global_pose.pose.position.y,
+    //     robot_global_pose.pose.position.y);
 
     // ROS_INFO("Robot pose is x: [%f], y: [%f], theta: [%f]",
     //     robot_pose_tmp.x, robot_pose_tmp.y, robot_pose_tmp.theta);
@@ -1315,6 +1332,28 @@ Candidate SARVOLocalPlanner::computeOperatorVelocityCost(Point2D operator_vel_) 
 }
 
 
+void SARVOLocalPlanner::optimalTwistPublisher(const Candidate& optimal_candidate)
+{
+    std_msgs::Float64MultiArray optimal_twist;
+    optimal_twist.data.push_back(optimal_candidate.twist.vx);
+    optimal_twist.data.push_back(optimal_candidate.twist.w);
+
+    optimal_cmd_vel_pub_.publish(optimal_twist);
+
+}
+
+
+void SARVOLocalPlanner::headingDeltaPublisher(const Point2D& optimal_vel,
+    const Point2D& operator_vel)
+{
+    // calculate the heading delta
+    std_msgs::Float32 delta;
+    delta.data = angleBetween(operator_vel, optimal_vel);
+
+    // ROS_INFO("Heading delta is: %0.3f", delta.data);
+    // publish
+    heading_delta_pub_.publish(delta);
+}
 
 } // end namespace
 

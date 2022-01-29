@@ -8,6 +8,7 @@ project(sarvo_local_planner)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  cv_bridge
   roscpp
   geometry_msgs
   costmap_2d
@@ -16,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   spencer_tracking_msgs
 )
 
-# find_package(OpenCV 3.2.0 REQUIRED)
+find_package(OpenCV 3.2.0 REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -24,13 +25,14 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package( 
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp std_msgs spencer_tracking_msgs nav_msgs geometry_msgs
+  CATKIN_DEPENDS cv_bridge roscpp std_msgs spencer_tracking_msgs nav_msgs geometry_msgs
 )
 
 ###########
 ## Build ##
 ###########
 
+message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "catkin_INCLUDE_DIRS = ${catkin_INCLUDE_DIRS}")
 
 ## Specify additional locations of header files
@@ -48,9 +50,11 @@ add_library(path_planner include/sarvo_local_planner/path_planner.h
 # add_executable(sarvo_local_planner_node src/sarvo_local_planner_node.cpp)
 add_executable(${PROJECT_NAME} src/sarvo_local_planner.cpp)
 
-
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} trajectory_generator trajectory_critic path_planner)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS}
+                      trajectory_generator 
+                      trajectory_critic 
+                      path_planner)
 
 
 #############

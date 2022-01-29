@@ -21,6 +21,8 @@
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/PoseArray.h"
 #include "geometry_msgs/Point.h"
+#include "std_msgs/Float64MultiArray.h"
+#include "std_msgs/Float32.h"
 #include <visualization_msgs/MarkerArray.h>
 #include <nav_msgs/Path.h>
 #include <gazebo_msgs/ModelStates.h>
@@ -55,7 +57,7 @@ namespace sarvo_local_planner {
 			/**
 			 * @brief  Destructor
 			 */
-			~SARVOLocalPlanner() {};
+			~SARVOLocalPlanner();
 
 		private:
 			// methods:
@@ -192,6 +194,12 @@ namespace sarvo_local_planner {
 			sarvo_msgs::Candidate computeOperatorVelocityCost(const Point2D operator_vel_);
 
 
+			void optimalTwistPublisher(const Candidate& optimal_candidate);
+
+			void headingDeltaPublisher(const Point2D& optimal_vel,
+    			const Point2D& operator_vel);
+
+
 		private:
 			// member variables:
 
@@ -262,6 +270,8 @@ namespace sarvo_local_planner {
 			ros::Publisher ped_viz_pub_;
 			ros::Publisher cmd_vel_pub_;
 			ros::Publisher sim_states_pub_;
+			ros::Publisher optimal_cmd_vel_pub_;
+			ros::Publisher heading_delta_pub_;
 
 			ros::Subscriber state_subs_;
 

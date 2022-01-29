@@ -58,6 +58,12 @@ namespace sarvo_local_planner {
         return atan2m( point1.y - point2.y, point1.x - point2.x );
     }
 
+    double atan(const Point2D& point1, const Point2D& point2)
+    {
+        // return std::atan2( point1.y - point2.y, point1.x - point2.x );
+        return atan2m( point1.y - point2.y, point1.x - point2.x );
+    }
+
     double wrapToPi(const double angle)
     {
         double x = std::fmod(angle + PI, 2*PI);
@@ -95,11 +101,33 @@ namespace sarvo_local_planner {
     }
 
     template <typename T>
-    void print(const std::vector<T>& vec)
+    void printVector(const std::vector<T>& vec)
     {
         for (T v : vec) 
             std::cout << v << " ";
         std::cout << std::endl;
+    }
+
+    template <typename T>
+    void printNode(const std::vector<T>& vec)
+    {
+        for (T v : vec) 
+            std::cout << v.idx << " ";
+        std::cout << std::endl;
+    }
+
+    template <typename T>
+    void printVectorOfVector(const std::vector<T>& vec)
+    {
+        for (T v : vec) 
+            printVector(v);
+    }
+
+    template <typename T>
+    void printVectorOfNode(const std::vector<T>& vec)
+    {
+        for (T v : vec) 
+            printNode(v);
     }
 
     void writeCSV(std::string filename, std::vector<std::string> colname)
@@ -141,12 +169,20 @@ namespace sarvo_local_planner {
         myFile.close();
     }
 
+    // double angleBetween(const Point2D& vector1, const Point2D& vector2)
+    // {
+    //     double dot_product = (vector1.x*vector2.x) + (vector1.y*vector2.y);
+    //     double vector1_mag = std::hypot(vector1.x, vector1.y);
+    //     double vector2_mag = std::hypot(vector2.x, vector2.y);
+    //     return std::acos( dot_product / (vector1_mag*vector2_mag) );
+    // }
+
     double angleBetween(const Point2D& vector1, const Point2D& vector2)
     {
-        double dot_product = (vector1.x*vector2.x) + (vector1.y*vector2.y);
-        double vector1_mag = std::hypot(vector1.x, vector1.y);
-        double vector2_mag = std::hypot(vector2.x, vector2.y);
-        return std::acos( dot_product / (vector1_mag*vector2_mag) );
+        double theta1 = std::atan2(vector1.x, -vector1.y);
+        double theta2 = std::atan2(vector2.x, -vector2.y);
+        // return std::fmod(theta1-theta2, PI);
+        return wrapToPi(theta1-theta2);
     }
 
     double magnitudeDifference(const Point2D& vector1, const Point2D& vector2)

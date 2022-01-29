@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from matplotlib import transforms
 import numpy as np
 import math
 import os
@@ -78,10 +79,35 @@ def point2DD_velocity(vel, theta_rad):
     return vel_dd
 
 
+def pose_transform(x_list, y_list):
+    transformed_x_list = [ (-y - 5.52) for y in y_list]
+    transformed_y_list = [ (x - 6.80) for x in x_list]
+    return transformed_x_list, transformed_y_list
+
+
+
 ############################################################################################################
 # MAIN FUNCTION
 ############################################################################################################
 def main(args):
+
+    ## store data in array
+    # data = np.array([self.x,                        # 0
+    #                 self.y,                         # 1
+    #                 self.theta,                     # 2
+    #                 self.v,                         # 3
+    #                 self.omega,                     # 4
+    #                 self.v_opt,                     # 5
+    #                 self.v_goal,                    # 6
+    #                 self.v_commanded,               # 7
+    #                 self.heading_delta,             # 8
+    #                 self.control_delta,             # 9
+    #                 self.optimal_traj,              # 10
+    #                 self.operator_traj,             # 11
+    #                 self.optimal_feature_count,     # 12
+    #                 self.operator_feature_count,    # 13
+    #                 self.time])                     # 14
+
 
     # load agent data
     data_filename = args.data
@@ -204,13 +230,48 @@ def main(args):
     ax3.legend(fontsize=8)
     ax4.legend(fontsize=8)
 
+
+    #------------------------------------------------------------------------------------------------------
+    # Trajectory Plotter
+    #------------------------------------------------------------------------------------------------------
+    plt.figure()
+
+    # get data
+    agent_x, agent_y = pose_transform(data[0][0][:], data[1][0][:])
+    num_pedestrians = len(data[0])-1
+    actors_x = data[0][1:]
+    actors_y = data[1][1:]
+
+    # call plotter
+    plt.plot(agent_x, agent_y)
+    plt.plot(agent_x[0], agent_y[0],'bo', label='Origin')
+    plt.plot(agent_x[-1], agent_y[-1],'ro', label='End')
+    plt.plot(-6.48, 7.22,'go', label='Goal')
+
+    for i in range(num_pedestrians):
+        actor_x, actor_y = pose_transform(actors_x[i], actors_y[i])
+        plt.plot(actor_x[2:], actor_y[2:], label='actor'+str(i))
+
+
+
+    # set limits & axis
+    plt.xlim(-12.93, 0.22)
+    plt.ylim(-9.62, 8.5)
+    plt.axis('equal')
+
+    # set title
+    plt.title("Trajectory of Robot Motion")
+
+    # show legend
+    plt.legend()
+
     plt.show()
 
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plotter")
-    parser.add_argument('--data', default='logs/test_crossing-01_layout-01_test_AUTO_[124_1711].npy', help='logged data filename')
+    parser.add_argument('--data', default='logs/test_crossing-02_layout-01_test_AUTO_[125_1729].npy', help='logged data filename')
                 
     args = parser.parse_args()
 
