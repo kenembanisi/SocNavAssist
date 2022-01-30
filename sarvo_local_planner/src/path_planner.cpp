@@ -36,13 +36,13 @@ PathPlanner::PathPlanner(costmap_2d::Costmap2D* costmap,
 
     auto road_map = generateRoadMap(samples_x, samples_y);
 
-    printVectorOfVector(road_map);
+    // printVectorOfVector(road_map);
 
     prm_roadmap_ = generateRoadMap(road_map);
 
     // printVectorOfNode(prm_roadmap_);
 
-    ROS_INFO("/////////////////////////////");
+    // ROS_INFO("/////////////////////////////");
 
     updateRoadMapwithGoal();
 
@@ -203,7 +203,7 @@ void PathPlanner::updateRoadMapwithGoal()
         // check if valid edge exists
         if (validEdge(x, y, nx, ny)) {
             prm_roadmap_[indices[j]].push_back(Node(goal_.x, 
-                    goal_.y, 0.0, goal_idx, -1));
+                    goal_.y, INF, goal_idx, -1));
             n_goal_neighbors++;
         }
 
@@ -293,7 +293,8 @@ std::stack<Pose2D> PathPlanner::computePathToGoal(
         std::cout << "[computePathToGoal]: Next Waypoint is: " << node_idx << ": [" << next_waypoint.x << ", " 
         << next_waypoint.y << "]" << std::endl;
 
-        return dijkstraPlanner(next_waypoint, node_idx);
+        // return dijkstraPlanner(next_waypoint, node_idx);
+        return AStarPlanner(next_waypoint, node_idx);
     }
     else {
         // instantiate return path stack
@@ -360,10 +361,10 @@ std::stack<Pose2D> PathPlanner::dijkstraPlanner(const Pose2D& next_wp,
             // calculate the edge cost
             double edge_cost = nodeDist(current_node, next_node);
             
-            std::cout << "[dijkstraPlanner]: 'Currnode': " << current_node.idx << ", cost: "
-                << current_node.cost  << ",  'Nxtnode' : " << next_node.idx << ", cost: "
-                << next_node.cost << " , push cond : "
-                << (next_node.cost > (current_node.cost + edge_cost)) << std::endl;
+            // std::cout << "[dijkstraPlanner]: 'Currnode': " << current_node.idx << ", cost: "
+            //     << current_node.cost  << ",  'Nxtnode' : " << next_node.idx << ", cost: "
+            //     << next_node.cost << " , push cond : "
+            //     << (next_node.cost > (current_node.cost + edge_cost)) << std::endl;
 
             // update the cost of next node and place in priority queue 
             // if its cost is higher than current path
@@ -416,6 +417,111 @@ std::stack<Pose2D> PathPlanner::dijkstraPlanner(const Pose2D& next_wp,
     return path_stack;
 }
 
+std::stack<Pose2D> PathPlanner::AStarPlanner(const Pose2D& next_wp,
+    const int& next_wp_idx)
+{
+    bool path_found = false;
+
+    // instantiate open and closed sets
+    std::priority_queue<Node, std::vector<Node>, compare > open_set;
+    std::unordered_map<int, Node> closed_set;
+
+    // add the start node into the open set
+    // Node start_node = Node(next_wp.x, next_wp.y, 0.0, (int)sample_x_.size(), -1);
+    Node start_node = Node(next_wp.x, next_wp.y, 0.0, next_wp_idx, -1);
+    // Node goal_node = Node(goal_.x, goal_.y, 0.0, (int)sample_x_.size()-1, -1);
+    Node goal_node = Node(goal_.x, goal_.y, 0.0, (int)new_samples_x_.size(), -1);
+
+    std::cout << "[AStarPlanner]: Goal node is: " << goal_node.idx << ": [" << goal_node.x << ", " 
+        << goal_node.y << "]" << std::endl;
+    std::cout << "[AStarPlanner]: Current waypoint node is: " << start_node.idx << ": [" << start_node.x << ", " 
+        << start_node.y << "] and edge cost: [" << start_node.cost << "]" << std::endl;
+
+    open_set.push(start_node);
+
+    // main algorithm loop:
+    while (!open_set.empty())
+    {
+        // get min node in the open set
+        Node current_node = open_set.top();
+        // std::cout << "[AStarPlanner]: Checking 'Current node': " << current_node.idx << std::endl;
+        open_set.pop();
+        
+        // check if current_node is goal_node
+        if (current_node.idx == goal_node.idx){
+            goal_node.parent_idx = current_node.parent_idx;
+            goal_node.cost = current_node.cost;
+            path_found = true;
+            std::cout << "[AStarPlanner]: Path to goal FOUND!" << std::endl;
+            break;
+        }
+
+        // traverse from current node
+        for (auto next_node : prm_roadmap_[current_node.idx])
+        {
+            // skip this next node if its in closed set
+            if (closed_set.find(next_node.idx) != closed_set.end()) continue;
+
+            // calculate the edge cost
+            double edge_cost = nodeDist(current_node, next_node);
+            double cost_to_goal = nodeDist(next_node, goal_node);
+            double total_cost = edge_cost + cost_to_goal;
+            
+            std::cout << "[dijkstraPlanner]: 'Currnode': " << current_node.idx << ", cost: "
+                << current_node.cost  << ",  'Nxtnode' : " << next_node.idx << ", cost: "
+                << next_node.cost << " , push cond : "
+                << (next_node.cost > (current_node.cost + edge_cost)) << std::endl;
+
+            // update the cost of next node and place in priority queue 
+            // if its cost is higher than current path
+            if (next_node.cost > (current_node.cost + total_cost)){
+                next_node.cost = current_node.cost + total_cost;
+                next_node.parent_idx = current_node.idx;
+                open_set.push(next_node);
+
+                // std::cout << "[dijkstraPlanner]: Added 'Next node' : " << next_node.idx <<
+                //     " to open_set of size [" << open_set.size() << "]" << std::endl;
+            }            
+        }
+
+        // add current_node to closed set
+        closed_set.insert( {current_node.idx, current_node} );
+    }
+
+    // instantiate return path stack
+    std::stack<Pose2D> path_stack;
+    Pose2D waypoint;
+    waypoint.x = goal_node.x;
+    waypoint.y = goal_node.y;
+    path_stack.push(waypoint);
+
+    if (path_found)
+    {
+        int parent_idx = goal_node.parent_idx;
+        std::cout << "***************************************************" << std::endl;
+        std::cout << "[AStarPlanner]: Node on the current path are: " << goal_node.idx << " ";
+        while (parent_idx != -1)
+        {
+            auto node = closed_set[parent_idx];
+            waypoint.x = node.x;
+            waypoint.y = node.y;
+            path_stack.push(waypoint);
+
+            std::cout << parent_idx << " ";
+
+            parent_idx = node.parent_idx;
+        }
+        std::cout << std::endl;
+        std::cout << "***************************************************" << std::endl;
+        // return path_stack;
+    }
+    else {
+        std::cout << "***************************************************" << std::endl;
+        std::cout << "[AStarPlanner]: Path to goal NOT found! Heading to Goal!" << std::endl;
+        std::cout << "***************************************************" << std::endl;
+    }
+    return path_stack;
+}
 
 double PathPlanner::nodeDist(const Node& point1, const Node& point2)
 {

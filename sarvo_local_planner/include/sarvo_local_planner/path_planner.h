@@ -131,6 +131,9 @@ class PathPlanner {
         std::stack<Pose2D> dijkstraPlanner(const Pose2D& next_wp,
             const int& next_wp_idx);
 
+        std::stack<Pose2D> AStarPlanner(const Pose2D& next_wp,
+            const int& next_wp_idx);
+
         bool inBetween(double theta_v,
             double theta_left, double theta_right);
 
