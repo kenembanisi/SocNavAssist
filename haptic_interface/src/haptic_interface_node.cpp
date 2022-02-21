@@ -54,7 +54,7 @@ FalconNovintControl::FalconNovintControl(ros::NodeHandle &nh) : nh_(nh){
     }
 
     // log info
-    ROS_INFO("Novint Falcon Controller Initialized");
+    ROS_INFO("[HAPTIC_INTERFACE]: Novint Falcon Controller Initialized");
 
 }
 
@@ -229,7 +229,7 @@ void FalconNovintControl::commandForce()
 
                 this->guidance_force_[0] = -this->Kf_x_ * this->control_delta_[0];
                 this->guidance_force_[2] = -this->Kf_z_ * this->control_delta_[1];
-                // ROS_INFO("Control delta: [ %f, %f ]", this->control_delta_[0], this->control_delta_[1]);
+                // ROS_INFO("Control delta: [ %0.3f, %0.3f ]", this->control_delta_[0], this->control_delta_[1]);
             }
         }
         else {

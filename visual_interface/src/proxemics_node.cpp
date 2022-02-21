@@ -3,6 +3,7 @@
 #include <gazebo_msgs/ModelStates.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Int8MultiArray.h>
+#include <std_msgs/Float32.h>
 #include <algorithm>
 #include <tf/tf.h>
 #include <cmath>
@@ -40,15 +41,18 @@ class Proxemics {
         ros::NodeHandle nh_;
         ros::Subscriber states_subcriber_;
         ros::Publisher proxemics_publisher_;
+        ros::Publisher proxemics_score_publisher_;
 
         // variables
         std_msgs::Int8MultiArray proxemics_state_;
+        std_msgs::Float32 proxemics_score_;
         std::vector<int> actor_index_;
         int num_actors_;
         int agent_index_;
         std::vector<Pose> actor_poses_;
         Pose agent_pose_;
         float agent_radius_ = 0.4f;
+        float clearance_threshold_ = 1.75f;
         float space_radius_ = 0.45f + agent_radius_;
         int intrusion_ = 0;
         
@@ -65,6 +69,7 @@ class Proxemics {
 
             // initialize the publisher
             proxemics_publisher_ = nh_.advertise<std_msgs::Int8MultiArray>("/proxemics_states", 50);
+            proxemics_score_publisher_ = nh_.advertise<std_msgs::Float32>("/proxemics_score", 50);
             
             // get index of actors and agent
             boost::shared_ptr<gazebo_msgs::ModelStates const> msg_ptr;
@@ -105,6 +110,21 @@ class Proxemics {
             
         }
 
+        void publishProxemicsScore(void) {
+            
+            // clear proxemics score
+            proxemics_score_.data = 0.0;
+
+            // check if actor_poses is populated
+            if (actor_poses_.size() > 1) {
+                proxemics_score_.data = calcScore();
+                // ROS_INFO("Proxemics score: %0.3f", proxemics_score_.data);
+            }
+
+            // publish message
+            proxemics_score_publisher_.publish(proxemics_score_);
+        }
+
 
 
     //---------------------------------------------------------------------------------------------------
@@ -141,6 +161,8 @@ class Proxemics {
 
             publishProxemics();
 
+            publishProxemicsScore();
+
         }
 
         void checkIntrusion(void) {
@@ -155,6 +177,22 @@ class Proxemics {
             float distance = sqrt( pow(agent_pose.x - actor_pose.x, 2) + 
                                    pow(agent_pose.y - actor_pose.y, 2));
             return distance;
+        }
+
+        float calcScore(void) {
+            
+            float score = 0.0;
+            
+            for (size_t i = 0; i < num_actors_; ++i) {
+                float dist = calcDistance(agent_pose_, actor_poses_[i]);
+
+                if (dist < clearance_threshold_) {
+                    float ped_score = (clearance_threshold_ - dist);
+                    score = std::max(score, ped_score);
+                }
+            }
+
+            return score;
         }
 
 };

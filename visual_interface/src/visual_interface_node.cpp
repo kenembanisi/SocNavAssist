@@ -54,10 +54,12 @@ class VisualInterface
     image_transport::Subscriber fwd_image_sub_;
     image_transport::Subscriber bwd_image_sub_;
     //   image_transport::Publisher image_pub_;
-    ros::Subscriber cmd_vel_sub;
-    ros::Subscriber proxemics_sub;
+    ros::Subscriber cmd_vel_sub_;
+    ros::Subscriber proxemics_sub_;
+    ros::Subscriber proxemics_score_sub_;
     ros::Subscriber predicted_traj_sub_;
     ros::Subscriber heading_delta_sub_;
+    ros::Subscriber control_delta_sub_;
     ros::Subscriber v_optimal_sub_;
     cv_bridge::CvImagePtr fwd_img_ptr;
     cv_bridge::CvImagePtr bwd_img_ptr;
@@ -72,10 +74,14 @@ class VisualInterface
     std::string trial_condition;
     std::string trial_condition_name;
     std::string trial_number;
+    std::string behavior_title;
+    std::string task_title;
     visual_interface::trajectory user_pred_traj_;
     visual_interface::trajectory optimal_pred_traj_;
     int pred_trajectory_size_;
     float heading_delta_ = 0.0f;
+    std_msgs::Float64MultiArray control_delta_;;
+    float proxemics_score_ = 0.0f;
     float operator_vel_[2] = { 0.0f, 0.0f };
     float optimal_velocity_[2] = { 0.0f, 0.0f };
     
@@ -91,16 +97,22 @@ class VisualInterface
         this->bwd_image_sub_ = it_.subscribe("/rear_cam/color/image_raw", 1, &VisualInterface::bwdImageCb, this); // rear view
  
         // Subscribe to the base_controller velocity
-        this->cmd_vel_sub = nh_.subscribe("/base_controller/cmd_vel", 10, &VisualInterface::velocityCb, this);
+        this->cmd_vel_sub_ = nh_.subscribe("/base_controller/cmd_vel", 10, &VisualInterface::velocityCb, this);
 
         // Subscribe to the proxemics topic
-        this->proxemics_sub = nh_.subscribe("/proxemics_states", 10, &VisualInterface::proxemicsCb, this);
+        this->proxemics_sub_ = nh_.subscribe("/proxemics_states", 10, &VisualInterface::proxemicsCb, this);
+
+        // Subscribe to the proxemics score topic
+        this->proxemics_score_sub_ = nh_.subscribe("/proxemics_score", 10, &VisualInterface::proxemicsScoreCb, this);
 
         // Subscribe to the predicted trajectories topic
         this->predicted_traj_sub_ = nh_.subscribe("/pred_trajectories", 10, &VisualInterface::predictedTrajCb, this);
 
         // Subscribe to heading delta topic
         this->heading_delta_sub_ = nh_.subscribe("/heading_delta", 10, &VisualInterface::headingDeltaCb, this);
+
+        // Subscribe to heading delta topic
+        // this->control_delta_sub_ = nh_.subscribe("/control_delta", 10, &VisualInterface::controlDeltaCb, this);
 
         // Subscribe to v_opt (optimal velocity command) topic
         this->v_optimal_sub_ = nh_.subscribe("/velocity_data", 10, &VisualInterface::optimalVelCb, this);
@@ -113,6 +125,8 @@ class VisualInterface
         nh_.getParam("toggle_rear_camera", this->show_rearview);
         nh_.getParam("trial_number", this->trial_number);
         nh_.getParam("trial_condition", this->trial_condition);
+        nh_.getParam("behavior", this->behavior_title);
+        nh_.getParam("task_objective", this->task_title);
 
         // Set the trial condition
         // switch(this->trial_condition) 
@@ -201,12 +215,19 @@ class VisualInterface
         // store operator linear and angular velocity
         operator_vel_[0] = msg.linear.x;
         operator_vel_[1] = msg.angular.z;
+
+        // std::cout << "Max and current angular velocity are: [" << msg.angular.z << " ," << this->max_angular_vel << "] \n" ;
         
     }
 
     void proxemicsCb(const std_msgs::Int8MultiArray& msg){
         proxemics_state_[0] = msg.data[0];
         proxemics_state_[1] = msg.data[1];
+    }
+
+    void proxemicsScoreCb(const std_msgs::Float32& msg){
+        proxemics_score_ += msg.data;
+        // ROS_INFO("Proxemics score is [%0.3f]", proxemics_score_);
     }
 
     void optimalVelCb(const std_msgs::Float64MultiArray& velocities) {
@@ -281,6 +302,39 @@ class VisualInterface
             this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
         }
     }
+
+    // void controlDeltaCb( const std_msgs::Float64MultiArray& msg){
+    //     control_delta_ = msg.data;
+
+    //     if (operator_vel_[0] > 0.0) 
+    //     {
+    //         if (std::abs(heading_delta_) > 0.1) 
+    //         {
+    //             if (heading_delta_ <= 0.0)  
+    //             {
+    //                 // right angular velocity
+    //                 this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1 - (OPTIMAL_RIGHT_BASE_VERTEX_X2 - OPTIMAL_RIGHT_BASE_VERTEX_X1) * (heading_delta_/1.732); 
+    //                 this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
+    //                 // ROS_INFO("Angular pixel value to the right is %d ", this->optimal_angular_vel_right);
+    //                 }
+
+    //             else { 
+    //                 // left angular velocity
+    //                 this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2 - (OPTIMAL_LEFT_BASE_VERTEX_X2 - OPTIMAL_LEFT_BASE_VERTEX_X1) * (heading_delta_/1.732); 
+    //                 this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1; 
+    //                 // ROS_INFO("Angular pixel value to the left is %d ", this->optimal_angular_vel_left);
+    //                 };    
+    //             }
+    //         else {
+    //             this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1; 
+    //             this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
+    //         }
+    //     }
+    //     else {
+    //         this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1; 
+    //         this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
+    //     }
+    // }
 
     void drawOperatorSpeedBars() {
 
@@ -386,20 +440,73 @@ class VisualInterface
         std::string time_passed = std::to_string(time_p);
 
         // display timer
-        cv::putText(this->fwd_img_ptr->image, time_passed, cv::Point(1520, 65), cv::FONT_HERSHEY_DUPLEX, 2, cv::Scalar( 0, 0, 0 ), 2, false);
+        // cv::putText(this->fwd_img_ptr->image, time_passed, cv::Point(1520, 65), 
+        //                     cv::FONT_HERSHEY_DUPLEX, 2, 
+        //                     cv::Scalar( 0, 0, 0 ), 2, false);
+
+        cv::putText(this->fwd_img_ptr->image, time_passed, cv::Point(1520, 60), 
+                            cv::FONT_HERSHEY_DUPLEX, 1.7, 
+                            cv::Scalar( 0, 0, 0 ), 2, false);
+
+        cv::String time = "Time:";
+        cv::putText(this->fwd_img_ptr->image, time, cv::Point(1400, 55), 
+                            cv::FONT_HERSHEY_DUPLEX, 1.3, 
+                            cv::Scalar( 0, 0, 0 ), 2, false);
     }
 
     void drawScenarioTitle() {
 
-        // display scenario title
-        cv::putText(this->fwd_img_ptr->image, this->trial_condition, cv::Point(100, 65), 
-                            cv::FONT_HERSHEY_DUPLEX, 1.7, 
-                            cv::Scalar( 0, 0, 0 ), 2, false);
+        // display proximity score
+        if (this->task_title == "cautious") {
+            cv::String safety_score = "Proximity Score";
+            cv::putText(this->fwd_img_ptr->image, safety_score, cv::Point(80, 30), 
+                                cv::FONT_HERSHEY_DUPLEX, 0.75, 
+                                cv::Scalar( 0, 0, 0 ), 2, false);
+            
+            int RIGHT_BASE_VERTEX_X1 = 60; int RIGHT_BASE_VERTEX_Y1 = 50;
+            int RIGHT_BASE_VERTEX_X2 = 240; int RIGHT_BASE_VERTEX_Y2 = 100;
+            int RIGHT_LEVEL_VERTEX_X1 = 60; int RIGHT_LEVEL_VERTEX_Y1 = 50;
+            int RIGHT_LEVEL_VERTEX_X2; 
+            int RIGHT_LEVEL_VERTEX_Y2 = 100;
+            cv::rectangle(this->fwd_img_ptr->image, 
+                        cv::Point(RIGHT_BASE_VERTEX_X1, RIGHT_BASE_VERTEX_Y1), 
+                        cv::Point(RIGHT_BASE_VERTEX_X2, RIGHT_BASE_VERTEX_Y2), 
+                        cv::Scalar( 0, 0, 0 ),
+                        cv::FILLED, 
+                        cv::LINE_8);
+            
+            float max_score = 500.0f;
+            if (proxemics_score_ < max_score)
+                RIGHT_LEVEL_VERTEX_X2 = RIGHT_LEVEL_VERTEX_X1 + (RIGHT_BASE_VERTEX_X2 - RIGHT_LEVEL_VERTEX_X1) * (proxemics_score_ / max_score);
+            else RIGHT_LEVEL_VERTEX_X2 = RIGHT_BASE_VERTEX_X2;
 
-        // display trial number
-        cv::putText(this->fwd_img_ptr->image, this->trial_number, cv::Point(800, 65), 
-                            cv::FONT_HERSHEY_DUPLEX, 1.7, 
-                            cv::Scalar( 0, 0, 0 ), 2, false);
+            cv::rectangle(this->fwd_img_ptr->image, 
+                        cv::Point(RIGHT_LEVEL_VERTEX_X1, RIGHT_LEVEL_VERTEX_Y1), 
+                        cv::Point(RIGHT_LEVEL_VERTEX_X2, RIGHT_LEVEL_VERTEX_Y2), 
+                        cv::Scalar( 90, 120, 8 ),
+                        cv::FILLED, 
+                        cv::LINE_8);
+        }
+
+        // display behavior
+        // cv::String scenario_title = "B: ";
+
+        // if (this->behavior_title == "assertive") {
+        //     cv::putText(this->fwd_img_ptr->image, scenario_title+this->behavior_title, cv::Point(540, 55), 
+        //                         cv::FONT_HERSHEY_DUPLEX, 1.3, 
+        //                         cv::Scalar( 100, 10, 10 ), 2, false);
+        // }
+        // else {
+        //     cv::putText(this->fwd_img_ptr->image, scenario_title+this->behavior_title, cv::Point(540, 55), 
+        //                         cv::FONT_HERSHEY_DUPLEX, 1.3, 
+        //                         cv::Scalar( 0, 100, 0 ), 2, false);
+        // }
+
+        // // display task objective
+        // cv::String task_title = "T: ";
+        // cv::putText(this->fwd_img_ptr->image, task_title+this->task_title, cv::Point(950, 55), 
+        //                     cv::FONT_HERSHEY_DUPLEX, 1.3, 
+        //                     cv::Scalar( 0, 100, 0 ), 2, false);
     }
 
     void drawSideIndicators() {
@@ -555,8 +662,8 @@ class VisualInterface
             this->drawScenarioTitle();
 
             // draw the optimal speedbars
-            // if (this->show_debug_bars)
-            if (this->trial_condition == "HV-B" || this->trial_condition == "V-B")
+            if (this->show_debug_bars)
+            // if (this->trial_condition == "HV-B" || this->trial_condition == "V-B")
                 this->drawOptimalSpeedBars();
 
             // draw the operatpor speedbars
@@ -580,7 +687,10 @@ class VisualInterface
             if (this->start_timer) {
                 // start the timer ~ run this once
                 for (static bool first = true; first; first=false) { this->start_time = time(0); }
-                this->drawTimer();
+
+                // if (this->task_title == "assertive")
+                //     this->drawTimer();
+                 this->drawTimer();
             }
             
             // ROS_INFO("[width, height]: [%d, %d]", this->fwd_img_ptr->image.size().width, this->fwd_img_ptr->image.size().height);
@@ -594,6 +704,7 @@ class VisualInterface
     }
 
 };
+
 
 int main(int argc, char** argv)
 {
