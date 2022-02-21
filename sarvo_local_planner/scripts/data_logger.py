@@ -30,19 +30,19 @@ class DataLogger():
         self.study_phase = rospy.get_param('study_phase')
 
         # get one instance of message 
-        data = None
-        while data is None:
-            try:
-                data = rospy.wait_for_message('sarvo_simulation_states', 
-                                SimulationStates, timeout=1)
-                self.num_active_pedestrians = len(data.ped_groups)
-            except BaseException:
-                self.num_active_pedestrians = 11 # this is hard-coded incase the subscriber fails
-                continue
+        # data = None
+        # while data is None:
+        #     try:
+        #         data = rospy.wait_for_message('sarvo_simulation_states', 
+        #                         SimulationStates, timeout=1)
+        #         self.num_active_pedestrians = len(data.ped_groups)
+        #     except BaseException:
+        #         self.num_active_pedestrians = 11 # this is hard-coded incase the subscriber fails
+        #         continue
         
-        # self.num_active_pedestrians = 11 # this is hard-coded incase the subscriber fails
+        self.num_active_pedestrians = 11 # this is hard-coded incase the subscriber fails
 
-        print("The num active pedestrians is {}".format(self.num_active_pedestrians))
+        # print("The num active pedestrians is {}".format(self.num_active_pedestrians))
 
         
         # initialize variables
@@ -85,7 +85,7 @@ class DataLogger():
         self.v_commanded.append([msg.operator_candidate.twist.vx,
                                  msg.operator_candidate.twist.w])
         # get deltas
-        # self.heading_delta.append()
+        self.heading_delta.append(msg.heading_delta)
         # self.control_delta.append()
 
         # get trajectories

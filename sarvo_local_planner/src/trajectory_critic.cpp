@@ -67,10 +67,13 @@ double TrajectoryCritic::socialDisturbanceScore(const Candidate& candidate,
             score += sc;
         
         // ROS_INFO("dt is: [%f]", dt);
+        // ROS_INFO("Social score is: [%f]", sc);
 
         dt += sim_granularity_;
     }
 
+    // ROS_INFO("..................................");
+    // ROS_INFO("Total Social score is: [%f]", score);
     // return score / (double)num_steps;
     return score;
 }
@@ -148,7 +151,7 @@ void TrajectoryCritic::computeTotalScore(Candidate& candidate)
 double TrajectoryCritic::scoreDecay(const double score, 
     const int horizon, const double dt)
 {
-    return (1 - (dt / (2.0*horizon)));
+    return (1 - (dt / (2.0*horizon)))*score;
 }
 
 

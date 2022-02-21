@@ -29,6 +29,7 @@
 #include <sarvo_local_planner/trajectory_generator.h>
 #include <sarvo_local_planner/trajectory_critic.h>
 #include <sarvo_local_planner/path_planner.h>
+#include <angles/angles.h>
 
 
 // Other includes
@@ -129,6 +130,9 @@ namespace sarvo_local_planner {
 			 */
 			Point2D twistToPoint2D(Twist2D& twist, double theta);
 
+
+			Twist2D point2DToTwist(Point2D& vel, double theta);
+
 			/**
 			 * @brief  ~
 			 */
@@ -196,8 +200,19 @@ namespace sarvo_local_planner {
 
 			void optimalTwistPublisher(const Candidate& optimal_candidate);
 
+
 			void headingDeltaPublisher(const Point2D& optimal_vel,
     			const Point2D& operator_vel);
+
+
+			void controlDeltaPublisher(const Point2D& optimal_vel,
+    			const Point2D& operator_vel);
+
+
+			void goalAndOptimalPointVelocityPublisher(const Point2D& optimal_vel);
+
+
+			geometry_msgs::Twist computeControlCommands(const Candidate& optimal_candidate);
 
 
 		private:
@@ -234,8 +249,10 @@ namespace sarvo_local_planner {
 
             // parameters
             std::string scenario_;
+			std::string behavior_;
 			std::string feature_filename_;
 			std::string b_weights_;
+			bool use_planner_;
             float radius_ext_;
             float rvo_planning_horizon_;
             float alpha_;
@@ -272,6 +289,8 @@ namespace sarvo_local_planner {
 			ros::Publisher sim_states_pub_;
 			ros::Publisher optimal_cmd_vel_pub_;
 			ros::Publisher heading_delta_pub_;
+			ros::Publisher control_delta_pub_;
+			ros::Publisher goal_and_optimal_velocity_pub_;
 
 			ros::Subscriber state_subs_;
 
@@ -293,6 +312,8 @@ namespace sarvo_local_planner {
 			bool isInitPathDefined_ = false;
 			std::stack<Pose2D> path_to_goal_;
 			Pose2D current_wp_;
+			double running_time_ = 0;
+			bool atGoalAlready_ = false;
     };
 
 }

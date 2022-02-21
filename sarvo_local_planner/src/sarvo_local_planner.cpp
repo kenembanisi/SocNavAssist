@@ -19,7 +19,8 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
 
     /* Get parameters from Parameter server */
     double goal_x, goal_y, start_x, start_y;
-    nh_.param("scenario_name", scenario_, std::string("crossing"));
+    nh_.param("scenario", scenario_, std::string("crossing"));
+    nh_.param("behavior", behavior_, std::string("neutral"));
     nh_.param("radius_extension", radius_ext_, 0.2f);
     nh_.param("rvo_planning_horizon", rvo_planning_horizon_, 3.5f);
     nh_.param("goal_x", goal_x, 0.0);
@@ -28,6 +29,7 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     nh_.param("start_y", start_y, 0.0);
     nh_.param("rvo_alpha", alpha_, 1.0f);
     nh_.param("trial_condition", trial_condition_, std::string("AUTO"));
+    nh_.param("use_planner", use_planner_, false);
     nh_.param("feature_filename", feature_filename_, std::string("data/demo_features.csv"));
     nh_.param("behavior_weights", b_weights_, std::string("0.1, 0.1, 0.0, 0.1, 0.1"));
     
@@ -35,6 +37,9 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     nh_.param("/base_controller/linear/x/max_acceleration", max_linear_acc_, 1.5);
     nh_.param("/base_controller/angular/z/max_velocity", max_angular_vel_, 2.0);
     nh_.param("/base_controller/angular/z/max_acceleration", max_angular_acc_, 4.5);
+
+    // max_linear_vel_ = 0.75;
+    // max_angular_vel_ = 0.6;
 
     nh_.getParam("/sarvo_planner/sarvo_local_planner/objective_name", objective_name_);
     nh_.getParam("/sarvo_planner/sarvo_local_planner/objective_weights_cautious", cautious_);
@@ -59,14 +64,14 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     robot_base_frame_ = costmap_ros_->getBaseFrameID();
 
 
-    ROS_INFO("SA-RVO Planner is using the following:");
-    ROS_INFO("Costmap-Frame: [%s], Robot-Frame: [%s], Costmap Name: [%s]", 
-        costmap_frame_.c_str(), robot_base_frame_.c_str(), costmap_ros_->getName().c_str());
-    ROS_INFO("Scenario Name: [%s], Trial Condition: [%s]", 
-        scenario_.c_str(), trial_condition_.c_str());
+    // ROS_INFO("[SARVO_PLANNER]: SA-RVO Planner is using the following:");
+    // ROS_INFO("Costmap-Frame: [%s], Robot-Frame: [%s], Costmap Name: [%s]", 
+    //     costmap_frame_.c_str(), robot_base_frame_.c_str(), costmap_ros_->getName().c_str());
+    ROS_INFO("[SARVO_PLANNER]: Scenario Name: [%s], Behavior: [%s], Trial Condition: [%s]", 
+        scenario_.c_str(), behavior_.c_str(), trial_condition_.c_str());
 
-    ROS_INFO("Feature Filename: [%s]", feature_filename_.c_str());
-    ROS_INFO("Initial weights: [%s]", b_weights_.c_str());
+    ROS_INFO("[SARVO_PLANNER]: Feature Filename: [%s]", feature_filename_.c_str());
+    ROS_INFO("[SARVO_PLANNER]: Initial weights: [%s]", b_weights_.c_str());
 
     /* Set the subscribers and publishers */
     std::string people_topic, groups_topic, odom_topic, cmd_topic;
@@ -91,7 +96,8 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     sim_states_pub_ = nh_.advertise<sarvo_msgs::SimulationStates>("/sarvo_simulation_states", 1);
     optimal_cmd_vel_pub_ = nh_.advertise<std_msgs::Float64MultiArray>("/velocity_data", 1);
     heading_delta_pub_ = nh_.advertise<std_msgs::Float32>("/heading_delta", 1);
-
+    control_delta_pub_ = nh_.advertise<std_msgs::Float64MultiArray>("/control_delta", 1);
+    goal_and_optimal_velocity_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_and_optimal_velocities", 5);
     
     /* Set transform from world (Gazebo) to map frames */
     // tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, -1.5707);
@@ -102,20 +108,26 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     double sim_time = 2.0;
     double vx_samples = 12;
     double vth_samples = 15;
+    // double vx_samples = 3;
+    // double vth_samples = 5;
     traj_generator_ = new TrajectoryGenerator(max_linear_vel_,
         max_angular_vel_, max_linear_acc_, max_angular_acc_,
         sim_time, vx_samples, vth_samples);  
 
     /* Initialize trajectory critic */  
     double horizon = sim_time;
-    double clearance_threshold = 6.0;
+    double clearance_threshold = 4.0;
     double sim_granularity = 0.2;
-    bool sum_obstacle_scores_ = false;
-    bool sum_social_disturbance_scores_ = false;
+    bool sum_obstacle_scores_ = true;
+    bool sum_social_disturbance_scores_ = true;
     bool decay_social_disturbance_scores_ = true;
-    // std::vector<double> weights = selectWeights();
-    std::vector<double> weights = parseWeightString(b_weights_);
-    weights[2] = 0.0; // set the operator feature weight to zero
+    std::vector<double> weights = selectWeights();
+    // std::vector<double> weights = parseWeightString(b_weights_);
+    if (trial_condition_ == "AUTO") weights[2] = 0.0; // set the operator feature weight to zero
+    else weights[2] = 2.0;
+    // ROS_INFO("[SARVO_PLANNER]: Weight value for Operator Input: [%f]", weights[2]);
+    ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
+        weights[0], weights[1], weights[2], weights[3], weights[4]);
     traj_critic_ = new TrajectoryCritic(costmap_ros_->getCostmap(), weights, 
         horizon, clearance_threshold, sim_granularity,
         sum_obstacle_scores_, sum_social_disturbance_scores_,
@@ -147,6 +159,7 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     zero_twist_.linear.x = 0.0;
     zero_twist_.angular.z = 0.0;
 
+    ROS_INFO("[SARVO_PLANNER]: Successfully initialized SARVO_PLANNER");
 }
 
 
@@ -241,18 +254,29 @@ void SARVOLocalPlanner::callbackStates(const gazebo_msgs::ModelStatesConstPtr& m
 
 void SARVOLocalPlanner::generateAndPublishRobotCommand()
 {
+    // ROS_INFO("[SARVO_PLANNER]: Processing SARVO for velocity command...........");
+
     /* Update robot state */
     updateRobotState();
 
     /* Update pedestrian list */
     updatePedestrianList();
 
-    /* Compute agent reference velocity */
-    // goal_vel_ = computeGoalVelocity(goal_location_);
-
+        
     // ROS_INFO("*******************************Got here: 1*******************************");
 
-    if (isFinalGoalReached()){
+    if (running_time_ >= 60.0) { // Robot timed-out. Don't save this trial
+        ROS_INFO("***************************************************");
+        ROS_INFO("[SARVO_PLANNER]: Robot Timed Out!");
+        ROS_INFO("***************************************************");
+
+        /* Shut down the node */
+        ros::shutdown();
+        
+        return;
+    }
+    else if (!atGoalAlready_ && isFinalGoalReached()){
+        atGoalAlready_ = true;
         ROS_INFO_STREAM_ONCE("***************************************************");
         ROS_INFO_STREAM_ONCE("[SARVO_PLANNER]: Goal Reached!!!");
         ROS_INFO_STREAM_ONCE("[SARVO_PLANNER]: Feature Counts: [" <<
@@ -263,6 +287,16 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
             traj_critic_->feature_counts_[4] / traj_critic_->iteration_count_ << "]");
         ROS_INFO_STREAM_ONCE("***************************************************");
 
+        // ROS_INFO_STREAM_ONCE("***************************************************");
+        // ROS_INFO_STREAM_ONCE("[SARVO_PLANNER]: Goal Reached!!!");
+        // ROS_INFO_STREAM_ONCE("[SARVO_PLANNER]: Feature Counts: [" <<
+        //     traj_critic_->feature_counts_[0]  << " " << 
+        //     traj_critic_->feature_counts_[1]  << " " <<
+        //     traj_critic_->feature_counts_[2]  << " " << 
+        //     traj_critic_->feature_counts_[3]  << " " <<
+        //     traj_critic_->feature_counts_[4]  << "]");
+        // ROS_INFO_STREAM_ONCE("***************************************************");
+
         /* Set goal_vel_ to zero */
         goal_vel_.x = 0.0;
         goal_vel_.y = 0.0;
@@ -272,7 +306,7 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
 
         /* Save variables to file */
         std::string directory = "/home/kenembanisi/workspaces/research_ws/src/SocNavAssist/sarvo_local_planner/";
-        writeCSV(directory+feature_filename_, {scenario_, objective_name_}, 
+        writeCSV(directory+feature_filename_, {scenario_, behavior_}, 
             multiply(traj_critic_->feature_counts_, 1/double(traj_critic_->iteration_count_)));
 
         ROS_INFO("File saved!");
@@ -319,13 +353,19 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
         // goal_vel_ = computeGoalVelocity(current_wp_);
     }
 
+    // ROS_INFO("*******************************Got here: 2*******************************");
 
     // std::cout << "[SARVO_PLANNER]: Waypoint is: [" << current_wp_.x << ", " 
     //     << current_wp_.y << "]" << std::endl;
     // ROS_INFO("PointVel: [%f, %f]", goal_vel_.x, goal_vel_.y);
 
     /* Compute agent reference velocity */
-    goal_vel_ = computeGoalVelocity(current_wp_);
+    if (use_planner_)
+        goal_vel_ = computeGoalVelocity(current_wp_);
+    else
+        goal_vel_ = computeGoalVelocity(goal_location_);
+
+    // ROS_INFO("[SARVO_PLANNER]: Goal velocity defined...........");
 
     /* Compute RVOs for all pedestrians */
     velocityObstacles_.clear();
@@ -409,7 +449,13 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
     /* Publish heading delta */
     headingDeltaPublisher(candidate_optimal.velocity, operator_vel_);
 
-    // ROS_INFO("Optimal velocity: Point[%0.2f,%0.2f] Twist[%0.2f,%0.2f]", 
+    /* Publish control delta */
+    controlDeltaPublisher(candidate_optimal.velocity, operator_vel_);
+
+    /* Publish goal and optimal velocity arrows */
+    goalAndOptimalPointVelocityPublisher(candidate_optimal.velocity);
+
+    // ROS_INFO("[SARVO_PLANNER]: Optimal velocity: Point[%0.2f,%0.2f] Twist[%0.2f,%0.2f]", 
     //     candidate_optimal.velocity.x, candidate_optimal.velocity.y,
     //     candidate_optimal.twist.vx, candidate_optimal.twist.w);
 
@@ -418,12 +464,28 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
 
         traj_critic_->calculateFeatureCounts(candidate_optimal);
 
-        simulationStatesPublisher(candidate_optimal);
+        auto twist = computeControlCommands(candidate_optimal);
 
-        geometry_msgs::Twist optimal_twist;
-        optimal_twist.linear.x = candidate_optimal.twist.vx;
-        optimal_twist.angular.z = candidate_optimal.twist.w;
-        cmd_vel_pub_.publish(optimal_twist);
+        // ROS_INFO("[SARVO_PLANNER]: Final velocity: Point[%0.2f,%0.2f] Twist[%0.2f,%0.2f]", 
+        // candidate_optimal.twist.vx, candidate_optimal.twist.w,
+        // twist.linear.x, twist.angular.z);
+
+        // update candidate_optimal twist
+        Twist2D new_twist;
+        new_twist.vx = twist.linear.x;
+        new_twist.w = twist.angular.z;
+        candidate_optimal.twist = new_twist;
+
+        simulationStatesPublisher(candidate_optimal);
+        
+        // geometry_msgs::Twist optimal_twist;
+        // optimal_twist.linear.x = candidate_optimal.twist.vx;
+        // optimal_twist.angular.z = candidate_optimal.twist.w;
+
+
+        cmd_vel_pub_.publish(twist);
+        // cmd_vel_pub_.publish(optimal_twist);
+
 
         // ROS_INFO("*******************************Got here: 2*******************************");
 
@@ -440,35 +502,6 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
 
 void SARVOLocalPlanner::updateRobotState()
 {
-    // tf::StampedTransform transform;
-    // try {
-    //     tf_listener_.waitForTransform(costmap_frame_,
-    //         robot_base_frame_,
-    //         ros::Time::now(),
-    //         ros::Duration(0.05));
-    //     tf_listener_.lookupTransform(costmap_frame_,
-    //         robot_base_frame_,
-    //         ros::Time::now(), transform);
-    // }
-    // catch (tf::TransformException& e) {
-    //     ROS_WARN_STREAM_THROTTLE(5.0, "TF lookup from robot_base_frame to global_Frame failed. Reason: " << e.what());
-    //     return;
-    // }
-
-    //  tf::Quaternion orientation(transform.getRotation().getX(),
-    //     transform.getRotation().getY(),
-    //     transform.getRotation().getZ(),
-    //     transform.getRotation().getW());
-
-    // double yaw = tf::getYaw(orientation);
-
-    // /*----------------------------------------- */
-    // Pose2D robot_pose_tmp;
-    // robot_pose_tmp.x = transform.getOrigin().x();
-    // robot_pose_tmp.y = transform.getOrigin().y();
-    // robot_pose_tmp.z = transform.getOrigin().z();
-    // robot_pose_tmp.theta = yaw;
-
     geometry_msgs::PoseStamped robot_global_pose;
     costmap_ros_->getRobotPose(robot_global_pose);
 
@@ -669,6 +702,19 @@ Point2D SARVOLocalPlanner::twistToPoint2D(Twist2D& twist, double theta)
 }
 
 
+Twist2D SARVOLocalPlanner::point2DToTwist(Point2D& vel, double theta)
+{
+    Twist2D result;
+
+    result.vx = vel.x * std::cos(theta) + vel.y * std::sin(theta);
+    result.w = vel.x * std::sin(theta) / radius_ext_ - vel.y * std::cos(theta) / radius_ext_;
+
+    ROS_INFO("[SARVO_PLANNER]: Velocity vector values: [%0.3f, %0.3f]", result.vx, result.w);
+
+    return result;
+}
+
+
 Point2D SARVOLocalPlanner::computeGoalVelocity(Pose2D& goal)
 {
     Point2D goal_vel, vec;
@@ -680,6 +726,7 @@ Point2D SARVOLocalPlanner::computeGoalVelocity(Pose2D& goal)
     double mag = std::hypot(goal.x - robot_gndtruth_.x, 
                             goal.y - robot_gndtruth_.y);
     ROS_ASSERT_MSG(mag != 0, "Goal velocity magnitude is zero");
+    // ROS_INFO("Mag is [%0.3f]", mag);
     vec.x = (goal.x - robot_gndtruth_.x) * max_linear_vel_ / mag;
     vec.y = (goal.y - robot_gndtruth_.y) * max_linear_vel_ / mag;
 
@@ -954,6 +1001,88 @@ void SARVOLocalPlanner::pointVelocityPublisher(const std::vector<Candidate>& sui
 }
 
 
+void SARVOLocalPlanner::goalAndOptimalPointVelocityPublisher(const Point2D& optimal_vel)
+{
+    visualization_msgs::MarkerArray velocity_arrows;
+    int idx = 0;
+
+    // for goal velocity ---------------------------------------------
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map";
+    ros::Time time = ros::Time();
+    marker.id = idx;
+    marker.type = visualization_msgs::Marker::ARROW;
+    marker.scale.x = 0.04;
+    marker.scale.y = 0.08;
+    marker.scale.z = 0;
+    marker.color.a = 0.9;
+    marker.color.r = 0.25;
+    marker.color.g = 0.4;
+    marker.color.b = 0.75;
+    geometry_msgs::Point start_point, end_point;
+    start_point.x = robot_gndtruth_.x;
+    start_point.y = robot_gndtruth_.y;
+    end_point.x = robot_gndtruth_.x + goal_vel_.x;
+    end_point.y = robot_gndtruth_.y + goal_vel_.y;
+    
+    marker.points.push_back(start_point);
+    marker.points.push_back(end_point);
+
+    velocity_arrows.markers.push_back(marker);
+
+    // for optimal velocity -------------------------------------------
+    visualization_msgs::Marker marker2;
+    marker2.header.frame_id = "map";
+    // ros::Time time = ros::Time();
+    marker2.id = ++idx;
+    marker2.type = visualization_msgs::Marker::ARROW;
+    marker2.scale.x = 0.04;
+    marker2.scale.y = 0.08;
+    marker2.scale.z = 0;
+    marker2.color.a = 0.6;
+    marker2.color.r = 0.75;
+    marker2.color.g = 0.15;
+    marker2.color.b = 0.15;
+    start_point.x = robot_gndtruth_.x;
+    start_point.y = robot_gndtruth_.y;
+    end_point.x = robot_gndtruth_.x + optimal_vel.x;
+    end_point.y = robot_gndtruth_.y + optimal_vel.y;
+
+    marker2.points.push_back(start_point);
+    marker2.points.push_back(end_point);
+
+    velocity_arrows.markers.push_back(marker2);
+
+
+    // for current heading -------------------------------------------
+    visualization_msgs::Marker marker3;
+    marker3.header.frame_id = "map";
+    // ros::Time time = ros::Time();
+    marker3.id = ++idx;
+    marker3.type = visualization_msgs::Marker::ARROW;
+    marker3.scale.x = 0.04;
+    marker3.scale.y = 0.08;
+    marker3.scale.z = 0;
+    marker3.color.a = 0.8;
+    marker3.color.r = 0.15;
+    marker3.color.g = 0.75;
+    marker3.color.b = 0.15;
+    start_point.x = robot_gndtruth_.x;
+    start_point.y = robot_gndtruth_.y;
+    end_point.x = robot_gndtruth_.x + operator_vel_.x;
+    end_point.y = robot_gndtruth_.y + operator_vel_.y;
+
+    marker3.points.push_back(start_point);
+    marker3.points.push_back(end_point);
+
+    velocity_arrows.markers.push_back(marker3);
+    
+    // ---------------------------------------------------------
+    goal_and_optimal_velocity_pub_.publish(velocity_arrows);
+
+}
+
+
 void SARVOLocalPlanner::pedestrianPosePublisher()
 {
     geometry_msgs::PoseArray pedestrian_markers;
@@ -1053,6 +1182,7 @@ void SARVOLocalPlanner::simulationStatesPublisher(const Candidate& candidate_opt
     // time
     ros::Time time = ros::Time::now();
     sim_states.current_time = time.toSec();
+    running_time_ = time.toSec();
 
     // publish
     sim_states_pub_.publish(sim_states);
@@ -1080,6 +1210,10 @@ void SARVOLocalPlanner::simulationStatesPublisher(const Candidate& candidate_opt
     sim_states.optimal_candidate = candidate_optimal;
     sim_states.operator_candidate = candidate_operator;
 
+    // heading delta
+    sim_states.heading_delta = angleBetween(candidate_optimal.velocity, 
+                                            candidate_operator.velocity);
+
     // features
     sim_states.feature_count = traj_critic_->feature_counts_;
 
@@ -1096,14 +1230,14 @@ std::vector<double> SARVOLocalPlanner::selectWeights()
 {
     std::vector<double> weights = {0.1, 0.1, 0.1, 0.1, 0.1};
 
-    if (objective_name_ == "cautious") 
+    if (behavior_ == "cautious") 
         weights = cautious_;
-    else if (objective_name_ == "neutral") 
+    else if (behavior_ == "neutral") 
         weights = neutral_;
-    else if (objective_name_ == "assertive") 
+    else if (behavior_ == "assertive") 
         weights = assertive_;
     else {
-        ROS_ERROR("Invalid objective/behavior name [%s]", objective_name_.c_str());
+        ROS_ERROR("Invalid objective/behavior name [%s]", behavior_.c_str());
     }
     return weights;
 }
@@ -1199,7 +1333,17 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
             //     candidate.score.total < optimal_candidate.score.total)
             //     optimal_candidate = candidate; // lower score is better
             if (candidate.score.total < optimal_candidate.score.total)
+            { 
                 optimal_candidate = candidate;
+                // if (candidate.score.raw_scores[0] > 0) {
+                //     ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,{%0.3f}]",
+                //         candidate.score.raw_scores[0],
+                //         candidate.score.raw_scores[1],
+                //         candidate.score.raw_scores[3],
+                //         candidate.score.raw_scores[4],
+                //         candidate.score.total);
+                // }
+            }
             
   
             // ROS_INFO("Vel:[%0.2f,%0.2f], Tw:[%0.2f,%0.2f], score[%0.3f]", 
@@ -1207,12 +1351,14 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
             //     candidate.twist.vx, candidate.twist.w,
             //     candidate.score.total);
 
-            // ROS_INFO("Scores-[Obst, PrevV, OpVel, GoalDev, SocObs]: [%0.3f, %0.3f, %0.3f, %0.3f, %0.3f]",
-            //     candidate.score.raw_scores[0],
-            //     candidate.score.raw_scores[1],
-            //     candidate.score.raw_scores[2],
-            //     candidate.score.raw_scores[3],
-            //     candidate.score.total);
+            // if (candidate.score.raw_scores[0] > 0) {
+            //     ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,{%0.3f}]",
+            //         candidate.score.raw_scores[0],
+            //         candidate.score.raw_scores[1],
+            //         candidate.score.raw_scores[3],
+            //         candidate.score.raw_scores[4],
+            //         candidate.score.total);
+            // }
             // ROS_INFO("CandVel:[%0.3f,%0.3f], GVel:[%0.3f,%0.3f], AngBet:[%0.3f], MagDif:[%0.3f]",
             //     candidate.velocity.x, candidate.velocity.y,
             //     goal_vel_.x, goal_vel_.y,
@@ -1220,7 +1366,7 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
 
         }
     }
-    else 
+    else if (v_unsuitable.size() > 0)
     {   
         ROS_INFO("{SARVO_PLANNER]: No suitable candidate found! Computing velocity with lowest TTC");
         // set a hashtable to track the ttc values
@@ -1294,9 +1440,35 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
 
         }
         else 
-            optimal_candidate.velocity = goal_vel_;        
+            optimal_candidate.velocity = goal_vel_;  
+            // optimal_candidate.twist = point2DToTwist(goal_vel_, robot_gndtruth_.theta);
+            optimal_candidate.twist = operator_twist_;
         
     }
+    else 
+    {
+        ROS_INFO("[SARVO_PLANNER]: No available velocities. Would head to the goal.");
+        // optimal_candidate.velocity = goal_vel_;
+        // optimal_candidate.twist = point2DToTwist(goal_vel_, robot_gndtruth_.theta);
+        optimal_candidate.twist = operator_twist_;
+    }
+    // ROS_INFO("******************************************************");
+    // try {        
+    //     ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,{%0.3f}]",
+    //                 optimal_candidate.score.raw_scores[0],
+    //                 optimal_candidate.score.raw_scores[1],
+    //                 optimal_candidate.score.raw_scores[3],
+    //                 optimal_candidate.score.raw_scores[4],
+    //                 optimal_candidate.score.total);
+    // }
+    // catch (...) {
+    //     std::cout << "Error in the ROS_INFO! \n";
+    // }
+    // catch (std::exception& e) // reference to the base of a polymorphic object
+    // {
+    //     std::cout << e.what(); // information from length_error printed
+    // }
+    // ROS_INFO("******************************************************");
 
     return optimal_candidate;
     
@@ -1354,6 +1526,80 @@ void SARVOLocalPlanner::headingDeltaPublisher(const Point2D& optimal_vel,
     // publish
     heading_delta_pub_.publish(delta);
 }
+
+
+void SARVOLocalPlanner::controlDeltaPublisher(const Point2D& optimal_vel,
+    const Point2D& operator_vel)
+{
+    // calculate the heading delta
+    std_msgs::Float64MultiArray delta;
+    delta.data = std::vector<double> {0.0, 0.0};
+    delta.data[0] = operator_vel.x - optimal_vel.x;
+    delta.data[1] = operator_vel.y - optimal_vel.y;
+
+    // ROS_INFO("[SARVO_PLANNER]: Control delta is: [%0.3f, %0.3f]", delta.data[0], delta.data[1]);
+    control_delta_pub_.publish(delta);
+}
+
+
+geometry_msgs::Twist SARVOLocalPlanner::computeControlCommands(const Candidate& optimal_candidate)
+{
+    geometry_msgs::Twist optimal_twist;
+    // optimal_twist.angular.z = optimal_candidate.twist.w;
+    double tau = 0.5;
+    double dt = 0.2;
+
+    // compute linear vel
+    optimal_twist.linear.x = optimal_candidate.twist.vx;
+
+    // compute angular vel
+    double theta_opt = std::atan2(optimal_candidate.velocity.y, 
+                                optimal_candidate.velocity.x);
+    
+    // ROS_INFO(" Theta optimal [%0.3f], Current theta [%0.3f]",
+    //     theta_opt, robot_gndtruth_.theta);
+
+    double twist_max = current_robot_vel_.w + max_angular_acc_ * dt;
+    double twist_min = current_robot_vel_.w - max_angular_acc_ * dt;
+    
+    double ct = (theta_opt - robot_gndtruth_.theta) / tau;
+    double angle_diff = angles::shortest_angular_distance(robot_gndtruth_.theta, theta_opt);
+
+    double controlled_twist = angle_diff / tau;
+
+    // ROS_INFO("Old and New twist: [%0.3f, %0.3f]", ct, controlled_twist);
+    ROS_INFO("Current heading, optimal heading: [%0.3f, %0.3f]", robot_gndtruth_.theta, theta_opt);
+
+    // optimal_twist.angular.z = (theta_opt - robot_gndtruth_.theta) / tau;
+    // if (std::abs(controlled_twist) < max_angular_vel_)
+    //     optimal_twist.angular.z = controlled_twist;
+    // else if (controlled_twist < 0)
+    //     optimal_twist.angular.z = std::max(-max_angular_vel_, twist_min);
+    // else optimal_twist.angular.z =  std::min(max_angular_vel_, twist_max);
+
+    if (controlled_twist < 0) {
+        if (std::abs(controlled_twist) < max_angular_vel_) 
+            optimal_twist.angular.z = std::max(controlled_twist, twist_min);
+        else 
+            optimal_twist.angular.z = std::max(-max_angular_vel_, twist_min); 
+    }
+    else {
+        if (std::abs(controlled_twist) < max_angular_vel_) 
+            optimal_twist.angular.z = std::min(controlled_twist, twist_max);
+        else 
+            optimal_twist.angular.z = std::min(max_angular_vel_, twist_max); 
+    }
+
+    // optimal_twist.angular.z = controlled_twist;
+
+    ROS_INFO("Optimal w [%0.3f], Controlled w [%0.3f], Twist min/max [%0.3f, %0.3f]",
+        optimal_candidate.twist.w, optimal_twist.angular.z,
+        twist_min, twist_max);
+
+    return optimal_twist;
+}
+
+
 
 } // end namespace
 

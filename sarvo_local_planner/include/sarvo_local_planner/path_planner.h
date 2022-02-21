@@ -115,6 +115,8 @@ class PathPlanner {
         bool validEdge(const float& current_x, const float& current_y,
             const float& next_x, const float& next_y);
 
+        bool validEdge(const Node& current_pose, const Node& next_pose);
+
         bool checkCollision(const Pose2D& pose);
 
         bool checkCollision(const float& x, const float& y);
@@ -134,6 +136,9 @@ class PathPlanner {
         std::stack<Pose2D> AStarPlanner(const Pose2D& next_wp,
             const int& next_wp_idx);
 
+        std::stack<Pose2D> AStarPlannerWithPathImprovement(const Pose2D& next_wp,
+            const int& next_wp_idx);
+
         bool inBetween(double theta_v,
             double theta_left, double theta_right);
 
@@ -143,6 +148,8 @@ class PathPlanner {
         double nodeDist(const Node& point1, const Node& point2);
 
         void worldToMap();
+
+        std::stack<Pose2D> pathImprovement(std::vector<Node>& current_path);
 
 
     private:
@@ -156,7 +163,7 @@ class PathPlanner {
         std::vector<double> van_der_corput_seq_ = 
             {1, 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 
             0.875, 0.0625, 0.5625};
-        double waypoint_threshold_ = 0.5;
+        double waypoint_threshold_ = 0.6;
         int num_sample_points_ = 35;
         int max_num_neighbors_ = 5;
         KDTree* sample_kdtree_;

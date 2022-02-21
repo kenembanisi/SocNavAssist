@@ -10,33 +10,88 @@
 
     <!-- Set scenario details-->
     <arg name="scenario" default="crossing-01" />
+    <arg name="behavior" default="cautious" />
+    <arg name="task_objective" default="cautious" />
     <arg name="scenario_layout" default="layout-01" />
+    <arg name="case1" default="0" />
+    <arg name="case2" default="0" />
+    <arg name="case3" default="0" />
+    <arg name="case4" default="0" />
+    <arg name="case5" default="0" />
+    <arg name="case6" default="0" />
     <arg name="trial_number" default="0/0" />
     <arg name="debug_bars" default="false" />
     <arg name="trial_name" default="test" />
+    <arg name="use_planner" default="false" />
     <arg name="phase" default="test" />
     <arg name="record_rosbag" default="false" />
     <arg name="display_viz" default="true" />
     <arg name="feature_filename" default="data/demos_features.csv" />
     <param name="scenario" value="$(arg scenario)" />
+    <param name="behavior" value="$(arg behavior)" />
+    <param name="task_objective" value="$(arg task_objective)" />
     <param name="scenario_layout" value="$(arg scenario_layout)" />
     <param name="trial_number" value="$(arg trial_number)" />
     <param name="trial_name" value="$(arg trial_name)" />
+    <param name="use_planner" value="$(arg use_planner)" />
     <param name="debug_bars" value="$(arg debug_bars)" />
     <param name="study_phase" value="$(arg phase)" />
     <param name="feature_filename" value="$(arg feature_filename)" />
 
+
     <!-- Initial robot pose and goal pose-->
-    <arg name="robot_x" default="-5.52" />
-    <arg name="robot_y" default="-6.80" />
-    <arg name="robot_z" default="0.0" />
-    <arg name="robot_yaw" default="1.55" />
-    <arg name="goal_x" default="-6.48" />
-    <arg name="goal_y" default="7.22" />
-    <!-- <arg name="goal_y" default="8.22" /> -->
+        <!-- if trial_case is case1 -->
+    <arg name="robot_x" default="-5.52" if="$(eval arg('case1'))" />
+    <arg name="robot_y" default="-6.80" if="$(eval arg('case1'))" />
+    <arg name="robot_z" default="0.0" if="$(eval arg('case1'))" />
+    <arg name="robot_yaw" default="1.55" if="$(eval arg('case1'))" />
+    <arg name="goal_x" default="-6.48" if="$(eval arg('case1'))" />
+    <arg name="goal_y" default="7.22" if="$(eval arg('case1'))" />
+    <param name="amcl/initial_pose_x" value="0.0" if="$(eval arg('case1'))" />
+    <param name="amcl/initial_pose_y" value="0.0" if="$(eval arg('case1'))" />
+    <param name="amcl/initial_pose_a" value="0.0" if="$(eval arg('case1'))" />
+
+        <!-- if trial_case is case2 -->
+    <arg name="robot_x" default="-11.99" if="$(eval arg('case2'))" />
+    <arg name="robot_y" default="-3.61"  if="$(eval arg('case2'))" />
+    <arg name="robot_z" default="0.00"  if="$(eval arg('case2'))" />
+    <arg name="robot_yaw" default="0.257"  if="$(eval arg('case2'))" />
+    <arg name="goal_x" default="-1.80"  if="$(eval arg('case2'))" />
+    <arg name="goal_y" default="7.30"  if="$(eval arg('case2'))" />
+    <param name="amcl/initial_pose_x" value="3.19" if="$(eval arg('case2'))" />
+    <param name="amcl/initial_pose_y" value="6.47" if="$(eval arg('case2'))" />
+    <param name="amcl/initial_pose_a" value="-1.313" if="$(eval arg('case2'))" />
+
+        <!-- if trial_case is case3 -->
+    <arg name="robot_x" default="-11.98" if="$(eval arg('case3'))" />
+    <arg name="robot_y" default="4.95" if="$(eval arg('case3'))" />
+    <arg name="robot_z" default="0.0" if="$(eval arg('case3'))" />
+    <arg name="robot_yaw" default="-0.13" if="$(eval arg('case3'))" />
+    <arg name="goal_x" default="-1.35" if="$(eval arg('case3'))" />
+    <arg name="goal_y" default="-5.49" if="$(eval arg('case3'))" />
+    <param name="amcl/initial_pose_x" value="11.75" if="$(eval arg('case3'))" />
+    <param name="amcl/initial_pose_y" value="6.46" if="$(eval arg('case3'))" />
+    <param name="amcl/initial_pose_a" value="-1.70" if="$(eval arg('case3'))" />
+
+        <!-- if trial_case is case4 -->
+    <arg name="robot_x" default="-2.25" if="$(eval arg('case4'))" />
+    <arg name="robot_y" default="6.42"  if="$(eval arg('case4'))" />
+    <arg name="robot_z" default="0.0"  if="$(eval arg('case4'))" />
+    <arg name="robot_yaw" default="-2.05"  if="$(eval arg('case4'))" />
+    <arg name="goal_x" default="-11.50"  if="$(eval arg('case4'))" />
+    <arg name="goal_y" default="-3.62"  if="$(eval arg('case4'))" />
+    <param name="amcl/initial_pose_x" value="13.22" if="$(eval arg('case4'))" />
+    <param name="amcl/initial_pose_y" value="-3.27" if="$(eval arg('case4'))" />
+    <param name="amcl/initial_pose_a" value="2.66" if="$(eval arg('case4'))" />
+
 
     <!-- Weights -->
-    <arg name="behavior_weights" default="0.05, 0.75, 0.0, 1.0, 0.03" />
+    <!-- <arg name="behavior_weights" default="0.05, 0.75, 0.0, 1.0, 0.03" /> -->
+        <!-- cautious -->
+    <!-- <arg name="behavior_weights" default="0.5, 0.75, 0.0, 1.0, 0.2" />  -->
+    <arg name="behavior_weights" default="0.5, 0.75, 0.0, 1.5, 0.2" />  
+        <!-- assertive -->
+    <!-- <arg name="behavior_weights" default="0.01, 0.75, 0.0, 1.5, 0.01" />   -->
     <param name="behavior_weights" value="$(arg behavior_weights)" />
 
     <!-- set goal pos as param -->
@@ -44,7 +99,7 @@
     <param name="goal_y" value="$(arg goal_y)" />
 
     <!-- Start timer bool flag -->
-    <param name="start_timer" value="false" />
+    <param name="start_timer" value="true" />
 
     <!-- Set control and manual mode -->
     <!-- <arg name="trial_condition" default="MC" /> -->
@@ -56,8 +111,8 @@
     <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
 
     <!-- Set world -->
-    <!-- <arg name="world_name" default="$(find socially_aware_rvo)/worlds/$(arg scenario)_$(arg scenario_layout).world" /> -->
-    <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario)_$(arg scenario_layout).world" />
+    <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario)_$(arg scenario_layout).world" /> -->
+    <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario).world" />
     <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/debug.world" /> -->
     <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/debug2.world" /> -->
 
@@ -110,8 +165,8 @@
         <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" />
 
         <!-- Launch rviz -->
-        <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo.rviz" />
-        <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" />
+        <!-- <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo_manual.rviz" />
+        <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" /> -->
     </group>
 
     <!-- Localize the robot -->
