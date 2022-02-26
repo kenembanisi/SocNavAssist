@@ -30,6 +30,9 @@ FalconNovintControl::FalconNovintControl(ros::NodeHandle &nh) : nh_(nh){
     // initialize control_delta subscriber
     control_delta_subscriber_ = nh_.subscribe("/control_delta", 5, &FalconNovintControl::controldeltaCallback, this);
 
+    // initialize risk_level subscriber
+    risk_level_subscriber_ = nh_.subscribe("/collision_risk_level", 5, &FalconNovintControl::riskLevelCallback, this);
+
     // initialize force publisher
     force_publisher_ = nh_.advertise<ros_falcon::falconForces>("/falconForce", 5);
 
@@ -101,6 +104,10 @@ void FalconNovintControl::controldeltaCallback(const std_msgs::Float64MultiArray
 
 }
 
+void FalconNovintControl::riskLevelCallback(const std_msgs::Float32& risk_level)
+{   
+    risk_level_ = risk_level.data;
+}
 
 // Compute functions
 

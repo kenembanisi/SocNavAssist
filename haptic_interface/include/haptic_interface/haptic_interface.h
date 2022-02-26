@@ -77,6 +77,7 @@ class FalconNovintControl
         std::vector<float> centering_force_ = {0,0,0} ;
         std::vector<float> guidance_force_ = {0,0,0} ;
         float heading_delta_ = 0.0f;
+        float risk_level_ = 0.0f;
         std::vector<float> control_delta_ = {0.0f,0.0f} ;
 
         // ros publishers and subscribers
@@ -86,6 +87,7 @@ class FalconNovintControl
         ros::Publisher force_publisher_;
         ros::Subscriber heading_delta_subscriber_;
         ros::Subscriber control_delta_subscriber_;
+        ros::Subscriber risk_level_subscriber_;
 
         // ros services
         ros::ServiceClient unpause_sim_;
@@ -114,6 +116,8 @@ class FalconNovintControl
         void headingdeltaCallback(const std_msgs::Float32& heading_delta);
 
         void controldeltaCallback(const std_msgs::Float64MultiArray& control_delta);
+
+        void riskLevelCallback(const std_msgs::Float32& risk_level);
         
         // Compute functions
 
