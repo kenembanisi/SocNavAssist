@@ -29,17 +29,18 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     nh_.param("start_y", start_y, 0.0);
     nh_.param("rvo_alpha", alpha_, 1.0f);
     nh_.param("trial_condition", trial_condition_, std::string("AUTO"));
-    nh_.param("use_planner", use_planner_, false);
+    nh_.param("use_planner", use_planner_, true);
+    nh_.param("trial_case", trial_case_, 0);
     nh_.param("feature_filename", feature_filename_, std::string("data/demo_features.csv"));
-    nh_.param("behavior_weights", b_weights_, std::string("0.1, 0.1, 0.0, 0.1, 0.1"));
+    nh_.param("behavior_weights", b_weights_, std::string("0.1, 0.1, 0.0, 0.1, 0.1, 0.1"));
     
     nh_.param("/base_controller/linear/x/max_velocity", max_linear_vel_, 2.0);
     nh_.param("/base_controller/linear/x/max_acceleration", max_linear_acc_, 1.5);
     nh_.param("/base_controller/angular/z/max_velocity", max_angular_vel_, 2.0);
     nh_.param("/base_controller/angular/z/max_acceleration", max_angular_acc_, 4.5);
 
-    // max_linear_vel_ = 0.75;
-    // max_angular_vel_ = 0.6;
+    // max_linear_vel_ = 1.25;
+    // max_angular_vel_ = 0.9;
 
     nh_.getParam("/sarvo_planner/sarvo_local_planner/objective_name", objective_name_);
     nh_.getParam("/sarvo_planner/sarvo_local_planner/objective_weights_cautious", cautious_);
@@ -53,7 +54,7 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     nh_.getParam("/sarvo_planner/sarvo_local_planner/connecting_node_dist_thr", connecting_node_dist_thr_);
     nh_.getParam("/sarvo_planner/sarvo_local_planner/prm_roadmap", prm_roadmap_);
 
-    /* Transform start and goal location [Temporary] */
+       /* Transform start and goal location [Temporary] */
     goal_location_.x = goal_y + 6.80;
     goal_location_.y = -goal_x - 5.52;
     start_location_.x = start_y + 6.80;
@@ -74,16 +75,18 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     ROS_INFO("[SARVO_PLANNER]: Initial weights: [%s]", b_weights_.c_str());
 
     /* Set the subscribers and publishers */
-    std::string people_topic, groups_topic, odom_topic, cmd_topic;
+    std::string people_topic, groups_topic, odom_topic, cmd_topic, laserscan_topic;
     nh_.param("people_topic", people_topic, std::string("/spencer/perception/tracked_persons"));
     nh_.param("groups_topic", groups_topic, std::string("/spencer/perception/tracked_groups"));
     nh_.param("odom_topic", odom_topic, std::string("/base_controller/odom"));
     nh_.param("cmd_topic", cmd_topic, std::string("/base_controller/cmd_vel"));
+    nh_.param("laserscan_topic", laserscan_topic, std::string("/base_scan"));
         /* subscribers*/
     persons_subs_ = nh_.subscribe(people_topic, 10, &SARVOLocalPlanner::callbackTrackedPersons, this);
 	groups_subs_ = nh_.subscribe(groups_topic, 10, &SARVOLocalPlanner::callbackTrackedGroups, this);
 	odom_subs_ = nh_.subscribe(odom_topic, 10, &SARVOLocalPlanner::callbackWheelOdom, this);
 	cmd_vel_subs_ = nh_.subscribe(cmd_topic, 10, &SARVOLocalPlanner::callbackCmdVel, this);
+    laserscan_subs_ = nh_.subscribe(laserscan_topic, 10, &SARVOLocalPlanner::callbackLaserScan, this);
     state_subs_ = nh_.subscribe("/gazebo/model_states", 10, &SARVOLocalPlanner::callbackStates, this);
         /* publishers */
     suitable_traj_cloud_pub_ = nh_.advertise<geometry_msgs::PoseArray>("/suitable_trajectory_cloud", 1);
@@ -98,6 +101,7 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     heading_delta_pub_ = nh_.advertise<std_msgs::Float32>("/heading_delta", 1);
     control_delta_pub_ = nh_.advertise<std_msgs::Float64MultiArray>("/control_delta", 1);
     goal_and_optimal_velocity_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_and_optimal_velocities", 5);
+    risk_level_pub_ = nh_.advertise<std_msgs::Float32>("/collision_risk_level", 1);
     
     /* Set transform from world (Gazebo) to map frames */
     // tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, -1.5707);
@@ -116,18 +120,22 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
 
     /* Initialize trajectory critic */  
     double horizon = sim_time;
-    double clearance_threshold = 4.0;
+    double clearance_threshold = 1.75;
     double sim_granularity = 0.2;
     bool sum_obstacle_scores_ = true;
     bool sum_social_disturbance_scores_ = true;
-    bool decay_social_disturbance_scores_ = true;
-    std::vector<double> weights = selectWeights();
-    // std::vector<double> weights = parseWeightString(b_weights_);
+    bool decay_social_disturbance_scores_ = false;
+
+    // ********************************************************
+    // std::vector<double> weights = selectWeights();
+    std::vector<double> weights = parseWeightString(b_weights_); 
+    // ********************************************************
+    
     if (trial_condition_ == "AUTO") weights[2] = 0.0; // set the operator feature weight to zero
     else weights[2] = 2.0;
     // ROS_INFO("[SARVO_PLANNER]: Weight value for Operator Input: [%f]", weights[2]);
-    ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
-        weights[0], weights[1], weights[2], weights[3], weights[4]);
+    ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
+        weights[0], weights[1], weights[2], weights[3], weights[4], weights[5]);
     traj_critic_ = new TrajectoryCritic(costmap_ros_->getCostmap(), weights, 
         horizon, clearance_threshold, sim_granularity,
         sum_obstacle_scores_, sum_social_disturbance_scores_,
@@ -199,7 +207,8 @@ void SARVOLocalPlanner::callbackCmdVel(const geometry_msgs::TwistConstPtr& msg)
     operator_twist_.w = msg->angular.z;
 
     // compute operator vel
-    operator_vel_ = twistToPoint2D(operator_twist_, robot_.pose.theta);
+    // operator_vel_ = twistToPoint2D(operator_twist_, robot_.pose.theta);
+    operator_vel_ = twistToPoint2D(operator_twist_, robot_gndtruth_.theta);
 
     // ROS_INFO("Twist: [%f, %f], PointVel: [%f, %f]",
     //     operator_twist_.vx, operator_twist_.w, operator_vel_.x, operator_vel_.y);
@@ -252,6 +261,15 @@ void SARVOLocalPlanner::callbackStates(const gazebo_msgs::ModelStatesConstPtr& m
 }
 
 
+void SARVOLocalPlanner::callbackLaserScan(const sensor_msgs::LaserScanConstPtr& msg)
+{
+    auto heading_ranges = std::vector<float>(msg->ranges.begin()+173, msg->ranges.begin()+487);
+
+    min_distance_to_obstacle_ = *std::min_element(heading_ranges.begin(), heading_ranges.end());
+
+}
+
+
 void SARVOLocalPlanner::generateAndPublishRobotCommand()
 {
     // ROS_INFO("[SARVO_PLANNER]: Processing SARVO for velocity command...........");
@@ -259,16 +277,36 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
     /* Update robot state */
     updateRobotState();
 
+    // ROS_INFO("*******************************Got here: 1*******************************");
+
     /* Update pedestrian list */
     updatePedestrianList();
 
         
-    // ROS_INFO("*******************************Got here: 1*******************************");
+    // ROS_INFO("*******************************Got here: 2*******************************");
 
-    if (running_time_ >= 60.0) { // Robot timed-out. Don't save this trial
-        ROS_INFO("***************************************************");
-        ROS_INFO("[SARVO_PLANNER]: Robot Timed Out!");
-        ROS_INFO("***************************************************");
+    if (running_time_ >= 60.0) { // Robot timed-out. 
+        ROS_INFO_STREAM_ONCE("***************************************************");
+        ROS_INFO_STREAM_ONCE("[SARVO_PLANNER]: Robot Timed out!!!");
+        ROS_INFO_STREAM_ONCE("[SARVO_PLANNER]: Feature Counts: [" <<
+            traj_critic_->feature_counts_[0] / traj_critic_->iteration_count_ << " " << 
+            traj_critic_->feature_counts_[1] / traj_critic_->iteration_count_ << " " <<
+            traj_critic_->feature_counts_[2] / traj_critic_->iteration_count_ << " " << 
+            traj_critic_->feature_counts_[3] / traj_critic_->iteration_count_ << " " <<
+            traj_critic_->feature_counts_[4] / traj_critic_->iteration_count_ << " " <<
+            traj_critic_->feature_counts_[5] / traj_critic_->iteration_count_ << " " << "]");
+        ROS_INFO_STREAM_ONCE("***************************************************");
+
+        /* Specially penalize timeouts */
+        traj_critic_->feature_counts_[0] = 800 * traj_critic_->iteration_count_;
+
+        /* Save variables to file */
+        std::string directory = "/home/kenembanisi/workspaces/research_ws/src/SocNavAssist/sarvo_local_planner/";
+        writeCSV(directory+feature_filename_, 
+                {scenario_, trial_condition_, std::to_string(trial_case_), behavior_}, 
+                multiply(traj_critic_->feature_counts_, 1/double(traj_critic_->iteration_count_)));
+
+        ROS_INFO("File saved!");
 
         /* Shut down the node */
         ros::shutdown();
@@ -284,8 +322,16 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
             traj_critic_->feature_counts_[1] / traj_critic_->iteration_count_ << " " <<
             traj_critic_->feature_counts_[2] / traj_critic_->iteration_count_ << " " << 
             traj_critic_->feature_counts_[3] / traj_critic_->iteration_count_ << " " <<
-            traj_critic_->feature_counts_[4] / traj_critic_->iteration_count_ << "]");
+            traj_critic_->feature_counts_[4] / traj_critic_->iteration_count_ << " " <<
+            traj_critic_->feature_counts_[5] / traj_critic_->iteration_count_ << " " << "]");
         ROS_INFO_STREAM_ONCE("***************************************************");
+
+        // ROS_INFO_STREAM_ONCE("[SARVO_PLANNER]: Social summary: [" <<
+        //     "Mean: " << traj_critic_->feature_counts_[5] / traj_critic_->iteration_count_ << " " << 
+        //     "Sum: " << traj_critic_->feature_counts_[5] << "]");
+        //     // "Max: " << std::max(traj_critic_->feature_counts_[5]) << " " <<
+            
+        // ROS_INFO_STREAM_ONCE("***************************************************");
 
         // ROS_INFO_STREAM_ONCE("***************************************************");
         // ROS_INFO_STREAM_ONCE("[SARVO_PLANNER]: Goal Reached!!!");
@@ -306,8 +352,9 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
 
         /* Save variables to file */
         std::string directory = "/home/kenembanisi/workspaces/research_ws/src/SocNavAssist/sarvo_local_planner/";
-        writeCSV(directory+feature_filename_, {scenario_, behavior_}, 
-            multiply(traj_critic_->feature_counts_, 1/double(traj_critic_->iteration_count_)));
+        writeCSV(directory+feature_filename_, 
+                {scenario_, trial_condition_, std::to_string(trial_case_), behavior_}, 
+                multiply(traj_critic_->feature_counts_, 1/double(traj_critic_->iteration_count_)));
 
         ROS_INFO("File saved!");
 
@@ -316,44 +363,46 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
         
         return;
     }
-    // robot is still at origin
-    else if (!isInitPathDefined_) {
-        path_to_goal_ = path_planner_->computePathToGoal(robot_gndtruth_);
-        current_wp_ = path_to_goal_.top();
-        path_to_goal_.pop();
-        isInitPathDefined_ = true;
+    if (use_planner_) {
+        // robot is still at origin
+        if (!isInitPathDefined_) {
+            path_to_goal_ = path_planner_->computePathToGoal(robot_gndtruth_);
+            current_wp_ = path_to_goal_.top();
+            path_to_goal_.pop();
+            isInitPathDefined_ = true;
 
-        ROS_INFO("[SARVO_PLANNER]: Initial path has been set...");
-        ROS_INFO("[SARVO_PLANNER]: Waypoint is: [%0.3f, %0.3f]", current_wp_.x, current_wp_.y);
-        ROS_INFO("[SARVO_PLANNER]: Path stack size is: %d", (int)path_to_goal_.size());
+            ROS_INFO("[SARVO_PLANNER]: Initial path has been set...");
+            ROS_INFO("[SARVO_PLANNER]: Waypoint is: [%0.3f, %0.3f]", current_wp_.x, current_wp_.y);
+            ROS_INFO("[SARVO_PLANNER]: Path stack size is: %d", (int)path_to_goal_.size());
+            
+        }
+        // current waypoint has been reached
+        else if (path_planner_->isWayPointReached(robot_gndtruth_, current_wp_) && 
+                !path_to_goal_.empty())
+        {
+            ROS_INFO("[SARVO_PLANNER]: Waypoint reached! Approaching next waypoint...");
+                
+            current_wp_ = path_to_goal_.top();
+            path_to_goal_.pop();
+
+            // /* Compute agent reference velocity */
+            // goal_vel_ = computeGoalVelocity(current_wp_);
+        }
+        // current waypoint is no longer visible
+        else if (!path_planner_->isWayPointVisible(robot_gndtruth_, current_wp_)){
         
+            ROS_INFO("[SARVO_PLANNER]: Waypoint is not visible. Recomputing...");
+        
+            path_to_goal_ = path_planner_->computePathToGoal(robot_gndtruth_);
+            current_wp_ = path_to_goal_.top();
+            path_to_goal_.pop();
+
+            // /* Compute agent reference velocity */
+            // goal_vel_ = computeGoalVelocity(current_wp_);
+        }
     }
-    // current waypoint has been reached
-    else if (path_planner_->isWayPointReached(robot_gndtruth_, current_wp_) && 
-            !path_to_goal_.empty())
-    {
-        ROS_INFO("[SARVO_PLANNER]: Waypoint reached! Approaching next waypoint...");
-        
-        current_wp_ = path_to_goal_.top();
-        path_to_goal_.pop();
-
-        // /* Compute agent reference velocity */
-        // goal_vel_ = computeGoalVelocity(current_wp_);
-    }
-    // current waypoint is no longer visible
-    else if (!path_planner_->isWayPointVisible(robot_gndtruth_, current_wp_)){
-        
-        ROS_INFO("[SARVO_PLANNER]: Waypoint is not visible. Recomputing...");
-        
-        path_to_goal_ = path_planner_->computePathToGoal(robot_gndtruth_);
-        current_wp_ = path_to_goal_.top();
-        path_to_goal_.pop();
-
-        // /* Compute agent reference velocity */
-        // goal_vel_ = computeGoalVelocity(current_wp_);
-    }
-
-    // ROS_INFO("*******************************Got here: 2*******************************");
+    
+    // ROS_INFO("*******************************Got here: 3*******************************");
 
     // std::cout << "[SARVO_PLANNER]: Waypoint is: [" << current_wp_.x << ", " 
     //     << current_wp_.y << "]" << std::endl;
@@ -364,6 +413,7 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
         goal_vel_ = computeGoalVelocity(current_wp_);
     else
         goal_vel_ = computeGoalVelocity(goal_location_);
+
 
     // ROS_INFO("[SARVO_PLANNER]: Goal velocity defined...........");
 
@@ -381,7 +431,7 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
     for (auto& person : ped_groups_){
         
         // distance btw agent and obstacle
-        double dist = abs(person.pose, robot_.pose);
+        // double dist = abs(person.pose, robot_.pose);
         double eff_obs_radius = person.radius + robot_.radius + eff_obs_radius_tol_;
 
         double dist_gnt_truth = abs(person.pose, robot_gndtruth_);
@@ -399,8 +449,10 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
         Point2D apex;
         // apex.x = robot_.pose.x + (1-alpha_) * robot_.velocity.x + alpha_ * person.velocity.x;
         // apex.y = robot_.pose.y + (1-alpha_) * robot_.velocity.y + alpha_ * person.velocity.y;
-        apex.x = robot_.pose.x + (1-alpha_) * v_desired.x + alpha_ * person.velocity.x;
-        apex.y = robot_.pose.y + (1-alpha_) * v_desired.y + alpha_ * person.velocity.y;
+        // apex.x = robot_.pose.x + (1-alpha_) * v_desired.x + alpha_ * person.velocity.x;
+        // apex.y = robot_.pose.y + (1-alpha_) * v_desired.y + alpha_ * person.velocity.y;
+        apex.x = robot_gndtruth_.x + (1-alpha_) * v_desired.x + alpha_ * person.velocity.x;
+        apex.y = robot_gndtruth_.y + (1-alpha_) * v_desired.y + alpha_ * person.velocity.y;
         // double theta = atan(person.pose, robot_.pose);
 
         double theta = atan(person.pose, robot_gndtruth_);
@@ -436,12 +488,17 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
 
     }
 
+
     /* Compute suitable and unsuitable velocity candidates */
     std::vector<Candidate> v_suitable, v_unsuitable;
     checkIntersection(v_suitable, v_unsuitable);
 
     /* Compute the optimal 2D velocity */
     Candidate candidate_optimal = chooseOptimalVelocity(v_suitable, v_unsuitable);
+
+    /* update the prev optimal velocity */
+    prev_v_optimal_ = candidate_optimal.velocity;
+    prev_candidate_optimal_ = candidate_optimal;
 
     /* Publish optimal twist */
     optimalTwistPublisher(candidate_optimal);
@@ -454,6 +511,9 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
 
     /* Publish goal and optimal velocity arrows */
     goalAndOptimalPointVelocityPublisher(candidate_optimal.velocity);
+
+    /* Evaluate Risk */
+    computeRiskLevel();
 
     // ROS_INFO("[SARVO_PLANNER]: Optimal velocity: Point[%0.2f,%0.2f] Twist[%0.2f,%0.2f]", 
     //     candidate_optimal.velocity.x, candidate_optimal.velocity.y,
@@ -502,21 +562,21 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
 
 void SARVOLocalPlanner::updateRobotState()
 {
-    geometry_msgs::PoseStamped robot_global_pose;
-    costmap_ros_->getRobotPose(robot_global_pose);
+    // geometry_msgs::PoseStamped robot_global_pose;
+    // costmap_ros_->getRobotPose(robot_global_pose);
 
-     tf::Quaternion orientation(robot_global_pose.pose.orientation.x,
-        robot_global_pose.pose.orientation.y,
-        robot_global_pose.pose.orientation.z,
-        robot_global_pose.pose.orientation.w);
+    //  tf::Quaternion orientation(robot_global_pose.pose.orientation.x,
+    //     robot_global_pose.pose.orientation.y,
+    //     robot_global_pose.pose.orientation.z,
+    //     robot_global_pose.pose.orientation.w);
 
-    double yaw = tf::getYaw(orientation);
+    // double yaw = tf::getYaw(orientation);
 
-    Pose2D robot_pose_tmp;
-    robot_pose_tmp.x = robot_global_pose.pose.position.x;
-    robot_pose_tmp.y = robot_global_pose.pose.position.y;
-    robot_pose_tmp.z = robot_global_pose.pose.position.z;
-    robot_pose_tmp.theta = yaw;
+    // Pose2D robot_pose_tmp;
+    // robot_pose_tmp.x = robot_global_pose.pose.position.x;
+    // robot_pose_tmp.y = robot_global_pose.pose.position.y;
+    // robot_pose_tmp.z = robot_global_pose.pose.position.z;
+    // robot_pose_tmp.theta = yaw;
 
     // ROS_INFO("Robot pose is x: [%f], y: [%f]",
     //     robot_global_pose.pose.position.x, 
@@ -526,7 +586,7 @@ void SARVOLocalPlanner::updateRobotState()
     //     robot_pose_tmp.x, robot_pose_tmp.y, robot_pose_tmp.theta);
 
     /*----------------------------------------- */
-    robot_.pose = augmentRobotPose(robot_pose_tmp);
+    // robot_.pose = augmentRobotPose(robot_pose_tmp);
 
 
     // ROS_INFO("Augmented robot pose is x: [%f], y: [%f], theta: [%f]",
@@ -546,27 +606,7 @@ void SARVOLocalPlanner::updatePedestrianList()
     // pedestrians_map_.clear();
 
     for (const spencer_tracking_msgs::TrackedPerson& p : tracked_persons_msg_.tracks){   
-               
-        // tf::Pose source;
-        // double curr_or = tf::getYaw(p.pose.pose.orientation);
-        // tf::Quaternion q = tf::createQuaternionFromRPY(0, 0, curr_or);
-        // tf::Matrix3x3 base(q);
-        // source.setOrigin(tf::Vector3(p.pose.pose.position.x, p.pose.pose.position.x, 0.0));
-        // source.setBasis(base);
-
-        // tf::Pose result = gazebo_to_map_transform_ * source;
-        // tf::Quaternion new_or = result.getRotation();
-        // double theta = tf::getYaw(new_or);
-        // double speed = std::hypot(p.twist.twist.linear.x, p.twist.twist.linear.y);
         
-        // Person pd;
-        // pd.pose.x = result.getOrigin().x();
-        // pd.pose.y = result.getOrigin().y();
-        // pd.pose.theta = theta;
-        // pd.velocity.x = speed*cos(theta);
-        // pd.velocity.y = speed*sin(theta);
-        // pd.radius = 0.4;
-
         // -------------------------------------------------------------------------------
         // ROS_INFO("Gazebo frame-> Position: [%f, %f, %f]",
         //     p.pose.pose.position.x, p.pose.pose.position.y, p.pose.pose.position.z);
@@ -597,16 +637,6 @@ void SARVOLocalPlanner::updatePedestrianList()
 
 
     for (const spencer_tracking_msgs::TrackedGroup& g : tracked_groups_msg_.groups){
-    //     tf::Pose source;
-    //     double curr_or = tf::getYaw(g.centerOfGravity.pose.orientation);
-    //     tf::Quaternion q = tf::createQuaternionFromYaw(curr_or);
-    //     tf::Matrix3x3 base(q);
-    //     source.setOrigin(tf::Vector3(g.centerOfGravity.pose.position.x, g.centerOfGravity.pose.position.y, 0.0));
-    //     source.setBasis(base);
-
-    //     tf::Pose result = gazebo_to_map_transform_ * source;
-    //     tf::Quaternion new_or = result.getRotation();
-    //     double theta = tf::getYaw(new_or);
 
         Person gr;
         gr.type = "group";
@@ -618,6 +648,11 @@ void SARVOLocalPlanner::updatePedestrianList()
         // compute group velocity as the average of the pedestrians
         Point2D velocity;
         for (auto id : g.track_ids){
+            if (id >= pedestrians_.size()) {
+                ROS_ERROR("Pedestrian ID [%d] does not exist [Group Velocity Calculation]", int(id));
+                continue;
+            }
+
             velocity.x += pedestrians_[id].velocity.x;
             velocity.y += pedestrians_[id].velocity.y;
         }
@@ -627,6 +662,10 @@ void SARVOLocalPlanner::updatePedestrianList()
         // compute group radius
         double radius = 0.0, ped_to_center_distance;
         for (auto id : g.track_ids){
+            if (id >= pedestrians_.size()) {
+                ROS_ERROR("Pedestrian ID [%d] does not exist [Group Radius Calculation]", int(id));
+                continue;
+            }
             ped_to_center_distance = std::hypot((pedestrians_[id].pose.x - gr.pose.x),
                                                 (pedestrians_[id].pose.y - gr.pose.y));
             radius = (ped_to_center_distance > radius) ? ped_to_center_distance : radius;
@@ -637,6 +676,8 @@ void SARVOLocalPlanner::updatePedestrianList()
         groups_.emplace_back(gr);
         ped_groups_.emplace_back(gr);
     }
+
+    // ROS_INFO("*******************************Got here: 5*******************************");
 
     // -------------------------------------------------------------------------------
     // for (auto& p : ped_groups_){
@@ -741,8 +782,10 @@ Point2D SARVOLocalPlanner::computeGoalVelocity(Pose2D& goal)
 void SARVOLocalPlanner::checkIntersection(std::vector<Candidate>& vSuitable, 
     std::vector<Candidate>& vUnsuitable)
 {
+    // traj_generator_->startNewIteration(robot_gndtruth_,
+    //     goal_location_, operator_twist_, 1.0); // 0.1
     traj_generator_->startNewIteration(robot_gndtruth_,
-        goal_location_, operator_twist_, 1.0); // 0.1
+        goal_location_, current_robot_vel_, 1.0); // 0.1
     // Using final goal location here instead of the current waypoint
 
     // for trajectory visualization
@@ -758,30 +801,31 @@ void SARVOLocalPlanner::checkIntersection(std::vector<Candidate>& vSuitable,
         Twist2D next_twist = traj_generator_->nextVelocity();
         // candidate.velocity = twistToPoint2D(next_twist, robot_.pose.theta);
 
-        // candidate.
         candidate.twist = next_twist;
         candidate.velocity = twistToPoint2D(next_twist, robot_gndtruth_.theta);
-
-        
         
         // Generate a new trajectory
         // candidate.traj = traj_generator_->generateTrajectory(robot_.pose, 
         //     operator_twist_, next_twist);
+        // candidate.traj = traj_generator_->generateTrajectory(robot_gndtruth_, 
+        //     operator_twist_, next_twist);
         candidate.traj = traj_generator_->generateTrajectory(robot_gndtruth_, 
-            operator_twist_, next_twist);
-
+            current_robot_vel_, next_twist);
 
         // Check for static collision
-        traj_critic_->computeCandidateScore(candidate, "obstacle");
-        if (candidate.score.raw_scores[0] > 250) continue; // i.e. skip the candidate
+        // traj_critic_->computeCandidateScore(candidate, "obstacle");
+        // if (candidate.score.raw_scores[0] > 250) continue; 
+        if ( !traj_critic_->freeOfStaticObstacles(candidate) ) continue; // i.e. skip the candidate
 
         // Check if the candidate velocity is suitable
         bool suitable = true;
         for (VelocityObstacle& vo : velocityObstacles_)
         {
             Point2D relative_vel;
-            relative_vel.x = candidate.velocity.x + robot_.pose.x - vo.apex_.x;
-            relative_vel.y = candidate.velocity.y + robot_.pose.y - vo.apex_.y;
+            // relative_vel.x = candidate.velocity.x + robot_.pose.x - vo.apex_.x;
+            // relative_vel.y = candidate.velocity.y + robot_.pose.y - vo.apex_.y;
+            relative_vel.x = candidate.velocity.x + robot_gndtruth_.x - vo.apex_.x;
+            relative_vel.y = candidate.velocity.y + robot_gndtruth_.y - vo.apex_.y;
             // find the angles the RVO boundaries make with the global X and then check if 
             // the angle vAB makes with the global X is within that
             double relative_vel_theta, theta_right, theta_left;
@@ -842,7 +886,7 @@ void SARVOLocalPlanner::checkIntersection(std::vector<Candidate>& vSuitable,
 
     // ROS_INFO("/////////////////////////");
 
-    // ROS_INFO("Suitable: [%d] | Unsuitable: %d]", (int)vSuitable.size(), (int)vUnsuitable.size());
+    // ROS_INFO("Suitable: [%d] | Unsuitable: [%d]", (int)vSuitable.size(), (int)vUnsuitable.size());
 
 
     trajectoryCloudPublisher(suitable_trajectories, unsuitable_trajectories);
@@ -1054,7 +1098,7 @@ void SARVOLocalPlanner::goalAndOptimalPointVelocityPublisher(const Point2D& opti
     velocity_arrows.markers.push_back(marker2);
 
 
-    // for current heading -------------------------------------------
+    // for current command velocity --------------------------------
     visualization_msgs::Marker marker3;
     marker3.header.frame_id = "map";
     // ros::Time time = ros::Time();
@@ -1293,6 +1337,9 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
     Candidate optimal_candidate;
     optimal_candidate.score.total = std::numeric_limits<double>::max();
 
+    if (v_suitable.size() == 0)
+        ROS_INFO("[SARVO_PLANNER]: Suitable: [%d] | Unsuitable: [%d]", (int)v_suitable.size(), (int)v_unsuitable.size());
+
     if (v_suitable.size() > 0)
     {
         for (auto& candidate : v_suitable)
@@ -1306,20 +1353,28 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
                 3. Using Gaussian function to represent the social disturbance    
             */
             
+            // Initialize the candidate's raw scores
+            candidate.score.raw_scores = traj_critic_->initializeScores();
+            // candidate.score.raw_scores = std::vector<double>(6, 0.0);
+
+            // Feature 1: Static collision score
+            // traj_critic_->computeCandidateScore(candidate, "obstacle");
+            candidate.score.raw_scores[0] = traj_critic_->baseObstacleScore(candidate);
             // Feature 2: Change from previous optimal velocity
             candidate.score.raw_scores[1] = abs(candidate.velocity, prev_v_optimal_);
             // Feature 3: Deviation from operator's input
             candidate.score.raw_scores[2] = abs(candidate.velocity, operator_vel_);
             // Feature 4: Deviation from goal heading
-            candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
-            // candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
-            // candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
+            // candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
             // Feature 5: Social obstruction score
-            candidate.score.raw_scores[4] = 
-                traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
-            // candidate.score.raw_scores[5] = 
+            // candidate.score.raw_scores[4] = 
             //     traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+            candidate.score.raw_scores[5] = 
+                traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
 
+            // ROS_INFO("prev v_optimal is [%0.3f, %0.3f]", prev_v_optimal_.x, prev_v_optimal_.y);
 
             // compute weighted cost
             traj_critic_->computeTotalScore(candidate);
@@ -1352,6 +1407,149 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
             //     candidate.score.total);
 
             // if (candidate.score.raw_scores[0] > 0) {
+            // ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f,{%0.3f}]",
+            //     optimal_candidate.score.raw_scores[0],
+            //     optimal_candidate.score.raw_scores[1],
+            //     optimal_candidate.score.raw_scores[3],
+            //     optimal_candidate.score.raw_scores[4],
+            //     optimal_candidate.score.raw_scores[5],
+            //     optimal_candidate.score.total);
+            // }
+            // ROS_INFO("CandVel:[%0.2f,%0.2f], GVel:[%0.2f,%0.2f], GoalDif: [%0.2f], AngBet:[%0.2f], MagDif:[%0.2f]",
+            //     candidate.velocity.x, candidate.velocity.y, 
+            //     goal_vel_.x, goal_vel_.y, abs(candidate.velocity, goal_vel_),
+            //     candidate.score.raw_scores[3], candidate.score.raw_scores[4]);
+
+            // ROS_INFO("GoalDif: [%0.2f], AngBet:[%0.2f], MagDif:[%0.2f]", 
+            //     abs(candidate.velocity, goal_vel_),
+            //     candidate.score.raw_scores[3], candidate.score.raw_scores[4]);
+
+
+        }
+
+    }
+    else if (v_unsuitable.size() > 0)
+    {   
+        ROS_INFO("{SARVO_PLANNER]: No suitable candidate found! Computing velocity with lowest TTC");
+        // // set a hashtable to track the ttc values
+        // auto comp = [](const Candidate& lhs, const Candidate& rhs) {return lhs.velocity.x < rhs.velocity.x;};
+        // std::map<Candidate, double, decltype(comp)> time_to_collision_map(comp);
+
+        // // Check if the candidate velocity is suitable
+        // for (auto& candidate : v_unsuitable)
+        // {
+        //     time_to_collision_map[candidate] = 0;
+        //     std::vector<double> ttc_candidate;
+        //     double min_ttc = INF;
+
+        //     for (VelocityObstacle& vo : velocityObstacles_)
+        //     {
+        //         Point2D relative_vel;
+        //         relative_vel.x = candidate.velocity.x + robot_.pose.x - vo.apex_.x;
+        //         relative_vel.y = candidate.velocity.y + robot_.pose.y - vo.apex_.y;
+        //         // find the angles the RVO boundaries make with the global X and then check if 
+        //         // the angle vAB makes with the global X is within that
+        //         double relative_vel_theta, theta_right, theta_left;
+
+        //         relative_vel_theta = atan2m(relative_vel.y, relative_vel.x);
+        //         theta_left = std::atan2(vo.lambda_left_.y, vo.lambda_left_.x);
+        //         theta_right = std::atan2(vo.lambda_right_.y, vo.lambda_right_.x);
+
+        //         // check if the velocity vector is suitable by:
+        //             // (1) checking if theta_relative_vel falls between theta_right and theta_left
+        //         if (inBetween(relative_vel_theta, theta_left, theta_right)) {
+        //             double small_theta = std::abs(relative_vel_theta - 0.5*(theta_left-theta_right));
+
+        //             if (std::abs(vo.distance_*std::sin(small_theta)) >= vo.eff_obs_radius_)
+        //                 vo.eff_obs_radius_ = std::abs(vo.distance_*std::sin(small_theta));
+                    
+        //             double big_theta = std::asin(std::abs(vo.distance_*std::sin(small_theta))/vo.eff_obs_radius_);
+
+        //             double dist_tg = std::abs( vo.distance_*std::cos(small_theta))
+        //                 -std::abs(vo.eff_obs_radius_*std::cos(big_theta) );
+
+        //             if (dist_tg < 0) dist_tg = 0;
+
+        //             double ttc_rvo = dist_tg/abs(relative_vel);
+                    
+        //             // store the minimum value of ttc
+        //             if (ttc_rvo < min_ttc) min_ttc = ttc_rvo;
+
+        //         }            
+        //     }
+        //     // finds the minimum ttc across all agents for a given candidate
+        //     time_to_collision_map[candidate] = min_ttc + 0.001;
+        // }
+        
+        // // define weighting
+        // double WT = 0.2;
+        // // choose the velocity that minimizes the penalty function
+        //     // if V_unsuitable is empty, just pass the operator velocity as the optimal
+        // if (v_unsuitable.size() > 0){
+        //     double min_cost = INF;
+        //     for (auto candidate : v_unsuitable)
+        //     {
+        //         double candidate_cost = (WT / time_to_collision_map[candidate]) + abs(candidate.velocity, goal_vel_);
+        //         if (candidate_cost < min_cost) {
+        //             min_cost = candidate_cost;
+        //             optimal_candidate = candidate;
+        //             // ROS_INFO("[SARVO_PLANNER]: Min cost is: %f", min_cost);
+        //         }
+
+        //     }
+
+        // }
+        // else 
+        //     optimal_candidate.velocity = goal_vel_;  
+        //     // optimal_candidate.twist = point2DToTwist(goal_vel_, robot_gndtruth_.theta);
+        //     optimal_candidate.twist = operator_twist_;
+
+        for (auto& candidate : v_unsuitable)
+        {
+            // Initialize the candidate's raw scores
+            candidate.score.raw_scores = traj_critic_->initializeScores();
+
+            // Feature 1: Static collision score
+            // traj_critic_->computeCandidateScore(candidate, "obstacle");
+            candidate.score.raw_scores[0] = traj_critic_->baseObstacleScore(candidate);
+            // Feature 2: Change from previous optimal velocity
+            candidate.score.raw_scores[1] = abs(candidate.velocity, prev_v_optimal_);
+            // Feature 3: Deviation from operator's input
+            candidate.score.raw_scores[2] = abs(candidate.velocity, operator_vel_);
+            // Feature 4: Deviation from goal heading
+            // candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
+            // Feature 5: Social obstruction score
+            // candidate.score.raw_scores[4] = 
+            //     traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+            candidate.score.raw_scores[5] = 
+                traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+
+            // compute weighted cost
+            traj_critic_->computeTotalScore(candidate);
+
+            // update the best candidate based on score
+            if (candidate.score.total < optimal_candidate.score.total)
+            { 
+                optimal_candidate = candidate;
+                // if (candidate.score.raw_scores[0] > 0) {
+                //     ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,{%0.3f}]",
+                //         candidate.score.raw_scores[0],
+                //         candidate.score.raw_scores[1],
+                //         candidate.score.raw_scores[3],
+                //         candidate.score.raw_scores[4],
+                //         candidate.score.total);
+                // }
+            }
+            
+  
+            // ROS_INFO("Vel:[%0.2f,%0.2f], Tw:[%0.2f,%0.2f], score[%0.3f]", 
+            //     candidate.velocity.x, candidate.velocity.y,
+            //     candidate.twist.vx, candidate.twist.w,
+            //     candidate.score.total);
+
+            // if (candidate.score.raw_scores[0] > 0) {
             //     ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,{%0.3f}]",
             //         candidate.score.raw_scores[0],
             //         candidate.score.raw_scores[1],
@@ -1359,116 +1557,113 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
             //         candidate.score.raw_scores[4],
             //         candidate.score.total);
             // }
-            // ROS_INFO("CandVel:[%0.3f,%0.3f], GVel:[%0.3f,%0.3f], AngBet:[%0.3f], MagDif:[%0.3f]",
-            //     candidate.velocity.x, candidate.velocity.y,
-            //     goal_vel_.x, goal_vel_.y,
+            // ROS_INFO("CandVel:[%0.2f,%0.2f], GVel:[%0.2f,%0.2f], GoalDif: [%0.2f], AngBet:[%0.2f], MagDif:[%0.2f]",
+            //     candidate.velocity.x, candidate.velocity.y, 
+            //     goal_vel_.x, goal_vel_.y, abs(candidate.velocity, goal_vel_),
             //     candidate.score.raw_scores[3], candidate.score.raw_scores[4]);
 
+            // ROS_INFO("GoalDif: [%0.2f], AngBet:[%0.2f], MagDif:[%0.2f]", 
+            //     abs(candidate.velocity, goal_vel_),
+            //     candidate.score.raw_scores[3], candidate.score.raw_scores[4]);
         }
-    }
-    else if (v_unsuitable.size() > 0)
-    {   
-        ROS_INFO("{SARVO_PLANNER]: No suitable candidate found! Computing velocity with lowest TTC");
-        // set a hashtable to track the ttc values
-        auto comp = [](const Candidate& lhs, const Candidate& rhs) {return lhs.velocity.x < rhs.velocity.x;};
-        std::map<Candidate, double, decltype(comp)> time_to_collision_map(comp);
-
-        // Check if the candidate velocity is suitable
-        for (auto& candidate : v_unsuitable)
-        {
-            time_to_collision_map[candidate] = 0;
-            std::vector<double> ttc_candidate;
-            double min_ttc = INF;
-
-            for (VelocityObstacle& vo : velocityObstacles_)
-            {
-                Point2D relative_vel;
-                relative_vel.x = candidate.velocity.x + robot_.pose.x - vo.apex_.x;
-                relative_vel.y = candidate.velocity.y + robot_.pose.y - vo.apex_.y;
-                // find the angles the RVO boundaries make with the global X and then check if 
-                // the angle vAB makes with the global X is within that
-                double relative_vel_theta, theta_right, theta_left;
-
-                relative_vel_theta = atan2m(relative_vel.y, relative_vel.x);
-                theta_left = std::atan2(vo.lambda_left_.y, vo.lambda_left_.x);
-                theta_right = std::atan2(vo.lambda_right_.y, vo.lambda_right_.x);
-
-                // check if the velocity vector is suitable by:
-                    // (1) checking if theta_relative_vel falls between theta_right and theta_left
-                if (inBetween(relative_vel_theta, theta_left, theta_right)) {
-                    double small_theta = std::abs(relative_vel_theta - 0.5*(theta_left-theta_right));
-
-                    if (std::abs(vo.distance_*std::sin(small_theta)) >= vo.eff_obs_radius_)
-                        vo.eff_obs_radius_ = std::abs(vo.distance_*std::sin(small_theta));
-                    
-                    double big_theta = std::asin(std::abs(vo.distance_*std::sin(small_theta))/vo.eff_obs_radius_);
-
-                    double dist_tg = std::abs( vo.distance_*std::cos(small_theta))
-                        -std::abs(vo.eff_obs_radius_*std::cos(big_theta) );
-
-                    if (dist_tg < 0) dist_tg = 0;
-
-                    double ttc_rvo = dist_tg/abs(relative_vel);
-                    
-                    // store the minimum value of ttc
-                    if (ttc_rvo < min_ttc) min_ttc = ttc_rvo;
-
-                }            
-            }
-            // finds the minimum ttc across all agents for a given candidate
-            time_to_collision_map[candidate] = min_ttc + 0.001;
-        }
-        
-        // define weighting
-        double WT = 0.2;
-        // choose the velocity that minimizes the penalty function
-            // if V_unsuitable is empty, just pass the operator velocity as the optimal
-        if (v_unsuitable.size() > 0){
-            // V_opt = min(V_unsuitable, key = lambda v: ((WT/tc_V[tuple(v)])+self.compute_distance(v, vA)))
-
-            double min_cost = INF;
-            for (auto candidate : v_unsuitable)
-            {
-                double candidate_cost = (WT / time_to_collision_map[candidate]) + abs(candidate.velocity, goal_vel_);
-                if (candidate_cost < min_cost) {
-                    min_cost = candidate_cost;
-                    optimal_candidate = candidate;
-                    // ROS_INFO("[SARVO_PLANNER]: Min cost is: %f", min_cost);
-                }
-
-            }
-
-        }
-        else 
-            optimal_candidate.velocity = goal_vel_;  
-            // optimal_candidate.twist = point2DToTwist(goal_vel_, robot_gndtruth_.theta);
-            optimal_candidate.twist = operator_twist_;
         
     }
     else 
     {
-        ROS_INFO("[SARVO_PLANNER]: No available velocities. Would head to the goal.");
+        ROS_INFO("[SARVO_PLANNER]: No available velocities. Performing recovery maneuver...");
         // optimal_candidate.velocity = goal_vel_;
         // optimal_candidate.twist = point2DToTwist(goal_vel_, robot_gndtruth_.theta);
-        optimal_candidate.twist = operator_twist_;
+        // optimal_candidate.twist = operator_twist_;
+
+        Candidate candidate;
+        candidate.twist = point2DToTwist(goal_vel_, robot_gndtruth_.theta);
+        candidate.velocity = goal_vel_;
+        candidate.score.raw_scores = traj_critic_->initializeScores();
+
+        // Generate a new trajectory
+        candidate.traj = traj_generator_->generateTrajectory(robot_gndtruth_, 
+            current_robot_vel_, candidate.twist);
+        
+        // Feature 1: Static collision score
+        candidate.score.raw_scores[0] = traj_critic_->baseObstacleScore(candidate);
+        // Feature 2: Change from previous optimal velocity
+        candidate.score.raw_scores[1] = abs(candidate.velocity, prev_v_optimal_);
+        // Feature 3: Deviation from operator's input
+        candidate.score.raw_scores[2] = abs(candidate.velocity, operator_vel_);
+        // Feature 4: Deviation from goal heading
+        // candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
+        candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
+        candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
+        // Feature 5: Social obstruction score
+        candidate.score.raw_scores[5] = 
+            traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+
+        // compute weighted cost
+        traj_critic_->computeTotalScore(candidate);
+        
+        // Check for static collision
+        if ( traj_critic_->forwardHeadingFree(candidate) ) {
+            optimal_candidate = candidate;
+            ROS_INFO("[SARVO_PLANNER]: No available velocities. Coast is clear, Heading to goal");
+        }
+        else {
+            // define reverse candidate
+            // Candidate reverse_candidate;
+            Twist2D reverse_twist;
+            reverse_twist.vx = -0.5;
+            reverse_twist.w = 0.0;
+            candidate.twist = reverse_twist;
+            candidate.velocity = twistToPoint2D(reverse_twist, robot_gndtruth_.theta);
+
+            // Generate a new trajectory
+            candidate.traj = traj_generator_->generateTrajectory(robot_gndtruth_, 
+            current_robot_vel_, candidate.twist);
+
+            // Feature 1: Static collision score
+            candidate.score.raw_scores[0] = traj_critic_->baseObstacleScore(candidate);
+            // Feature 2: Change from previous optimal velocity
+            candidate.score.raw_scores[1] = abs(candidate.velocity, prev_v_optimal_);
+            // Feature 3: Deviation from operator's input
+            candidate.score.raw_scores[2] = abs(candidate.velocity, operator_vel_);
+            // Feature 4: Deviation from goal heading
+            // candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
+            // Feature 5: Social obstruction score
+            candidate.score.raw_scores[5] = 
+                traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+
+            // compute weighted cost
+            traj_critic_->computeTotalScore(candidate);
+
+            optimal_candidate = candidate;
+            ROS_INFO("[SARVO_PLANNER]: No available velocities. Obstacle ahead! Reversing...");
+        }
+
+
+        // optimal_candidate = prev_candidate_optimal_;
     }
-    // ROS_INFO("******************************************************");
-    // try {        
-    //     ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,{%0.3f}]",
+    
+    // if (v_suitable.size() > 0 || v_unsuitable.size() > 0) {
+    //     ROS_INFO("******************************************************");
+    //     // try {        
+    //     ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f,{%0.3f}]",
     //                 optimal_candidate.score.raw_scores[0],
     //                 optimal_candidate.score.raw_scores[1],
     //                 optimal_candidate.score.raw_scores[3],
     //                 optimal_candidate.score.raw_scores[4],
+    //                 optimal_candidate.score.raw_scores[5],
     //                 optimal_candidate.score.total);
+    //     // }
+    //     // catch (...) {
+    //     //     std::cout << "Error in the ROS_INFO! \n";
+    //     // }
+    //     // catch (std::exception& e) // reference to the base of a polymorphic object
+    //     // {
+    //     //     std::cout << e.what(); // information from length_error printed
+    //     // }
+    //     ROS_INFO("******************************************************");
     // }
-    // catch (...) {
-    //     std::cout << "Error in the ROS_INFO! \n";
-    // }
-    // catch (std::exception& e) // reference to the base of a polymorphic object
-    // {
-    //     std::cout << e.what(); // information from length_error printed
-    // }
-    // ROS_INFO("******************************************************");
 
     return optimal_candidate;
     
@@ -1485,17 +1680,27 @@ Candidate SARVOLocalPlanner::computeOperatorVelocityCost(Point2D operator_vel_) 
     candidate.traj = traj_generator_->generateTrajectory(robot_gndtruth_, 
         operator_twist_, operator_twist_);
 
+    // Initialize the candidate's raw scores
+    candidate.score.raw_scores = traj_critic_->initializeScores();
+
     // Feature 1: Static collision score
-    traj_critic_->computeCandidateScore(candidate, "obstacle");
+    // traj_critic_->computeCandidateScore(candidate, "obstacle");
+    candidate.score.raw_scores[0] = traj_critic_->baseObstacleScore(candidate);
     // Feature 2: Change from previous optimal velocity
-    candidate.score.raw_scores[1] = abs(operator_vel_, prev_v_optimal_);
+    candidate.score.raw_scores[1] = abs(candidate.velocity, prev_v_optimal_);
     // Feature 3: Deviation from operator's input
-    candidate.score.raw_scores[2] = abs(operator_vel_, operator_vel_);
+    candidate.score.raw_scores[2] = abs(candidate.velocity, operator_vel_);
     // Feature 4: Deviation from goal heading
-    candidate.score.raw_scores[3] = abs(operator_vel_, goal_vel_);
+    // candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
+    candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
+    candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
     // Feature 5: Social obstruction score
-    candidate.score.raw_scores[4] = 
+    // candidate.score.raw_scores[4] = 
+    //     traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+    candidate.score.raw_scores[5] = 
         traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+
+    // ROS_INFO("prev v_optimal is [%0.3f, %0.3f]", prev_v_optimal_.x, prev_v_optimal_.y);
 
     // compute weighted cost
     traj_critic_->computeTotalScore(candidate);
@@ -1568,7 +1773,7 @@ geometry_msgs::Twist SARVOLocalPlanner::computeControlCommands(const Candidate& 
     double controlled_twist = angle_diff / tau;
 
     // ROS_INFO("Old and New twist: [%0.3f, %0.3f]", ct, controlled_twist);
-    ROS_INFO("Current heading, optimal heading: [%0.3f, %0.3f]", robot_gndtruth_.theta, theta_opt);
+    // ROS_INFO("Current heading, optimal heading: [%0.3f, %0.3f]", robot_gndtruth_.theta, theta_opt);
 
     // optimal_twist.angular.z = (theta_opt - robot_gndtruth_.theta) / tau;
     // if (std::abs(controlled_twist) < max_angular_vel_)
@@ -1592,14 +1797,75 @@ geometry_msgs::Twist SARVOLocalPlanner::computeControlCommands(const Candidate& 
 
     // optimal_twist.angular.z = controlled_twist;
 
-    ROS_INFO("Optimal w [%0.3f], Controlled w [%0.3f], Twist min/max [%0.3f, %0.3f]",
-        optimal_candidate.twist.w, optimal_twist.angular.z,
-        twist_min, twist_max);
+    // ROS_INFO("Optimal w [%0.3f], Controlled w [%0.3f], Twist min/max [%0.3f, %0.3f]",
+    //     optimal_candidate.twist.w, optimal_twist.angular.z,
+    //     twist_min, twist_max);
 
     return optimal_twist;
 }
 
 
+void SARVOLocalPlanner::computeRiskLevel()
+{
+    // compute obstacle collision risk
+    double obstacle_ttc = 0.0;
+    if (std::abs(current_robot_vel_.vx) < 0.005) obstacle_ttc = 1000.0;
+    else obstacle_ttc = min_distance_to_obstacle_ / std::abs(current_robot_vel_.vx);
+
+    // if (obstacle_ttc < 2.0)
+        // ROS_INFO("Obstacle TTC is: [%0.3f]", obstacle_ttc);
+        // ROS_INFO("Velocity is: [%0.3f] | TTC is: [%0.3f]", current_robot_vel_.vx, ttc);
+
+    // compute pedestrian collision risk
+    double pedestrian_ttc = INF;
+
+    Point2D curr_vel = twistToPoint2D(current_robot_vel_, robot_gndtruth_.theta);
+
+    for (VelocityObstacle& vo : velocityObstacles_)
+    {
+        Point2D relative_vel;
+        relative_vel.x = curr_vel.x + robot_gndtruth_.x - vo.apex_.x;
+        relative_vel.y = curr_vel.y + robot_gndtruth_.y - vo.apex_.y;
+        // find the angles the RVO boundaries make with the global X and then check if 
+        // the angle vAB makes with the global X is within that
+        double relative_vel_theta, theta_right, theta_left;
+
+        relative_vel_theta = atan2m(relative_vel.y, relative_vel.x);
+        theta_left = std::atan2(vo.lambda_left_.y, vo.lambda_left_.x);
+        theta_right = std::atan2(vo.lambda_right_.y, vo.lambda_right_.x);
+
+        // check if the velocity vector is suitable by:
+            // (1) checking if theta_relative_vel falls between theta_right and theta_left
+        if (inBetween(relative_vel_theta, theta_left, theta_right)) {
+            double small_theta = std::abs(relative_vel_theta - 0.5*(theta_left-theta_right));
+
+            if (std::abs(vo.distance_*std::sin(small_theta)) >= vo.eff_obs_radius_)
+                vo.eff_obs_radius_ = std::abs(vo.distance_*std::sin(small_theta));
+            
+            double big_theta = std::asin(std::abs(vo.distance_*std::sin(small_theta))/vo.eff_obs_radius_);
+
+            double dist_tg = std::abs( vo.distance_*std::cos(small_theta))
+                -std::abs(vo.eff_obs_radius_*std::cos(big_theta) );
+
+            if (dist_tg < 0) dist_tg = 0;
+
+            double ttc_rvo = dist_tg/abs(relative_vel);
+            
+            // store the minimum value of ttc
+            if (ttc_rvo < pedestrian_ttc) pedestrian_ttc = ttc_rvo;
+
+        }            
+    }
+    
+    // if (pedestrian_ttc < 2.0)
+    //     ROS_INFO("Pedestrian TTC is: [%0.3f]", pedestrian_ttc);
+
+    // publish risk level
+    std_msgs::Float32 risk_level;
+    risk_level.data = std::min(obstacle_ttc, pedestrian_ttc);
+
+    risk_level_pub_.publish(risk_level);
+}
 
 } // end namespace
 
@@ -1611,18 +1877,10 @@ int main(int argc, char** argv){
 
 	ros::init(argc, argv, "sarvo_planner_node");
 
-	// tf::TransformListener tf;
-    // tf2_ros::Buffer buffer(ros::Duration(10));
-
     tf2_ros::Buffer tf;
     tf2_ros::TransformListener tfListener(tf);
 
-    // tf::TransformListener tf(ros::Duration(10));
-	// costmap_2d::Costmap2DROS* costmap_ros = new costmap_2d::Costmap2DROS("global_costmap", tf);
-
-	// namespace::ClassName object_name
-	// sarvo_local_planner::SARVOLocalPlanner sarvo_planner(tf, costmap_ros);
-    sarvo_local_planner::SARVOLocalPlanner sarvo_planner(tf);
+	sarvo_local_planner::SARVOLocalPlanner sarvo_planner(tf);
 
 	ros::spin();
 

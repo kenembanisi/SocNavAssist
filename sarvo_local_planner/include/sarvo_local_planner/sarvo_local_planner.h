@@ -23,6 +23,7 @@
 #include "geometry_msgs/Point.h"
 #include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/Float32.h"
+#include "sensor_msgs/LaserScan.h"
 #include <visualization_msgs/MarkerArray.h>
 #include <nav_msgs/Path.h>
 #include <gazebo_msgs/ModelStates.h>
@@ -104,6 +105,12 @@ namespace sarvo_local_planner {
 			 * @param  
 			 */
 			void callbackStates(const gazebo_msgs::ModelStatesConstPtr& msg);
+
+			/**
+			 * @brief  
+			 * @param  
+			 */
+			void callbackLaserScan(const sensor_msgs::LaserScanConstPtr& msg);
 			
             /**
 			 * @brief  Updates both the pose and velocity of the robot
@@ -215,6 +222,8 @@ namespace sarvo_local_planner {
 			geometry_msgs::Twist computeControlCommands(const Candidate& optimal_candidate);
 
 
+			void computeRiskLevel();
+
 		private:
 			// member variables:
 
@@ -252,6 +261,7 @@ namespace sarvo_local_planner {
 			std::string behavior_;
 			std::string feature_filename_;
 			std::string b_weights_;
+			int trial_case_;
 			bool use_planner_;
             float radius_ext_;
             float rvo_planning_horizon_;
@@ -279,6 +289,7 @@ namespace sarvo_local_planner {
             ros::Subscriber groups_subs_;
             ros::Subscriber odom_subs_;
             ros::Subscriber cmd_vel_subs_;
+			ros::Subscriber laserscan_subs_;
 			ros::Publisher suitable_traj_cloud_pub_;
 			ros::Publisher unsuitable_traj_cloud_pub_;
 			ros::Publisher suitable_velocity_pub_;
@@ -291,6 +302,7 @@ namespace sarvo_local_planner {
 			ros::Publisher heading_delta_pub_;
 			ros::Publisher control_delta_pub_;
 			ros::Publisher goal_and_optimal_velocity_pub_;
+			ros::Publisher risk_level_pub_;
 
 			ros::Subscriber state_subs_;
 
@@ -304,6 +316,7 @@ namespace sarvo_local_planner {
 			PathPlanner* path_planner_;
 
 			Point2D prev_v_optimal_;
+			Candidate prev_candidate_optimal_;
 			Point2D goal_vel_;
 			std::vector<double> operator_feature_count_ 
 				= std::vector<double>(5);
@@ -314,6 +327,8 @@ namespace sarvo_local_planner {
 			Pose2D current_wp_;
 			double running_time_ = 0;
 			bool atGoalAlready_ = false;
+
+			float min_distance_to_obstacle_;
     };
 
 }

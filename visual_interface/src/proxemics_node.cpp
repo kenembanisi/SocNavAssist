@@ -55,6 +55,7 @@ class Proxemics {
         float clearance_threshold_ = 1.75f;
         float space_radius_ = 0.45f + agent_radius_;
         int intrusion_ = 0;
+        ros::Timer timer;
         
 
     //---------------------------------------------------------------------------------------------------
@@ -70,6 +71,8 @@ class Proxemics {
             // initialize the publisher
             proxemics_publisher_ = nh_.advertise<std_msgs::Int8MultiArray>("/proxemics_states", 50);
             proxemics_score_publisher_ = nh_.advertise<std_msgs::Float32>("/proxemics_score", 50);
+
+            timer = nh_.createTimer(ros::Duration(0.1), boost::bind(&Proxemics::publishProxemicsScore, this));
             
             // get index of actors and agent
             boost::shared_ptr<gazebo_msgs::ModelStates const> msg_ptr;
@@ -81,6 +84,8 @@ class Proxemics {
                 if (prefix == "actor") { actor_index_.push_back(i); num_actors_ = actor_index_.size(); }
                 if (prefix == "trina") { agent_index_ = i; }
             }
+
+            
             
             ROS_INFO("Initialized the Proxemics Evaluation Node");
 
@@ -110,19 +115,35 @@ class Proxemics {
             
         }
 
-        void publishProxemicsScore(void) {
-            
-            // clear proxemics score
-            proxemics_score_.data = 0.0;
 
-            // check if actor_poses is populated
-            if (actor_poses_.size() > 1) {
-                proxemics_score_.data = calcScore();
-                // ROS_INFO("Proxemics score: %0.3f", proxemics_score_.data);
+        // void calculateProxemicsScore(void) {
+            
+        //     // clear proxemics score
+        //     proxemics_score_.data = 0.0;
+
+        //     // check if actor_poses is populated
+        //     if (actor_poses_.size() > 1) {
+        //         proxemics_score_.data = calcScore();
+        //         // ROS_INFO("Proxemics score: %0.3f", proxemics_score_.data);
+        //     }
+
+        //     // // publish message
+        //     // proxemics_score_publisher_.publish(proxemics_score_);
+        // }
+
+
+        void publishProxemicsScore() {
+            std_msgs::Float32 proxemics_score;
+            // proxemics_score.data = 10.555;
+
+            // // check if actor_poses is populated
+            if (actor_poses_.size() > 0) {
+                proxemics_score.data = calcScore();
+                // ROS_INFO("Proxemics score: %0.3f", proxemics_score.data);
             }
 
             // publish message
-            proxemics_score_publisher_.publish(proxemics_score_);
+            proxemics_score_publisher_.publish(proxemics_score);
         }
 
 
@@ -161,7 +182,8 @@ class Proxemics {
 
             publishProxemics();
 
-            publishProxemicsScore();
+            // calculateProxemicsScore();
+            // publishProxemicsScore();
 
         }
 
@@ -213,8 +235,6 @@ int main(int argc, char** argv)
     //     prox.publishProxemics();
     //     ros::spinOnce();
     // }
-
-    // prox.publishProxemics();
 
     ros::spin();
     

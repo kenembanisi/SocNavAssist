@@ -104,13 +104,6 @@ void PathPredictor::optimalCmdCallback(const std_msgs::Float64MultiArray& veloci
 
 }
 
-// void PathPredictor::filterOptimalCmdVel(float new_v, float new_w){
-//     // compare the current optimal_velocities with the new ones
-//     if (std::abs(new_w - optimal_control_.w) > filter_threshold){
-//         optimal_control_.w = new_w;
-//     }
-//     optimal_control_.v = new_v;
-// }
 
 TrajectoryPair PathPredictor::computePredictedTraj(void) {
 
@@ -251,12 +244,6 @@ int main(int argc, char** argv)
 
     // instantiate the PathPredictor object
     PathPredictor path_predictor(nh, prediction_time, dt);
-
-    // while (ros::ok())
-    // {
-    //     path_predictor.publishTrajectories();
-    //     ros::spinOnce();
-    // }
 
     ros::spin();
     

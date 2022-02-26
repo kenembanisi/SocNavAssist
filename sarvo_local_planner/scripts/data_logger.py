@@ -28,6 +28,10 @@ class DataLogger():
         self.scenario = rospy.get_param('scenario')
         self.trial_name = rospy.get_param('trial_name')
         self.study_phase = rospy.get_param('study_phase')
+        self.behavior = rospy.get_param('behavior')
+        self.trial_case = rospy.get_param('trial_case')
+        self.trial_mode = rospy.get_param('trial_mode')
+
 
         # get one instance of message 
         # data = None
@@ -173,7 +177,7 @@ class DataLogger():
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
                     str(time_struct.tm_hour) + str(time_struct.tm_min) + ']'
 
-        filename = self.trial_name+'_'+self.scenario+'_'+self.layout+'_'+self.study_phase \
+        filename = self.trial_name+'_'+self.scenario+'_case'+str(self.trial_case)+'_'+self.behavior \
                         +'_'+self.trial_condition+'_'+time_now
 
 

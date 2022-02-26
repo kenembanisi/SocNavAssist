@@ -12,12 +12,14 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core.hpp>
 
 // Other includes
 #include <time.h>
 #include <string>
 #include <vector>
 #include <cmath> 
+#include <random>
 
 // custom defined msgs
 #include <visual_interface/trajectoryPair.h>
@@ -84,7 +86,14 @@ class VisualInterface
     float proxemics_score_ = 0.0f;
     float operator_vel_[2] = { 0.0f, 0.0f };
     float optimal_velocity_[2] = { 0.0f, 0.0f };
-    
+    std::vector<int> first_number_ = { 23, 19, 26, 46, 22, 47, 6, 63, 35, 28,
+                                       35, 20, 45, 41, 15};
+    std::vector<int> second_number_ = { 5, 13, 17, 38, 76, 12, 61, 57, 36, 17,
+                                        28, 75, 29, 32, 57};
+    int idx1 = 0, idx2 = 0;
+    // std::random_device rd;
+    // std::mt19937 gen(rd());
+    // std::uniform_int_distribution<> distr(0, (int)first_number.size());
 
   public:
     // CONSTRUCTOR
@@ -128,28 +137,11 @@ class VisualInterface
         nh_.getParam("behavior", this->behavior_title);
         nh_.getParam("task_objective", this->task_title);
 
-        // Set the trial condition
-        // switch(this->trial_condition) 
-        // {
-        //     case "MC":
-        //         this->trial_condition_name = "MC";
-        //         break;
-        //     case "H":
-        //         this->trial_condition_name = "Haptic";
-        //         break;
-        //     case "V-T":
-        //         this->trial_condition_name = "Visual (Traj)";
-        //         break;
-        //     case "V-B":
-        //         this->trial_condition_name = "Visual (Bars)";
-        //         break;
-        //     case "HV-B":
-        //         this->trial_condition_name = "Haptic + Visual (Bars)";
-        //         break;
-        //     case "HV-T":
-        //         this->trial_condition_name = "Haptic + Visual (Traj)";  
-        //         break; 
-        // }
+
+        // Set initial values for secondary task idx
+        idx1 = (std::rand() % 10);
+        idx2 = (std::rand() % 10);
+
 
 
         cv::namedWindow(OPENCV_WINDOW);
@@ -475,7 +467,7 @@ class VisualInterface
                         cv::FILLED, 
                         cv::LINE_8);
             
-            float max_score = 500.0f;
+            float max_score = 100.0f;
             if (proxemics_score_ < max_score)
                 RIGHT_LEVEL_VERTEX_X2 = RIGHT_LEVEL_VERTEX_X1 + (RIGHT_BASE_VERTEX_X2 - RIGHT_LEVEL_VERTEX_X1) * (proxemics_score_ / max_score);
             else RIGHT_LEVEL_VERTEX_X2 = RIGHT_BASE_VERTEX_X2;
@@ -486,6 +478,9 @@ class VisualInterface
                         cv::Scalar( 90, 120, 8 ),
                         cv::FILLED, 
                         cv::LINE_8);
+            cv::putText(this->fwd_img_ptr->image, std::to_string(int(proxemics_score_)), cv::Point(260, 80), 
+                                cv::FONT_HERSHEY_DUPLEX, 1.1, 
+                                cv::Scalar( 0, 0, 0 ), 2, false);
         }
 
         // display behavior
@@ -624,8 +619,52 @@ class VisualInterface
                     cv::Scalar( 195, 195, 195, 0.4 ), cv::FILLED);
     }
 
-    void drawRobotFootprint(){
+    void drawSecondaryTask(){
 
+        // temp:
+        cv::Point p1(60, 600), p2(280, 600), p3(280, 700), p4(60, 700);
+        int thickness = 2;
+
+        cv::line(this->fwd_img_ptr->image, 
+                 p1, p2, cv::Scalar(0, 0, 0),
+                 thickness, cv::LINE_8);
+
+        cv::line(this->fwd_img_ptr->image, 
+                 p2, p3, cv::Scalar(0, 0, 0),
+                 thickness, cv::LINE_8);
+
+        cv::line(this->fwd_img_ptr->image, 
+                 p3, p4, cv::Scalar(0, 0, 0),
+                 thickness, cv::LINE_8);
+
+        cv::line(this->fwd_img_ptr->image, 
+                 p1, p4, cv::Scalar(0, 0, 0),
+                 thickness, cv::LINE_8);
+
+        char k = cv::waitKey(2);
+
+        cv::putText(this->fwd_img_ptr->image, std::to_string(first_number_[idx1]), cv::Point(75, 670), 
+                cv::FONT_HERSHEY_DUPLEX, 1.75, 
+                cv::Scalar( 0, 0, 0 ), 2, false);
+
+        cv::putText(this->fwd_img_ptr->image, "+", cv::Point(150, 670), 
+                cv::FONT_HERSHEY_DUPLEX, 1.75, 
+                cv::Scalar( 0, 0, 0 ), 2, false);
+        
+        cv::putText(this->fwd_img_ptr->image, std::to_string(second_number_[idx2]), cv::Point(200, 670), 
+                cv::FONT_HERSHEY_DUPLEX, 1.75, 
+                cv::Scalar( 0, 0, 0 ), 2, false);
+
+
+        if (k == 32) {
+            ROS_INFO("***************Pressed***************");
+            idx1 = (std::rand() % (int(first_number_.size())));
+            idx2 = (std::rand() % (int(second_number_.size())));
+        }
+    }
+
+    void drawRobotFootprint(){
+        
         // temp:
         cv::Point p1(650, 800), p2(1050, 800), p3(800, 600), p4(900, 600);
         int thickness = 3;
@@ -695,10 +734,11 @@ class VisualInterface
             
             // ROS_INFO("[width, height]: [%d, %d]", this->fwd_img_ptr->image.size().width, this->fwd_img_ptr->image.size().height);
 
+            this->drawSecondaryTask();
 
             // Update GUI Window
             cv::imshow(OPENCV_WINDOW, this->fwd_img_ptr->image);
-            cv::waitKey(5); // previously set to 1
+            cv::waitKey(2); // previously set to 5
 
         }
     }

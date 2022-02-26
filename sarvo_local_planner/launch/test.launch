@@ -26,13 +26,18 @@
     <arg name="phase" default="test" />
     <arg name="record_rosbag" default="false" />
     <arg name="display_viz" default="true" />
-    <arg name="feature_filename" default="data/demos_features.csv" />
+    <arg name="trial_mode" default="learning" />
+    <arg name="feature_filename" default="data/learning/demos_features_counts.csv" 
+        if="$(eval trial_mode=='learning')"/>
+    <arg name="feature_filename" default="data/testing/trial_features_counts.csv" 
+        if="$(eval trial_mode=='testing')"/>
     <param name="scenario" value="$(arg scenario)" />
     <param name="behavior" value="$(arg behavior)" />
     <param name="task_objective" value="$(arg task_objective)" />
     <param name="scenario_layout" value="$(arg scenario_layout)" />
     <param name="trial_number" value="$(arg trial_number)" />
     <param name="trial_name" value="$(arg trial_name)" />
+    <param name="trial_mode" value="$(arg trial_mode)" />
     <param name="use_planner" value="$(arg use_planner)" />
     <param name="debug_bars" value="$(arg debug_bars)" />
     <param name="study_phase" value="$(arg phase)" />
@@ -47,9 +52,11 @@
     <arg name="robot_yaw" default="1.55" if="$(eval arg('case1'))" />
     <arg name="goal_x" default="-6.48" if="$(eval arg('case1'))" />
     <arg name="goal_y" default="7.22" if="$(eval arg('case1'))" />
+    <arg name="trial_case" default="1" if="$(eval arg('case1'))" />
     <param name="amcl/initial_pose_x" value="0.0" if="$(eval arg('case1'))" />
     <param name="amcl/initial_pose_y" value="0.0" if="$(eval arg('case1'))" />
     <param name="amcl/initial_pose_a" value="0.0" if="$(eval arg('case1'))" />
+    <param name="trial_case" value="1" if="$(eval arg('case1'))" />
 
         <!-- if trial_case is case2 -->
     <arg name="robot_x" default="-11.99" if="$(eval arg('case2'))" />
@@ -58,9 +65,11 @@
     <arg name="robot_yaw" default="0.257"  if="$(eval arg('case2'))" />
     <arg name="goal_x" default="-1.80"  if="$(eval arg('case2'))" />
     <arg name="goal_y" default="7.30"  if="$(eval arg('case2'))" />
+    <arg name="trial_case" default="2" if="$(eval arg('case2'))" />
     <param name="amcl/initial_pose_x" value="3.19" if="$(eval arg('case2'))" />
     <param name="amcl/initial_pose_y" value="6.47" if="$(eval arg('case2'))" />
     <param name="amcl/initial_pose_a" value="-1.313" if="$(eval arg('case2'))" />
+    <param name="trial_case"          value="2" if="$(eval arg('case2'))" />
 
         <!-- if trial_case is case3 -->
     <arg name="robot_x" default="-11.98" if="$(eval arg('case3'))" />
@@ -69,9 +78,11 @@
     <arg name="robot_yaw" default="-0.13" if="$(eval arg('case3'))" />
     <arg name="goal_x" default="-1.35" if="$(eval arg('case3'))" />
     <arg name="goal_y" default="-5.49" if="$(eval arg('case3'))" />
+    <arg name="trial_case" default="3" if="$(eval arg('case3'))" />
     <param name="amcl/initial_pose_x" value="11.75" if="$(eval arg('case3'))" />
     <param name="amcl/initial_pose_y" value="6.46" if="$(eval arg('case3'))" />
     <param name="amcl/initial_pose_a" value="-1.70" if="$(eval arg('case3'))" />
+    <param name="trial_case"          value="3" if="$(eval arg('case3'))" />
 
         <!-- if trial_case is case4 -->
     <arg name="robot_x" default="-2.25" if="$(eval arg('case4'))" />
@@ -80,18 +91,22 @@
     <arg name="robot_yaw" default="-2.05"  if="$(eval arg('case4'))" />
     <arg name="goal_x" default="-11.50"  if="$(eval arg('case4'))" />
     <arg name="goal_y" default="-3.62"  if="$(eval arg('case4'))" />
+    <arg name="trial_case" default="4" if="$(eval arg('case4'))" />
     <param name="amcl/initial_pose_x" value="13.22" if="$(eval arg('case4'))" />
     <param name="amcl/initial_pose_y" value="-3.27" if="$(eval arg('case4'))" />
     <param name="amcl/initial_pose_a" value="2.66" if="$(eval arg('case4'))" />
+    <param name="trial_case"          value="4"    if="$(eval arg('case4'))" />
 
 
     <!-- Weights -->
     <!-- <arg name="behavior_weights" default="0.05, 0.75, 0.0, 1.0, 0.03" /> -->
         <!-- cautious -->
     <!-- <arg name="behavior_weights" default="0.5, 0.75, 0.0, 1.0, 0.2" />  -->
-    <arg name="behavior_weights" default="0.5, 0.75, 0.0, 1.5, 0.2" />  
+    <!-- <arg name="behavior_weights" default="0.5, 0.75, 0.0, 1.5, 0.2" />   -->
         <!-- assertive -->
     <!-- <arg name="behavior_weights" default="0.01, 0.75, 0.0, 1.5, 0.01" />   -->
+
+    <arg name="behavior_weights" default="0.5, 0.75, 0.0, 1.5, 1.0, 0.2" />
     <param name="behavior_weights" value="$(arg behavior_weights)" />
 
     <!-- set goal pos as param -->
@@ -151,7 +166,7 @@
 
     <!-- Launch the falcon novint haptic interface -->
     <node name="socnavassist_haptic_interface" pkg="haptic_interface" type="haptic_interface_node" 
-        output="screen" if="$(eval trial_condition!='AUTO')"/>/>
+        output="screen" if="$(eval trial_condition!='AUTO')"/>
 
     <group if="$(eval display_viz==true)">
             <!-- Launch the visual interface -->
@@ -165,8 +180,9 @@
         <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" />
 
         <!-- Launch rviz -->
-        <!-- <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo_manual.rviz" />
-        <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" /> -->
+        <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo_manual.rviz" />
+        <!-- <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo.rviz" /> -->
+        <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" />
     </group>
 
     <!-- Localize the robot -->
@@ -181,7 +197,7 @@
     <!-- Launch main sarvo_local_planner -->
     <node pkg="sarvo_local_planner" type="sarvo_local_planner" name="sarvo_planner" output="screen" required="true" >
         <rosparam file="$(find sarvo_local_planner)/config/costmap_params.yaml" command="load" ns="static_costmap" />
-        <rosparam file="$(find sarvo_local_planner)/config/behaviors.yaml" command="load" />
+        <rosparam file="$(find sarvo_local_planner)/config/behaviors_2.yaml" command="load" />
     </node>
 
     <!-- Launch rosbag to store data -->

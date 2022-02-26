@@ -5,6 +5,7 @@
 #include "sarvo_msgs/Candidate.h"
 #include <ros/ros.h>
 #include "costmap_2d/costmap_2d.h"
+#include "costmap_2d/cost_values.h"
 #include "sarvo_local_planner/utilities.h"
 
 /*
@@ -34,6 +35,12 @@ class TrajectoryCritic {
 
         void computeCandidateScore(Candidate& candidate, 
             const std::string& feature_name);
+        
+        bool freeOfStaticObstacles(const Candidate& candidate);
+
+        bool forwardHeadingFree(const Candidate& candidate);
+
+        std::vector<double> initializeScores();
 
         void computeCandidateScore(Candidate& candidate, 
             Point2D& prev_v_optimal_);
@@ -69,6 +76,8 @@ class TrajectoryCritic {
         bool sum_social_disturbance_scores_;
         bool decay_social_disturbance_scores_;
         costmap_2d::Costmap2D* static_costmap_;
+        double max_social_cost = 0.0;
+        int num_weights_;
     
     public:
 

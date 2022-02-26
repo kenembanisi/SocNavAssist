@@ -169,20 +169,14 @@ namespace sarvo_local_planner {
         myFile.close();
     }
 
-    // double angleBetween(const Point2D& vector1, const Point2D& vector2)
-    // {
-    //     double dot_product = (vector1.x*vector2.x) + (vector1.y*vector2.y);
-    //     double vector1_mag = std::hypot(vector1.x, vector1.y);
-    //     double vector2_mag = std::hypot(vector2.x, vector2.y);
-    //     return std::acos( dot_product / (vector1_mag*vector2_mag) );
-    // }
 
     double angleBetween(const Point2D& vector1, const Point2D& vector2)
     {
         double theta1 = std::atan2(vector1.x, -vector1.y);
         double theta2 = std::atan2(vector2.x, -vector2.y);
         // return std::fmod(theta1-theta2, PI);
-        return wrapToPi(theta1-theta2);
+        // return wrapToPi(theta1-theta2);
+        return std::abs(wrapToPi(theta2-theta1));
     }
 
     double magnitudeDifference(const Point2D& vector1, const Point2D& vector2)

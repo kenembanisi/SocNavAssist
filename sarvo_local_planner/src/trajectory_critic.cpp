@@ -42,6 +42,47 @@ void TrajectoryCritic::computeCandidateScore(Candidate& candidate,
 
 }
 
+std::vector<double> TrajectoryCritic::initializeScores()
+{
+    return std::vector<double>(weights_.size(), 0.0);
+}
+
+
+bool TrajectoryCritic::freeOfStaticObstacles(const Candidate& candidate)
+{
+    unsigned int mx, my;
+    // const costmap_2d::Costmap2D& costmap = *static_costmap_;
+    for (auto& pose : candidate.traj.poses)
+    {
+        static_costmap_->worldToMap(pose.x, pose.y, mx, my);
+
+        unsigned char pose_cost = static_costmap_->getCost(mx, my);
+
+        if (pose_cost == costmap_2d::LETHAL_OBSTACLE || 
+            pose_cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+            return false;
+    }
+    return true;
+}
+
+bool TrajectoryCritic::forwardHeadingFree(const Candidate& candidate)
+{
+    unsigned int mx, my;
+    
+    for (int i = candidate.traj.poses.size()-1; i > 1; --i)
+    {
+        Pose2D pose = candidate.traj.poses[i];
+        static_costmap_->worldToMap(pose.x, pose.y, mx, my);
+
+        unsigned char pose_cost = static_costmap_->getCost(mx, my);
+
+        if (pose_cost == costmap_2d::LETHAL_OBSTACLE || 
+            pose_cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+            return false;
+    }
+    return true;
+}
+
 
 double TrajectoryCritic::socialDisturbanceScore(const Candidate& candidate, 
     const std::vector<Person>& ped_groups)
@@ -74,8 +115,9 @@ double TrajectoryCritic::socialDisturbanceScore(const Candidate& candidate,
 
     // ROS_INFO("..................................");
     // ROS_INFO("Total Social score is: [%f]", score);
-    // return score / (double)num_steps;
-    return score;
+
+    return score / (double)num_steps;
+    // return score;
 }
 
 
@@ -91,7 +133,8 @@ double TrajectoryCritic::socialDisturbanceScore(const Pose2D& robot_pose,
         if (dist < clearance_threshold_) {
             double ped_score = (clearance_threshold_ - dist);     // include a decay here to account for position uncertainty?
             // double ped_score += gaussianPDF(dist, 0.0, sigma);
-            score = std::max(score, ped_score);
+            // score = std::max(score, ped_score);
+            score += ped_score;
         }
     }
     // return score / (double)pedestrians.size();
@@ -161,6 +204,10 @@ void TrajectoryCritic::calculateFeatureCounts(Candidate optimal_candidate)
     for (size_t i = 0; i < optimal_candidate.score.raw_scores.size(); ++i)
         feature_counts_[i] += optimal_candidate.score.raw_scores[i];
     iteration_count_++;
+
+    max_social_cost = std::max(optimal_candidate.score.raw_scores[5], max_social_cost);
+
+    // ROS_INFO("Max social disturbance value: %0.3f", max_social_cost);
 }
 
 }

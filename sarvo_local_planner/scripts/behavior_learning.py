@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import time
 import csv
+import copy
 
 
 ####################################################################################
@@ -20,17 +21,20 @@ rounder = lambda lst, decimal_places: str([round(e, decimal_places) for e in lst
 ####################################################################################
 # Step 1. Load feature count data for human demonstration data from a file
 ####################################################################################
-scenario = 'crossing-01'
+scenario = 'dynamic02'
 behavior = 'cautious'
+case = 4
 exec_file = '../bash/test.sh'
-filename = '../data/human_demo_features.csv'
+# filename = 'data/learning/cautious_feature_counts.csv'
+filename = '../data/learning/cautious_feature_counts.csv'
+
 df = pd.read_csv(filename)
 
-columns = ['Scenario','Behavior','F1','F2','F3','F4','F5','']
-feature_names = ['F1', 'F2', 'F3', 'F4', 'F5']
+columns = ['scenario','trial','case','behavior','F1','F2','F3','F4','F5','F6','']
+feature_names = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6']
 num_human_demos = len(df[feature_names[0]])
 
-human_feature_counts = df[['F1', 'F2', 'F3', 'F4', 'F5']].to_numpy()
+human_feature_counts_main = df[['F1', 'F2', 'F3', 'F4', 'F5', 'F6']].to_numpy()
 # human_features_exp = [sum(df[f])/num_demos for f in feature_names]
 feature_num = len(feature_names)
 
@@ -43,19 +47,19 @@ print("******************* Starting IRL training *******************")
 print("*************************************************************\n")
 
 # 2.1. Initialize weights ------------------------------------------------------
-weights = np.array([0.05, 0.75, 0.0, 1.0, 0.03])
-# weights = np.array([0.1341, 0.8814, 0.0, 1.1021, 0.1681] )
+# weights = np.array([0.0, 0.0, 0.0, 0.5, 0.5, 0.0])
+weights = np.array([0.0084, -0.0234, 0.0, 0.5108, 0.4627, 0.0232] )
 print('---- Initial weights: {} \n'.format(str(weights)))
 
 
 time_struct = time.localtime(time.time())
 time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
             str(time_struct.tm_hour) + str(time_struct.tm_min) + ']'
-log_filename = '../data/learning_logs/'+behavior+'_learning_log_'+time_now+'.txt'  
+log_filename = '../data/learning_logs/'+scenario+'_'+behavior+'_learning_log_'+time_now+'.txt'  
 
 with open(log_filename, 'w') as log_file_obj:
     log_file_obj.write("*********************************************************** \n")
-    log_file_obj.write(behavior+'_learning_log_'+time_now+ "txt \n")
+    log_file_obj.write(scenario+'_'+behavior+'_learning_log_'+time_now+ "txt \n")
     log_file_obj.write("*********************************************************** \n \n")
     log_file_obj.write("Scenario: [" + scenario +"] \n")
     log_file_obj.write("Behavior: [" + behavior +"] \n")
@@ -85,7 +89,7 @@ for iteration in range(num_iterations):
     for weight in weights:
         w += str(round(weight, 2)) + '/'
     w = w[:-1]
-    arg_list = [ exec_file, scenario, current_filename, w, display_flag ]
+    arg_list = [ exec_file, scenario, behavior, current_filename, w ]
 
     #  2.3.3. Run the simulation for the defined number of repetitions
     #       This will store the feature counts in the current open file
@@ -97,16 +101,17 @@ for iteration in range(num_iterations):
 # 2.4. Calculate the average sarvo feature count ------------------------------
     df2 = pd.read_csv('../'+current_filename)
 
-    feature_names = ['F1', 'F2', 'F3', 'F4', 'F5']
+    feature_names = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6']
     num_sarvo_demos = len(df2[feature_names[0]])
 
     # sarvo_features_exp = [sum(df2[f])/num_demos for f in feature_names]
-    sarvo_feature_counts = df2[['F1', 'F2', 'F3', 'F4', 'F5']].to_numpy()
+    sarvo_feature_counts = df2[['F1', 'F2', 'F3', 'F4', 'F5', 'F6']].to_numpy()
     # print(sarvo_features_exp)
 
 
 # 2.5. Normalize the feature counts -------------------------------------------
     # concatenate human and sarvo feature counts
+    human_feature_counts = copy.deepcopy(human_feature_counts_main)
     total_feature_counts = np.concatenate((sarvo_feature_counts, human_feature_counts), axis=0)
     # compute max/min feature values
     max_v = [total_feature_counts[:,i].max() for i in range(feature_num)]
@@ -135,7 +140,8 @@ for iteration in range(num_iterations):
 
 
 # 2.6. Perform gradient descent -----------------------------------------------
-    weights -= learning_rate * grad
+    # weights -= learning_rate * grad
+    weights += learning_rate * grad
 
     print('---- Gradient: {}'.format(str(grad)))
     print('---- Weight update: {} \n'.format(str(weights)))
