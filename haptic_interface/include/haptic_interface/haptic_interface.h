@@ -69,8 +69,8 @@ class FalconNovintControl
         // force variable
         float Ks_ = 12.0f; // 20
         // float Ks_ = 20.0f;
-        float Kf_ = 1.0f; // 0.75 or 1.20
-        // float Kf_ = 1.2f;
+        // float Kf_ = 1.0f; // 0.75 or 1.20
+        float Kf_ = 0.9f;
         float Kf_x_ = 0.9f; // 1.2
         float Kf_z_ = 0.3f; // 0.5
         ros_falcon::falconForces force_fbk_;
@@ -101,12 +101,16 @@ class FalconNovintControl
         // custom objects
         geometry_msgs::Twist cmd_vel_;
         bool show_rearview = false;
+        bool risk_enabled_ = false;
 
 
     public: // public methods
 
         // Constructor
         FalconNovintControl(ros::NodeHandle &n);     
+
+        // Destructor
+        ~FalconNovintControl() {};
 
         // Callback functions
         void odometryCallback(const nav_msgs::Odometry::ConstPtr& odom_data);
