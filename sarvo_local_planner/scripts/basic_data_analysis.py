@@ -252,136 +252,112 @@ def main(args):
     agent_omega = data[4][0]
 
     # get pedestrian data
-    num_ped_groups = len(data[0])-1
-    num_pedestrians = 9
-    pedestrian_x = []
-    pedestrian_y = []
-    for i in range(num_pedestrians):
-        ped_x, ped_y = pose_transform(data[0][i+1], data[1][i+1])
-        pedestrian_x.append(ped_x)
-        pedestrian_y.append(ped_y)
-
+    pedestrian_x = data[0][1:]
+    pedestrian_y = data[1][1:]
+    # pedestrian_theta = data[3][1:]
     pedestrian_v = data[3][1:]
     # pedestrian_omega = data[9][1:]
-    
+    num_pedestrians = len(data[0])-1
 
     # get control data
     heading_delta = data[8]
-    control_delta = data[9]
 
     ######################################### PATH QUALITY #################################################
-    
-    # TIME TO COMPLETION
-    completion_time = data[14][-1]
-    
     # PATH LENGTH & PATH LENGTH RATIO
     path_length_list = [ math.sqrt((agent_x[i+1]-agent_x[i])**2 + (agent_y[i+1]-agent_y[i])**2) for i in range(n_frames-1) ]
     path_length = sum(path_length_list)
+    avg_path_length = path_length
 
-    # # CUMULATIVE HEADING CHANGES
-    # # Described by the cumulative heading changes normalized by the trajectory length
-    # heading_diff = [ abs(agent_omega[i+1] - agent_omega[i]) for i in range(n_frames-1)]
-    heading_diff = [ abs(agent_theta[i+1] - agent_theta[i]) for i in range(n_frames-1)]
+    # CUMULATIVE HEADING CHANGES
+    # Described by the cumulative heading changes normalized by the trajectory length
+    heading_diff = [ abs(agent_omega[i+1] - agent_omega[i]) for i in range(n_frames-1)]
     heading_diff_norm = sum(heading_diff) / (n_frames-1)
-    # avg_heading_diff_norm = heading_diff_norm
+    avg_heading_diff_norm = heading_diff_norm
 
-    
+
+    # TIME TO COMPLETION
+    completion_time = data[14][-1]
+    avg_time_to_complete = completion_time
 
     ######################################## SOCIAL AWARENESS ##############################################
-    
-    pair_wise_dist = [ [ dist([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]]) \
-                                            for i in range(num_pedestrians) ] for j in range(n_frames) ]
-    dist_to_closest_person = [ min(pair_wise_dist[j]) for j in range(n_frames) ]
-    
-    # AVG. DISTANCE TO CLOSEST PERSON ----------------------------------------------------------------------
+    # AVG. CLOSEST DISTANCE TO PEDESTRIANS
         # minimum distance to each pedestrian at each timestep
-    avg_dist_to_closest_person = sum(dist_to_closest_person[1:])/n_frames
+    min_pair_wise_dist = [ min([ dist([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]]) \
+                                            for i in range(num_pedestrians) ]) for j in range(n_frames) ]
+    avg_min_dist = sum(min_pair_wise_dist)/n_frames
+    avg_avg_min_dist = avg_min_dist
+
     
+    # PROXEMICS INTRUSIONS
+        # intimate
+    intimate = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "intimate") \
+                                            for i in range(num_pedestrians) ] for j in range(n_frames) ]
+    intimate_int = [ sum([ 1 if (intimate[j+1][i] - intimate[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
+                                            for j in range(n_frames-1) ]
+    num_intimate = sum(intimate_int)
+    avg_num_intimate = num_intimate
 
-    # plt.plot(dist_to_closest_person[1:])
+        # personal
+    personal = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "personal") \
+                                            for i in range(num_pedestrians) ] for j in range(n_frames) ]
+    personal_int = [ sum([ 1 if (personal[j+1][i] - personal[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
+                                            for j in range(n_frames-1) ]
+    num_personal = sum(personal_int)
+    avg_num_personal = num_personal
 
-    # plt.show()
-
-
-    # MIN & MAX DISTANCE TO CLOSEST PERSON -----------------------------------------------------------------
-    min_dist_to_closest_person = min(dist_to_closest_person[1:])
-    max_dist_to_closest_person = max(dist_to_closest_person[1:])
-
-
-    # PROXEMICS INTRUSIONS ---------------------------------------------------------------------------------
-    intrusions_intimate = 0
-    intrusions_personal = 0
-    intrusions_social = 0
-
-    for val in dist_to_closest_person[1:]:
-        if val <= 0.45: 
-            intrusions_intimate += 1
-        elif val > 0.45 and val <= 1.2:
-            intrusions_personal += 1
-        else:
-            intrusions_social += 1
-
-
-    intrusions = [(intrusions_intimate*100.0)/n_frames, \
-                  (intrusions_personal*100.0)/n_frames, \
-                  (intrusions_social*100.0)/n_frames]
+        # social
+    social = [ [ check_intrusion([agent_x[j], agent_y[j]], [pedestrian_x[i][j], pedestrian_y[i][j]], "social") \
+                                            for i in range(num_pedestrians) ] for j in range(n_frames) ]
+    social_int = [ sum([ 1 if (social[j+1][i] - social[j][i]) == 1 else 0 for i in range(num_pedestrians) ]) \
+                                            for j in range(n_frames-1) ]
+    num_social = sum(social_int)
+    avg_num_social = num_social
 
 
-    # MINIMUM TIME TO INTRUSION (OR COLLISION) -------------------------------------------------------------
+    # MINIMUM TIME TO INTRUSION (OR COLLISION)
         # at each timestep, check which pedestrian would lead to a collision
             # for each potential collision, calculate the time to collision
     # min_ttc = [ min([ calc_ttc([agent_x[j], agent_y[j]], [agent_v[j], agent_omega[j]], agent_theta[j], [pedestrian_x[i][j], pedestrian_y[i][j]], \
     #                             pedestrian_v[i][j], "collision") for i in range(num_pedestrians) ]) for j in range(n_frames) ]
     
-    min_ttc_per_timestep = [ min([ calc_ttc([agent_x[j], agent_y[j]], [agent_v[j], agent_omega[j]], agent_theta[j], [pedestrian_x[i][j], pedestrian_y[i][j]], \
-                                pedestrian_v[i][j], "collision") for i in range(9) ]) for j in range(n_frames-1) ]
-    # min_ttc = [ min([ calc_ttc([agent_x[j], agent_y[j]], [agent_v[j], agent_omega[j]], agent_theta[j], [pedestrian_x[i][j], pedestrian_y[i][j]], \
-    #                             pedestrian_v[i][j], "collision") for i in range(9) ]) for j in range(n_frames) ]
-    min_ttc_per_timestep_ = []
-    for i in range(n_frames-1):
-        if min_ttc_per_timestep[i] != 8888:
-            min_ttc_per_timestep_.append(min_ttc_per_timestep[i])
-    # avg_min_ttc = sum(min_ttc_per_timestep_[1:])/len(min_ttc_per_timestep_[1:])
+    min_ttc = [ min([ calc_ttc([agent_x[j], agent_y[j]], [agent_v[j], agent_omega[j]], agent_theta[j], [pedestrian_x[i][j], pedestrian_y[i][j]], \
+                                pedestrian_v[i][j], "collision") for i in range(9) ]) for j in range(n_frames) ]
+    tmp = []
+    for i in range(n_frames):
+        if min_ttc[i] != 8888:
+            tmp.append(min_ttc[i])
+    avg_min_ttc = sum(tmp[1:])/len(tmp[1:])
     # median_min_ttc = statistics.median(tmp)
     
-    # avg_avg_min_ttc = avg_min_ttc
-    
-
-    min_ttc_personal = 0
-    min_ttc_social = 0
-
-    for val in min_ttc_per_timestep_:
-        if val <= 3.0: 
-            min_ttc_personal += 1
-        else:
-            min_ttc_social += 1
-
-    num_collision_timesteps = len(min_ttc_per_timestep_)
-
-    time_to_collisions = [(min_ttc_personal*100.0)/n_frames, \
-                  (min_ttc_social*100.0)/n_frames, \
-                  ((n_frames-num_collision_timesteps)*100.0)/n_frames]
+    avg_avg_min_ttc = avg_min_ttc
+    # avg_median_min_ttc = median_min_ttc
 
 
-    # ######################################## DISAGREEMENT ##############################################
-    # # MEAN DISAGREEMENT (using heading delta)
+    ######################################## MOTION QUALITY ##############################################
+    # AVG. SPEED
+    avg_linear_speed = sum(agent_v)/n_frames
+    avg_angular_speed = sum(agent_omega)/n_frames
+
+    # AVG. ACCELERATION
+    linear_acc = compute_derivative(agent_v)
+    avg_linear_acc = sum(linear_acc)/len(linear_acc)
+
+    angular_acc = compute_derivative(agent_omega)
+    avg_angular_acc = sum(angular_acc)/len(angular_acc)
+
+    # AVG. JERK
+    linear_jerk = compute_derivative(linear_acc)
+    avg_linear_jerk = sum(linear_jerk)/len(linear_jerk)
+
+    angular_jerk = compute_derivative(angular_acc)
+    avg_angular_jerk = sum(angular_jerk)/len(angular_jerk)
+
+
+    ######################################## DISAGREEMENT ##############################################
+    # MEAN DISAGREEMENT (using heading delta)
     disagreement = [ abs(heading_delta[i]) for i in range(n_frames)]
     avg_disagreement = sum(disagreement)/len(disagreement)
-    # avg_avg_disagreement = avg_disagreement
-
-
-    print(
-        "----------------- Path Quality ---------------- \n" + \
-        "Path length (m): " + str(round(path_length, 2)) + "\n" + \
-        "Path roughness(smoothness): " + str(round(heading_diff_norm, 4)) + "\n" + \
-        "Time to complete (secs): " + str(round(completion_time, 2)) + "\n \n" + \
-        "----------------- Social Awareness -------------- \n" + \
-        "Avg. clearance to pedestrians (m): " + str(round(avg_dist_to_closest_person, 2)) + "\n" + \
-        "Min and Max clearance to pedestrians (m): [" + str(round(min_dist_to_closest_person, 2)) + \
-            ", " + str(round(max_dist_to_closest_person, 2)) + "]\n" + \
-        "Percentage of intrusions (int | pers | soc): " + str(round(intrusions[0], 2)) + " | " + \
-                str(round(intrusions[1], 2)) + " | " + \
-                str(round(intrusions[2], 2)) + "\n" )
+    avg_avg_disagreement = avg_disagreement
 
 
 
@@ -389,7 +365,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plotter")
     # parser.add_argument('--data', default='logs/test_learning_static-01_layout-01_case1_cautious_MC_[32_164].npy', help='logged data filename')
-    parser.add_argument('--data', default='logs/P05_learning_crossing_dynamic-01_case3_none_none_MC_True_[310_1336].npy', help='logged data filename')              
+    parser.add_argument('--data', default='logs/test_learning_crossing_dynamic-01_layout-01_case1_cautious_MC_[32_1634].npy', help='logged data filename')              
     args = parser.parse_args()
 
     main(args)

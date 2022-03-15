@@ -10,6 +10,9 @@ Candidate operator_candidate
 # heading delta 
 float64 heading_delta
 
+# control delta 
+float64[] control_delta
+
 # Features
 float64[] feature_count
 

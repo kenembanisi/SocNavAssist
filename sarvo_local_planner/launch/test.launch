@@ -9,9 +9,9 @@
     <arg name="paused" default="true" />
 
     <!-- Set scenario details-->
-    <arg name="scenario" default="crossing-01" />
-    <arg name="behavior" default="cautious" />
-    <arg name="task_objective" default="cautious" />
+    <arg name="scenario" default="static-01" />
+    <arg name="behavior" default="none" />
+    <arg name="task_objective" default="none" />
     <arg name="scenario_layout" default="layout-01" />
     <arg name="case1" default="0" />
     <arg name="case2" default="0" />
@@ -20,28 +20,37 @@
     <arg name="case5" default="0" />
     <arg name="case6" default="0" />
     <arg name="trial_number" default="0/0" />
+    <arg name="trial_category" default="0" />
     <arg name="debug_bars" default="false" />
     <arg name="trial_name" default="test" />
     <arg name="use_planner" default="false" />
     <arg name="phase" default="test" />
     <arg name="record_rosbag" default="false" />
     <arg name="display_viz" default="true" />
+    <arg name="distracted_mode" default="false" />
     <arg name="trial_mode" default="learning" />
-    <arg name="feature_filename" default="data/learning/demos_features_counts.csv" 
-        if="$(eval trial_mode=='learning')"/>
-    <arg name="feature_filename" default="data/testing/trial_features_counts.csv" 
-        if="$(eval trial_mode=='testing')"/>
+    <arg name="risk_enabled" default="false" />
+    <arg name="save_trial" default="false" />
+    <arg name="feature_filename" default="data/learning/demos_features_counts.csv" />
+    <!-- <arg name="feature_filename" default="data/learning/demos_features_counts.csv" 
+        if="$(eval trial_mode=='learning')"/> -->
+    <!-- <arg name="feature_filename" default="data/testing/trial_features_counts.csv" 
+        if="$(eval trial_mode=='testing')"/> -->
     <param name="scenario" value="$(arg scenario)" />
     <param name="behavior" value="$(arg behavior)" />
     <param name="task_objective" value="$(arg task_objective)" />
     <param name="scenario_layout" value="$(arg scenario_layout)" />
     <param name="trial_number" value="$(arg trial_number)" />
+    <param name="trial_category" value="$(arg trial_category)" />
     <param name="trial_name" value="$(arg trial_name)" />
     <param name="trial_mode" value="$(arg trial_mode)" />
     <param name="use_planner" value="$(arg use_planner)" />
     <param name="debug_bars" value="$(arg debug_bars)" />
+    <param name="distracted_mode" value="$(arg distracted_mode)" />
     <param name="study_phase" value="$(arg phase)" />
     <param name="feature_filename" value="$(arg feature_filename)" />
+    <param name="risk_enabled" value="$(arg risk_enabled)" />
+    <param name="save_trial" value="$(arg save_trial)" />
 
 
     <!-- Initial robot pose and goal pose-->
@@ -59,10 +68,10 @@
     <param name="trial_case" value="1" if="$(eval arg('case1'))" />
 
         <!-- if trial_case is case2 -->
-    <arg name="robot_x" default="-11.99" if="$(eval arg('case2'))" />
-    <arg name="robot_y" default="-3.61"  if="$(eval arg('case2'))" />
+    <arg name="robot_x" default="-11.84" if="$(eval arg('case2'))" />
+    <arg name="robot_y" default="-3.19"  if="$(eval arg('case2'))" />
     <arg name="robot_z" default="0.00"  if="$(eval arg('case2'))" />
-    <arg name="robot_yaw" default="0.257"  if="$(eval arg('case2'))" />
+    <arg name="robot_yaw" default="0.05"  if="$(eval arg('case2'))" />
     <arg name="goal_x" default="-1.80"  if="$(eval arg('case2'))" />
     <arg name="goal_y" default="7.30"  if="$(eval arg('case2'))" />
     <arg name="trial_case" default="2" if="$(eval arg('case2'))" />
@@ -84,29 +93,54 @@
     <param name="amcl/initial_pose_a" value="-1.70" if="$(eval arg('case3'))" />
     <param name="trial_case"          value="3" if="$(eval arg('case3'))" />
 
-        <!-- if trial_case is case4 -->
+        <!-- if trial_case is case4 (OLD)
     <arg name="robot_x" default="-2.25" if="$(eval arg('case4'))" />
     <arg name="robot_y" default="6.42"  if="$(eval arg('case4'))" />
     <arg name="robot_z" default="0.0"  if="$(eval arg('case4'))" />
     <arg name="robot_yaw" default="-2.05"  if="$(eval arg('case4'))" />
-    <arg name="goal_x" default="-11.50"  if="$(eval arg('case4'))" />
-    <arg name="goal_y" default="-3.62"  if="$(eval arg('case4'))" />
+    <arg name="goal_x" default="-11.15"  if="$(eval arg('case4'))" />
+    <arg name="goal_y" default="-3.90"  if="$(eval arg('case4'))" />
+    <arg name="trial_case" default="4" if="$(eval arg('case4'))" />
+    <param name="amcl/initial_pose_x" value="13.22" if="$(eval arg('case4'))" />
+    <param name="amcl/initial_pose_y" value="-3.27" if="$(eval arg('case4'))" />
+    <param name="amcl/initial_pose_a" value="2.66" if="$(eval arg('case4'))" />
+    <param name="trial_case"          value="4"    if="$(eval arg('case4'))" /> -->
+
+        <!-- if trial_case is case4 -->
+    <arg name="robot_x" default="-11.04" if="$(eval arg('case4'))" />
+    <arg name="robot_y" default="-6.47"  if="$(eval arg('case4'))" />
+    <arg name="robot_z" default="0.0"  if="$(eval arg('case4'))" />
+    <arg name="robot_yaw" default="1.07"  if="$(eval arg('case4'))" />
+    <arg name="goal_x" default="-6.48" if="$(eval arg('case4'))" />
+    <arg name="goal_y" default="7.22" if="$(eval arg('case4'))" />
     <arg name="trial_case" default="4" if="$(eval arg('case4'))" />
     <param name="amcl/initial_pose_x" value="13.22" if="$(eval arg('case4'))" />
     <param name="amcl/initial_pose_y" value="-3.27" if="$(eval arg('case4'))" />
     <param name="amcl/initial_pose_a" value="2.66" if="$(eval arg('case4'))" />
     <param name="trial_case"          value="4"    if="$(eval arg('case4'))" />
 
+        <!-- if trial_case is case5 -->
+    <arg name="robot_x" default="-6.68" if="$(eval arg('case5'))" />
+    <arg name="robot_y" default="8.59"  if="$(eval arg('case5'))" />
+    <arg name="robot_z" default="0.0"  if="$(eval arg('case5'))" />
+    <arg name="robot_yaw" default="-1.66"  if="$(eval arg('case5'))" />
+    <arg name="goal_x" default="-1.35" if="$(eval arg('case5'))" />
+    <arg name="goal_y" default="-5.49" if="$(eval arg('case5'))" />
+    <arg name="trial_case" default="4" if="$(eval arg('case5'))" />
+    <param name="amcl/initial_pose_x" value="13.22" if="$(eval arg('case5'))" />
+    <param name="amcl/initial_pose_y" value="-3.27" if="$(eval arg('case5'))" />
+    <param name="amcl/initial_pose_a" value="2.66" if="$(eval arg('case5'))" />
+    <param name="trial_case"          value="5"    if="$(eval arg('case5'))" />
+
 
     <!-- Weights -->
     <!-- <arg name="behavior_weights" default="0.05, 0.75, 0.0, 1.0, 0.03" /> -->
         <!-- cautious -->
-    <!-- <arg name="behavior_weights" default="0.5, 0.75, 0.0, 1.0, 0.2" />  -->
     <!-- <arg name="behavior_weights" default="0.5, 0.75, 0.0, 1.5, 0.2" />   -->
         <!-- assertive -->
-    <!-- <arg name="behavior_weights" default="0.01, 0.75, 0.0, 1.5, 0.01" />   -->
+    <arg name="behavior_weights" default="0.01, 0.75, 0.0, 1.5, 0.01" />  
 
-    <arg name="behavior_weights" default="0.5, 0.75, 0.0, 1.5, 1.0, 0.2" />
+    <!-- <arg name="behavior_weights" default="0.5, 0.75, 0.0, 1.5, 1.0, 0.2" /> -->
     <param name="behavior_weights" value="$(arg behavior_weights)" />
 
     <!-- set goal pos as param -->
@@ -114,7 +148,7 @@
     <param name="goal_y" value="$(arg goal_y)" />
 
     <!-- Start timer bool flag -->
-    <param name="start_timer" value="true" />
+    <param name="start_timer" value="false" />
 
     <!-- Set control and manual mode -->
     <!-- <arg name="trial_condition" default="MC" /> -->
@@ -126,10 +160,9 @@
     <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
 
     <!-- Set world -->
-    <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario)_$(arg scenario_layout).world" /> -->
-    <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario).world" />
+    <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario)_$(arg scenario_layout).world" />
+    <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario).world" /> -->
     <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/debug.world" /> -->
-    <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/debug2.world" /> -->
 
     
     <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
@@ -182,11 +215,15 @@
         <!-- Launch rviz -->
         <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo_manual.rviz" />
         <!-- <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo.rviz" /> -->
-        <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" />
+        <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" /> -->
     </group>
 
     <!-- Localize the robot -->
-    <arg name="map_file" default="$(find sarvo_local_planner)/maps/hall_map.yaml" />
+    <!-- <arg name="map_file" default="$(find sarvo_local_planner)/maps/hall_map.yaml" /> -->
+    <arg name="map_file" default="$(find sarvo_local_planner)/maps/layout-01.yaml" 
+        if="$(eval scenario_layout=='layout-01')"/>
+    <arg name="map_file" default="$(find sarvo_local_planner)/maps/layout-02.yaml" 
+        if="$(eval scenario_layout=='layout-02')"/>
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
     <node name="amcl" pkg="amcl" type="amcl">
@@ -197,11 +234,12 @@
     <!-- Launch main sarvo_local_planner -->
     <node pkg="sarvo_local_planner" type="sarvo_local_planner" name="sarvo_planner" output="screen" required="true" >
         <rosparam file="$(find sarvo_local_planner)/config/costmap_params.yaml" command="load" ns="static_costmap" />
-        <rosparam file="$(find sarvo_local_planner)/config/behaviors_2.yaml" command="load" />
+        <rosparam file="$(find sarvo_local_planner)/config/behaviors.yaml" command="load" />
+        <!-- <rosparam file="$(find sarvo_local_planner)/config/behaviors_2.yaml" command="load" /> -->
     </node>
 
     <!-- Launch rosbag to store data -->
-    <node pkg="rosbag" type="record" name="recorder" output="screen" 
+    <!-- <node pkg="rosbag" type="record" name="recorder" output="screen" 
         args=" -O $(find sarvo_local_planner)/rosbags/session.bag
             /base_controller/cmd_vel /base_controller/odom /gazebo/model_states 
             /pedestrian_pose_markers /pedestrian_viz_markers
@@ -212,9 +250,11 @@
             /suitable_velocities
             /unsuitable_trajectory_cloud
             /unsuitable_velocities
-            /map /map_metadata" if="$(eval record_rosbag=='true')"/>
+            /map /map_metadata" if="$(eval record_rosbag=='true')"/> -->
 
-    <node pkg="sarvo_local_planner" type="data_logger.py" name="data_logger" output="screen" />
+    <!-- <node pkg="sarvo_local_planner" type="data_logger.py" name="data_logger" 
+        output="screen" if="$(eval save_trial=='true')"/> -->
+    <node pkg="sarvo_local_planner" type="data_logger.py" name="data_logger" />
 
 
 </launch>

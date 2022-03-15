@@ -31,6 +31,8 @@ class DataLogger():
         self.behavior = rospy.get_param('behavior')
         self.trial_case = rospy.get_param('trial_case')
         self.trial_mode = rospy.get_param('trial_mode')
+        self.task_objective = rospy.get_param('task_objective')
+        self.distracted_mode = rospy.get_param('distracted_mode')
 
 
         # get one instance of message 
@@ -90,7 +92,7 @@ class DataLogger():
                                  msg.operator_candidate.twist.w])
         # get deltas
         self.heading_delta.append(msg.heading_delta)
-        # self.control_delta.append()
+        self.control_delta.append(msg.control_delta)
 
         # get trajectories
         self.optimal_traj.append(msg.optimal_candidate.traj.poses)
@@ -136,8 +138,8 @@ class DataLogger():
                                   self.pedestrians_list[i-1].velocity.y])
             # maintain the pedestrian/group trace but set values which would locate it outside the vicinity
             for j in range(prev_num_active_pedestrians - self.num_active_pedestrians):
-                self.x[j+self.num_active_pedestrians+1].append(40.0) # value of 40 is set arbitrarily
-                self.y[j+self.num_active_pedestrians+1].append(40.0) # +1 is to address indexing issue because trina2 is index '0'
+                self.x[j+self.num_active_pedestrians+1].append(0.0) # value of 40 is set arbitrarily
+                self.y[j+self.num_active_pedestrians+1].append(0.0) # +1 is to address indexing issue because trina2 is index '0'
         
         # case #3: check if num of active obstacles remained the same
         if prev_num_active_pedestrians == self.num_active_pedestrians:
@@ -177,9 +179,11 @@ class DataLogger():
         time_now = '[' + str(time_struct.tm_mon) + str(time_struct.tm_mday) + '_' + \
                     str(time_struct.tm_hour) + str(time_struct.tm_min) + ']'
 
-        filename = self.trial_name+'_'+self.scenario+'_case'+str(self.trial_case)+'_'+self.behavior \
-                        +'_'+self.trial_condition+'_'+time_now
+        filename = self.trial_name+'_'+self.trial_mode+'_'+self.scenario+'_case'+str(self.trial_case) \
+                        +'_'+self.behavior+'_'+self.task_objective+'_'+self.trial_condition \
+                        +'_'+str(self.distracted_mode)+'_'+time_now
 
+        print("Saving to: "+self.directory+filename+".npy")
 
         if os.path.isdir(self.directory):
             np.save(self.directory+filename+".npy", data)

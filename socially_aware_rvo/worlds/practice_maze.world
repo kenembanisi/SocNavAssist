@@ -2948,7 +2948,7 @@
 
 
     <!-- actor 1 -->
-    <actor name="actor1">
+    <!-- <actor name="actor1">
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -2956,10 +2956,10 @@
         <filename>walk.dae</filename>
         <interpolate_x>true</interpolate_x>
       </animation>
-    </actor>
+    </actor> -->
 
     <!-- actor 2 -->
-    <actor name="actor2">
+    <!-- <actor name="actor2">
       <skin>
         <filename>model://actor/meshes/SKIN_man_blue_shirt.dae</filename>
       </skin>
@@ -2967,10 +2967,10 @@
         <filename>model://actor/meshes/ANIMATION_walking.dae</filename>
         <interpolate_x>true</interpolate_x>
       </animation>
-    </actor>
+    </actor> -->
 
     <!-- actor 3 -->
-    <actor name="actor3">
+    <!-- <actor name="actor3">
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -2978,7 +2978,7 @@
         <filename>walk.dae</filename>
         <interpolate_x>true</interpolate_x>
       </animation>
-    </actor>
+    </actor> -->
 
 
     <gui fullscreen='0'>

@@ -272,9 +272,9 @@ namespace sarvo_local_planner {
 			double max_linear_acc_;
 			double max_angular_acc_;
 			float goal_threshold_ = 0.8f;
-			std::vector<double> cautious_;
+			std::vector<double> safety_aligned_;
 			std::vector<double> neutral_;
-			std::vector<double> assertive_;
+			std::vector<double> goal_aligned_;
 			std::string objective_name_;
 			std::vector<double> prm_samples_x_;
 			std::vector<double> prm_samples_y_;
@@ -327,6 +327,7 @@ namespace sarvo_local_planner {
 			Pose2D current_wp_;
 			double running_time_ = 0;
 			bool atGoalAlready_ = false;
+			bool save_trial_;
 
 			float min_distance_to_obstacle_;
     };

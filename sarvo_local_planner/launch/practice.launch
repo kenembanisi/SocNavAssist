@@ -10,6 +10,8 @@
 
     <!-- Set scenario details-->
     <arg name="scenario" default="practice_maze" />
+    <arg name="behavior" default="none" />
+    <arg name="task_objective" default="none" />
     <arg name="scenario_layout" default="layout-01" />
     <arg name="case1" default="0" />
     <arg name="case2" default="1" />
@@ -20,13 +22,32 @@
     <arg name="trial_number" default="0/0" />
     <arg name="debug_bars" default="false" />
     <arg name="trial_name" default="test" />
+    <arg name="use_planner" default="false" />
     <arg name="phase" default="test" />
+    <arg name="record_rosbag" default="false" />
+    <arg name="display_viz" default="true" />
+    <arg name="distracted_mode" default="false" />
+    <arg name="trial_mode" default="learning" />
+    <arg name="risk_enabled" default="false" />
+    <arg name="save_trial" default="false" />
+    <arg name="feature_filename" default="data/learning/demos_features_counts.csv" 
+        if="$(eval trial_mode=='learning')"/>
+    <arg name="feature_filename" default="data/testing/trial_features_counts.csv" 
+        if="$(eval trial_mode=='testing')"/>
     <param name="scenario" value="$(arg scenario)" />
+    <param name="behavior" value="$(arg behavior)" />
+    <param name="task_objective" value="$(arg task_objective)" />
     <param name="scenario_layout" value="$(arg scenario_layout)" />
     <param name="trial_number" value="$(arg trial_number)" />
     <param name="trial_name" value="$(arg trial_name)" />
+    <param name="trial_mode" value="$(arg trial_mode)" />
+    <param name="use_planner" value="$(arg use_planner)" />
     <param name="debug_bars" value="$(arg debug_bars)" />
+    <param name="distracted_mode" value="$(arg distracted_mode)" />
     <param name="study_phase" value="$(arg phase)" />
+    <param name="feature_filename" value="$(arg feature_filename)" />
+    <param name="risk_enabled" value="$(arg risk_enabled)" />
+    <param name="save_trial" value="$(arg save_trial)" />
 
     <!-- Initial robot pose and goal pose-->
         <!-- if trial_case is case1 -->
@@ -42,8 +63,8 @@
     <arg name="robot_y" default="-6.64"  if="$(eval arg('case2'))" />
     <arg name="robot_z" default="0.00"  if="$(eval arg('case2'))" />
     <arg name="robot_yaw" default="2.55"  if="$(eval arg('case2'))" />
-    <arg name="goal_x" default="-0.69"  if="$(eval arg('case2'))" />
-    <arg name="goal_y" default="7.56"  if="$(eval arg('case2'))" />
+    <arg name="goal_x" default="-50.69"  if="$(eval arg('case2'))" />
+    <arg name="goal_y" default="70.56"  if="$(eval arg('case2'))" />
 
         <!-- if trial_case is case3 -->
     <arg name="robot_x" default="-6.48" if="$(eval arg('case3'))" />

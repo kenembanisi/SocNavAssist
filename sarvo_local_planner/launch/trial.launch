@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="rosbag" type="record" name="recorder" output="screen" args="rosout_agg" />
+</launch>

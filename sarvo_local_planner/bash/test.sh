@@ -7,16 +7,22 @@
 echo "Starting the user study, kindly wait!"
 
 SCENARIO=$1
-FILENAME=$2
-WEIGHTS=$3
-DISP=$4
+BEHAVIOR=$2
+FILENAME=$3
+WEIGHTS=$4
 
 # 1
 roslaunch sarvo_local_planner test.launch scenario:=$SCENARIO \
+                                          behavior:=$BEHAVIOR \
                                           feature_filename:=$FILENAME \
                                           behavior_weights:=$WEIGHTS \
-                                          paused:="false" 
-                                          display_viz:=$DISP
+                                          paused:="false" \
+                                          case2:=1 \
+                                          trial_condition:=AUTO \
+                                          trial_name:="auto-learning" \
+                                          display_viz:=false \
+                                          use_planner:=true
+
 
 # -----------------------------------------------------------------------------------------------------
 

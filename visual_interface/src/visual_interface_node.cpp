@@ -24,7 +24,7 @@
 // custom defined msgs
 #include <visual_interface/trajectoryPair.h>
 
-static const std::string OPENCV_WINDOW = "Image window";
+// static const std::string OPENCV_WINDOW = "Image window";
 
 // right bar
 const int RIGHT_BASE_VERTEX_X1 = 1460; const int RIGHT_BASE_VERTEX_Y1 = 617;  // 635
@@ -47,6 +47,19 @@ const int OPTIMAL_LEFT_BASE_VERTEX_X1 = 550; const int OPTIMAL_LEFT_BASE_VERTEX_
 const int OPTIMAL_LEFT_BASE_VERTEX_X2 = 750; const int OPTIMAL_LEFT_BASE_VERTEX_Y2 = 600;
 
 
+// optimal right bar
+const int FORCE_RIGHT_BASE_VERTEX_X1 = 950; const int FORCE_RIGHT_BASE_VERTEX_Y1 = 575;  // 635
+const int FORCE_RIGHT_BASE_VERTEX_X2 = 1050; const int FORCEL_RIGHT_BASE_VERTEX_Y2 = 600;  // 670
+// optimal left bar
+const int FORCE_LEFT_BASE_VERTEX_X1 = 550; const int FORCE_LEFT_BASE_VERTEX_Y1 = 575;
+const int FORCE_LEFT_BASE_VERTEX_X2 = 750; const int FORCE_LEFT_BASE_VERTEX_Y2 = 600;
+// linear forward bar
+const int FORCE_FWD_BASE_VERTEX_X1 = 825; const int FORCE_FWD_BASE_VERTEX_Y1 = 450;
+const int FORCE_FWD_BASE_VERTEX_X2 = 900; const int FORCE_FWD_BASE_VERTEX_Y2 = 550;
+// linear backward bar
+const int FORCE_BWD_BASE_VERTEX_X1 = 825; const int FORCE_BWD_BASE_VERTEX_Y1 = 675;
+const int FORCE_BWD_BASE_VERTEX_X2 = 900; const int FORCE_BWD_BASE_VERTEX_Y2 = 775;
+
 class VisualInterface
 {
   
@@ -67,17 +80,22 @@ class VisualInterface
     cv_bridge::CvImagePtr bwd_img_ptr;
     int angular_vel_left, angular_vel_right, linear_vel;
     int optimal_angular_vel_left, optimal_angular_vel_right;
+    int force_left, force_right, force_linear;
     float max_linear_vel, max_angular_vel, min_linear_vel, min_angular_vel;
     time_t start_time;
     bool show_rearview = false;
     bool start_timer = false;
     bool show_debug_bars = false;
+    bool distracted_mode = false;
     int proxemics_state_[2];
+    std::string trial_category;
     std::string trial_condition;
     std::string trial_condition_name;
     std::string trial_number;
+    std::string trial_mode;
     std::string behavior_title;
     std::string task_title;
+    std::string window_name;
     visual_interface::trajectory user_pred_traj_;
     visual_interface::trajectory optimal_pred_traj_;
     int pred_trajectory_size_;
@@ -121,7 +139,7 @@ class VisualInterface
         this->heading_delta_sub_ = nh_.subscribe("/heading_delta", 10, &VisualInterface::headingDeltaCb, this);
 
         // Subscribe to heading delta topic
-        // this->control_delta_sub_ = nh_.subscribe("/control_delta", 10, &VisualInterface::controlDeltaCb, this);
+        this->control_delta_sub_ = nh_.subscribe("/control_delta", 10, &VisualInterface::controlDeltaCb, this);
 
         // Subscribe to v_opt (optimal velocity command) topic
         this->v_optimal_sub_ = nh_.subscribe("/velocity_data", 10, &VisualInterface::optimalVelCb, this);
@@ -134,8 +152,11 @@ class VisualInterface
         nh_.getParam("toggle_rear_camera", this->show_rearview);
         nh_.getParam("trial_number", this->trial_number);
         nh_.getParam("trial_condition", this->trial_condition);
+        nh_.getParam("trial_category", this->trial_category);
+        nh_.getParam("trial_mode", this->trial_mode);
         nh_.getParam("behavior", this->behavior_title);
         nh_.getParam("task_objective", this->task_title);
+        nh_.getParam("distracted_mode", this->distracted_mode);
 
 
         // Set initial values for secondary task idx
@@ -144,7 +165,10 @@ class VisualInterface
 
 
 
-        cv::namedWindow(OPENCV_WINDOW);
+        // cv::namedWindow(OPENCV_WINDOW);
+        window_name = this->trial_mode + "   |   Category " + this->trial_category + "   |   " + this->trial_condition + "   |   " + this->trial_number;
+        // const cv::String window_name = "Category#1-1/2";
+        cv::namedWindow(window_name);
 
         ROS_INFO("Initialized Visual Interface Node");
     }
@@ -152,7 +176,7 @@ class VisualInterface
     // DESTRUCTOR
     ~VisualInterface()
     {
-        cv::destroyWindow(OPENCV_WINDOW);
+        cv::destroyWindow(window_name);
     }
 
     // Callback method
@@ -262,7 +286,7 @@ class VisualInterface
         // displayVisual();
     }
 
-    void headingDeltaCb( const std_msgs::Float32& msg){
+    void headingDeltaCb(const std_msgs::Float32& msg){
         heading_delta_ = msg.data;
 
         if (operator_vel_[0] > 0.0) 
@@ -271,16 +295,21 @@ class VisualInterface
             {
                 if (heading_delta_ <= 0.0)  
                 {
+                    // heading_delta_ = std::max(double(heading_delta_), -1.732);
+                    if (heading_delta_ <= -1.732) heading_delta_ = 0.0;
                     // right angular velocity
                     this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1 - (OPTIMAL_RIGHT_BASE_VERTEX_X2 - OPTIMAL_RIGHT_BASE_VERTEX_X1) * (heading_delta_/1.732); 
                     this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
-                    // ROS_INFO("Angular pixel value to the right is %d ", this->optimal_angular_vel_right);
+                    // ROS_INFO("(RIGHT) Heading delta is %0.2f ", heading_delta_);
                     }
 
                 else { 
+                    // heading_delta_ = std::min(double(heading_delta_), 1.732);
+                    if (heading_delta_ >= 1.732) heading_delta_ = 0.0;
                     // left angular velocity
                     this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2 - (OPTIMAL_LEFT_BASE_VERTEX_X2 - OPTIMAL_LEFT_BASE_VERTEX_X1) * (heading_delta_/1.732); 
                     this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1; 
+                    // ROS_INFO("(LEFT) Heading delta is %0.2f ", heading_delta_);
                     // ROS_INFO("Angular pixel value to the left is %d ", this->optimal_angular_vel_left);
                     };    
                 }
@@ -295,38 +324,35 @@ class VisualInterface
         }
     }
 
-    // void controlDeltaCb( const std_msgs::Float64MultiArray& msg){
-    //     control_delta_ = msg.data;
+    void controlDeltaCb( const std_msgs::Float64MultiArray& msg){
+        // control_delta_ = msg.data;
 
-    //     if (operator_vel_[0] > 0.0) 
-    //     {
-    //         if (std::abs(heading_delta_) > 0.1) 
-    //         {
-    //             if (heading_delta_ <= 0.0)  
-    //             {
-    //                 // right angular velocity
-    //                 this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1 - (OPTIMAL_RIGHT_BASE_VERTEX_X2 - OPTIMAL_RIGHT_BASE_VERTEX_X1) * (heading_delta_/1.732); 
-    //                 this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
-    //                 // ROS_INFO("Angular pixel value to the right is %d ", this->optimal_angular_vel_right);
-    //                 }
+        // force in x direction
+        if (msg.data[1] >= 0.0) {
+            this->force_linear = FORCE_FWD_BASE_VERTEX_Y2 - (FORCE_FWD_BASE_VERTEX_Y2 - FORCE_FWD_BASE_VERTEX_Y1) * (msg.data[1] / 2.0);
+        }
+        else {
+            this->force_linear = FORCE_BWD_BASE_VERTEX_Y1 - (FORCE_BWD_BASE_VERTEX_Y2 - FORCE_BWD_BASE_VERTEX_Y1) * (msg.data[1] / 2.0);
+            // ROS_INFO("Linear pixel value is %d ", this->linear_vel);
+        }
+        
 
-    //             else { 
-    //                 // left angular velocity
-    //                 this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2 - (OPTIMAL_LEFT_BASE_VERTEX_X2 - OPTIMAL_LEFT_BASE_VERTEX_X1) * (heading_delta_/1.732); 
-    //                 this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1; 
-    //                 // ROS_INFO("Angular pixel value to the left is %d ", this->optimal_angular_vel_left);
-    //                 };    
-    //             }
-    //         else {
-    //             this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1; 
-    //             this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
-    //         }
-    //     }
-    //     else {
-    //         this->optimal_angular_vel_right = OPTIMAL_RIGHT_BASE_VERTEX_X1; 
-    //         this->optimal_angular_vel_left = OPTIMAL_LEFT_BASE_VERTEX_X2; 
-    //     }
-    // }
+        if (msg.data[0] <= 0.0)  {
+            // right angular velocity
+            this->force_right = FORCE_RIGHT_BASE_VERTEX_X1 - (FORCE_RIGHT_BASE_VERTEX_X2 - FORCE_RIGHT_BASE_VERTEX_X1) * (msg.data[0] / 2.0); 
+            this->force_left = FORCE_LEFT_BASE_VERTEX_X2; 
+            }
+
+        else { 
+            // left angular velocity
+            this->force_left = FORCE_LEFT_BASE_VERTEX_X2 - (FORCE_LEFT_BASE_VERTEX_X2 - FORCE_LEFT_BASE_VERTEX_X1) * (msg.data[0] / 2.0); 
+            this->force_right = FORCE_RIGHT_BASE_VERTEX_X1; 
+            };
+
+        // ROS_INFO("Control delta is [%0.3f, %0.3f] | Force display [%d, %d, %d] ", msg.data[0], msg.data[1],
+            // this->force_linear, this->force_right, this->force_left);
+        
+    }
 
     void drawOperatorSpeedBars() {
 
@@ -425,6 +451,61 @@ class VisualInterface
 
     }
 
+    void drawForceBars() {
+        // Draw the right angular speed bars
+        int FORCE_RIGHT_LEVEL_VERTEX_X1 = 950; int FORCE_RIGHT_LEVEL_VERTEX_Y1 = 575;
+        int FORCE_RIGHT_LEVEL_VERTEX_X2 = this->force_right; int FORCE_RIGHT_LEVEL_VERTEX_Y2 = 600;
+        cv::rectangle(this->fwd_img_ptr->image, 
+                    cv::Point(RIGHT_BASE_VERTEX_X1, RIGHT_BASE_VERTEX_Y1), 
+                    cv::Point(RIGHT_BASE_VERTEX_X2, RIGHT_BASE_VERTEX_Y2), 
+                    cv::Scalar( 0, 0, 0 ),
+                    cv::FILLED, 
+                    cv::LINE_8);
+
+        cv::rectangle(this->fwd_img_ptr->image, 
+                    cv::Point(FORCE_RIGHT_LEVEL_VERTEX_X1, FORCE_RIGHT_LEVEL_VERTEX_Y1), 
+                    cv::Point(FORCE_RIGHT_LEVEL_VERTEX_X2, FORCE_RIGHT_LEVEL_VERTEX_Y2), 
+                    cv::Scalar( 117, 163, 8 ),
+                    cv::FILLED, 
+                    cv::LINE_8);
+        cv::putText(this->fwd_img_ptr->image, "Right", cv::Point(1515, 690), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar( 0, 0, 0 ), 2, false);
+
+        // Draw the left angular speed bars
+        int FORCE_LEFT_LEVEL_VERTEX_X1 = this->force_left; int FORCE_LEFT_LEVEL_VERTEX_Y1 = 575;
+        int FORCE_LEFT_LEVEL_VERTEX_X2 = 750; int FORCE_LEFT_LEVEL_VERTEX_Y2 = 600;
+        cv::rectangle(this->fwd_img_ptr->image, 
+                    cv::Point(FORCE_LEFT_BASE_VERTEX_X1, FORCE_LEFT_BASE_VERTEX_Y1), 
+                    cv::Point(FORCE_LEFT_BASE_VERTEX_X2, FORCE_LEFT_BASE_VERTEX_Y2), 
+                    cv::Scalar( 0, 0, 0 ),
+                    cv::FILLED, 
+                    cv::LINE_8);
+
+        cv::rectangle(this->fwd_img_ptr->image, 
+                    cv::Point(FORCE_LEFT_LEVEL_VERTEX_X1, FORCE_LEFT_LEVEL_VERTEX_Y1), 
+                    cv::Point(FORCE_LEFT_LEVEL_VERTEX_X2, FORCE_LEFT_LEVEL_VERTEX_Y2), 
+                    cv::Scalar( 117, 163, 8 ),
+                    cv::FILLED, 
+                    cv::LINE_8);
+        cv::putText(this->fwd_img_ptr->image, "Left", cv::Point(1290, 690), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar( 0, 0, 0 ), 2, false);
+
+        // // Draw the linear velocity bars
+        // int FORCE_LINEAR_LEVEL_VERTEX_X1 = 1400; int FORCE_LINEAR_LEVEL_VERTEX_Y1 = this->force_linear;
+        // int FORCE_LINEAR_LEVEL_VERTEX_X2 = 1440; int FORCE_LINEAR_LEVEL_VERTEX_Y2 = 635;
+        // cv::rectangle(this->fwd_img_ptr->image, 
+        //             cv::Point(LINEAR_FWD_BASE_VERTEX_X1, LINEAR_FWD_BASE_VERTEX_Y1), 
+        //             cv::Point(LINEAR_BWD_BASE_VERTEX_X2, LINEAR_BWD_BASE_VERTEX_Y2), 
+        //             cv::Scalar( 0, 0, 0 ),
+        //             cv::FILLED, 
+        //             cv::LINE_8);
+
+        // cv::rectangle(this->fwd_img_ptr->image, 
+        //             cv::Point(FORCE_LINEAR_LEVEL_VERTEX_X1, FORCE_LINEAR_LEVEL_VERTEX_Y1), 
+        //             cv::Point(FORCE_LINEAR_LEVEL_VERTEX_X2, FORCE_LINEAR_LEVEL_VERTEX_Y2), 
+        //             cv::Scalar( 117, 163, 8 ),
+        //             cv::FILLED, 
+        //             cv::LINE_8);
+    }
+
     void drawTimer() {
 
         // compute time
@@ -449,59 +530,70 @@ class VisualInterface
     void drawScenarioTitle() {
 
         // display proximity score
-        if (this->task_title == "cautious") {
-            cv::String safety_score = "Proximity Score";
-            cv::putText(this->fwd_img_ptr->image, safety_score, cv::Point(80, 30), 
-                                cv::FONT_HERSHEY_DUPLEX, 0.75, 
-                                cv::Scalar( 0, 0, 0 ), 2, false);
-            
-            int RIGHT_BASE_VERTEX_X1 = 60; int RIGHT_BASE_VERTEX_Y1 = 50;
-            int RIGHT_BASE_VERTEX_X2 = 240; int RIGHT_BASE_VERTEX_Y2 = 100;
-            int RIGHT_LEVEL_VERTEX_X1 = 60; int RIGHT_LEVEL_VERTEX_Y1 = 50;
-            int RIGHT_LEVEL_VERTEX_X2; 
-            int RIGHT_LEVEL_VERTEX_Y2 = 100;
-            cv::rectangle(this->fwd_img_ptr->image, 
-                        cv::Point(RIGHT_BASE_VERTEX_X1, RIGHT_BASE_VERTEX_Y1), 
-                        cv::Point(RIGHT_BASE_VERTEX_X2, RIGHT_BASE_VERTEX_Y2), 
-                        cv::Scalar( 0, 0, 0 ),
-                        cv::FILLED, 
-                        cv::LINE_8);
-            
-            float max_score = 100.0f;
-            if (proxemics_score_ < max_score)
-                RIGHT_LEVEL_VERTEX_X2 = RIGHT_LEVEL_VERTEX_X1 + (RIGHT_BASE_VERTEX_X2 - RIGHT_LEVEL_VERTEX_X1) * (proxemics_score_ / max_score);
-            else RIGHT_LEVEL_VERTEX_X2 = RIGHT_BASE_VERTEX_X2;
+        cv::String safety_score = "Proximity Score";
+        cv::putText(this->fwd_img_ptr->image, safety_score, cv::Point(80, 30), 
+                            cv::FONT_HERSHEY_DUPLEX, 0.75, 
+                            cv::Scalar( 0, 0, 0 ), 2, false);
+        
+        int RIGHT_BASE_VERTEX_X1 = 60; int RIGHT_BASE_VERTEX_Y1 = 50;
+        int RIGHT_BASE_VERTEX_X2 = 240; int RIGHT_BASE_VERTEX_Y2 = 100;
+        int RIGHT_LEVEL_VERTEX_X1 = 60; int RIGHT_LEVEL_VERTEX_Y1 = 50;
+        int RIGHT_LEVEL_VERTEX_X2; 
+        int RIGHT_LEVEL_VERTEX_Y2 = 100;
+        cv::rectangle(this->fwd_img_ptr->image, 
+                    cv::Point(RIGHT_BASE_VERTEX_X1, RIGHT_BASE_VERTEX_Y1), 
+                    cv::Point(RIGHT_BASE_VERTEX_X2, RIGHT_BASE_VERTEX_Y2), 
+                    cv::Scalar( 0, 0, 0 ),
+                    cv::FILLED, 
+                    cv::LINE_8);
+        
+        float max_score = 100.0f;
+        if (proxemics_score_ < max_score)
+            RIGHT_LEVEL_VERTEX_X2 = RIGHT_LEVEL_VERTEX_X1 + (RIGHT_BASE_VERTEX_X2 - RIGHT_LEVEL_VERTEX_X1) * (proxemics_score_ / max_score);
+        else RIGHT_LEVEL_VERTEX_X2 = RIGHT_BASE_VERTEX_X2;
 
-            cv::rectangle(this->fwd_img_ptr->image, 
-                        cv::Point(RIGHT_LEVEL_VERTEX_X1, RIGHT_LEVEL_VERTEX_Y1), 
-                        cv::Point(RIGHT_LEVEL_VERTEX_X2, RIGHT_LEVEL_VERTEX_Y2), 
-                        cv::Scalar( 90, 120, 8 ),
-                        cv::FILLED, 
-                        cv::LINE_8);
-            cv::putText(this->fwd_img_ptr->image, std::to_string(int(proxemics_score_)), cv::Point(260, 80), 
-                                cv::FONT_HERSHEY_DUPLEX, 1.1, 
-                                cv::Scalar( 0, 0, 0 ), 2, false);
-        }
+        cv::rectangle(this->fwd_img_ptr->image, 
+                    cv::Point(RIGHT_LEVEL_VERTEX_X1, RIGHT_LEVEL_VERTEX_Y1), 
+                    cv::Point(RIGHT_LEVEL_VERTEX_X2, RIGHT_LEVEL_VERTEX_Y2), 
+                    cv::Scalar( 90, 120, 8 ),
+                    cv::FILLED, 
+                    cv::LINE_8);
+        cv::putText(this->fwd_img_ptr->image, std::to_string(int(proxemics_score_)), cv::Point(260, 80), 
+                            cv::FONT_HERSHEY_DUPLEX, 1.1, 
+                            cv::Scalar( 0, 0, 0 ), 2, false);
+        // }
 
         // display behavior
-        // cv::String scenario_title = "B: ";
+        cv::String scenario_title = "A: ";
+        if (this->behavior_title != "none") {
+            cv::putText(this->fwd_img_ptr->image, scenario_title+this->behavior_title, cv::Point(540, 55), 
+                                cv::FONT_HERSHEY_DUPLEX, 1.3, 
+                                cv::Scalar( 100, 10, 10 ), 2, false);
+        }
 
-        // if (this->behavior_title == "assertive") {
-        //     cv::putText(this->fwd_img_ptr->image, scenario_title+this->behavior_title, cv::Point(540, 55), 
-        //                         cv::FONT_HERSHEY_DUPLEX, 1.3, 
-        //                         cv::Scalar( 100, 10, 10 ), 2, false);
-        // }
-        // else {
-        //     cv::putText(this->fwd_img_ptr->image, scenario_title+this->behavior_title, cv::Point(540, 55), 
-        //                         cv::FONT_HERSHEY_DUPLEX, 1.3, 
-        //                         cv::Scalar( 0, 100, 0 ), 2, false);
+        // if (this->behavior_title != "none" && this->trial_mode == "testing") {
+        //     if (this->behavior_title == "goal_aligned") {
+        //         cv::String behavior = "option 1";
+        //         cv::putText(this->fwd_img_ptr->image, scenario_title+behavior, cv::Point(540, 55), 
+        //                             cv::FONT_HERSHEY_DUPLEX, 1.3, 
+        //                             cv::Scalar( 100, 10, 10 ), 2, false);
+        //     }
+        //     else {
+        //         cv::String behavior = "option 2";
+        //         cv::putText(this->fwd_img_ptr->image, scenario_title+behavior, cv::Point(540, 55), 
+        //                             cv::FONT_HERSHEY_DUPLEX, 1.3, 
+        //                             cv::Scalar( 100, 10, 10 ), 2, false);
+        //     }
         // }
 
-        // // display task objective
-        // cv::String task_title = "T: ";
-        // cv::putText(this->fwd_img_ptr->image, task_title+this->task_title, cv::Point(950, 55), 
-        //                     cv::FONT_HERSHEY_DUPLEX, 1.3, 
-        //                     cv::Scalar( 0, 100, 0 ), 2, false);
+
+        // display task objective
+        if (this->task_title != "none") {
+            cv::String task_title = "T: ";
+            cv::putText(this->fwd_img_ptr->image, task_title+this->task_title, cv::Point(930, 55), 
+                                cv::FONT_HERSHEY_DUPLEX, 1.3, 
+                                cv::Scalar( 0, 100, 0 ), 2, false);
+        }
     }
 
     void drawSideIndicators() {
@@ -623,41 +715,44 @@ class VisualInterface
 
         // temp:
         cv::Point p1(60, 600), p2(280, 600), p3(280, 700), p4(60, 700);
-        int thickness = 2;
+        int thickness = 3;
+        cv::Scalar font_color = cv::Scalar(0, 160, 0);
 
         cv::line(this->fwd_img_ptr->image, 
-                 p1, p2, cv::Scalar(0, 0, 0),
+                 p1, p2, font_color,
                  thickness, cv::LINE_8);
 
         cv::line(this->fwd_img_ptr->image, 
-                 p2, p3, cv::Scalar(0, 0, 0),
+                 p2, p3, font_color,
                  thickness, cv::LINE_8);
 
         cv::line(this->fwd_img_ptr->image, 
-                 p3, p4, cv::Scalar(0, 0, 0),
+                 p3, p4, font_color,
                  thickness, cv::LINE_8);
 
         cv::line(this->fwd_img_ptr->image, 
-                 p1, p4, cv::Scalar(0, 0, 0),
+                 p1, p4, font_color,
                  thickness, cv::LINE_8);
 
-        char k = cv::waitKey(2);
 
         cv::putText(this->fwd_img_ptr->image, std::to_string(first_number_[idx1]), cv::Point(75, 670), 
                 cv::FONT_HERSHEY_DUPLEX, 1.75, 
-                cv::Scalar( 0, 0, 0 ), 2, false);
+                font_color, thickness, false);
 
         cv::putText(this->fwd_img_ptr->image, "+", cv::Point(150, 670), 
                 cv::FONT_HERSHEY_DUPLEX, 1.75, 
-                cv::Scalar( 0, 0, 0 ), 2, false);
+                font_color, thickness, false);
         
         cv::putText(this->fwd_img_ptr->image, std::to_string(second_number_[idx2]), cv::Point(200, 670), 
                 cv::FONT_HERSHEY_DUPLEX, 1.75, 
-                cv::Scalar( 0, 0, 0 ), 2, false);
+                font_color, thickness, false);
 
-
-        if (k == 32) {
-            ROS_INFO("***************Pressed***************");
+        int time_p = (int)difftime(time(0), this->start_time);
+        
+        // char k = cv::waitKey(2);
+        // if (k == 32) {
+        if ((time_p % 6) == 0) {
+            // ROS_INFO("***************Pressed***************");
             idx1 = (std::rand() % (int(first_number_.size())));
             idx2 = (std::rand() % (int(second_number_.size())));
         }
@@ -718,6 +813,8 @@ class VisualInterface
                 this->drawPredictedTrajectories();
             }
                 
+            // draw force debug
+            // this->drawForceBars();
 
             // draw the rearview camera 
             if (this->show_rearview) this->drawRearView();
@@ -727,17 +824,18 @@ class VisualInterface
                 // start the timer ~ run this once
                 for (static bool first = true; first; first=false) { this->start_time = time(0); }
 
-                // if (this->task_title == "assertive")
+                // if (this->task_title == "goal_aligned")
                 //     this->drawTimer();
                  this->drawTimer();
             }
             
             // ROS_INFO("[width, height]: [%d, %d]", this->fwd_img_ptr->image.size().width, this->fwd_img_ptr->image.size().height);
 
-            this->drawSecondaryTask();
+            if (this->distracted_mode)
+                this->drawSecondaryTask();
 
             // Update GUI Window
-            cv::imshow(OPENCV_WINDOW, this->fwd_img_ptr->image);
+            cv::imshow(window_name, this->fwd_img_ptr->image);
             cv::waitKey(2); // previously set to 5
 
         }

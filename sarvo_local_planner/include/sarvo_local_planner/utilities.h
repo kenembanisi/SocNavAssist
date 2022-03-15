@@ -175,8 +175,8 @@ namespace sarvo_local_planner {
         double theta1 = std::atan2(vector1.x, -vector1.y);
         double theta2 = std::atan2(vector2.x, -vector2.y);
         // return std::fmod(theta1-theta2, PI);
-        // return wrapToPi(theta1-theta2);
-        return std::abs(wrapToPi(theta2-theta1));
+        // return std::abs(wrapToPi(theta2-theta1));
+        return wrapToPi(theta1-theta2);
     }
 
     double magnitudeDifference(const Point2D& vector1, const Point2D& vector2)
