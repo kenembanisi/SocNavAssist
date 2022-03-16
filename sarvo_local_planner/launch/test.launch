@@ -207,7 +207,7 @@
             output="screen" respawn="true" />
 
         <!-- Launch the proxemics evaluation -->
-        <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" />
+        <node name="proxemics_eval" pkg="visual_interface" type="proxemics_node" output="screen" /> -->
 
         <!-- Launch the augmented visualization -->
         <node name="augmented_viz" pkg="visual_interface" type="predicted_path_viz" output="screen" />
@@ -215,7 +215,7 @@
         <!-- Launch rviz -->
         <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo_manual.rviz" />
         <!-- <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo.rviz" /> -->
-        <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" /> -->
+        <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" />
     </group>
 
     <!-- Localize the robot -->

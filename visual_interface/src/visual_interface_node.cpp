@@ -109,9 +109,6 @@ class VisualInterface
     std::vector<int> second_number_ = { 5, 13, 17, 38, 76, 12, 61, 57, 36, 17,
                                         28, 75, 29, 32, 57};
     int idx1 = 0, idx2 = 0;
-    // std::random_device rd;
-    // std::mt19937 gen(rd());
-    // std::uniform_int_distribution<> distr(0, (int)first_number.size());
 
   public:
     // CONSTRUCTOR
@@ -793,7 +790,7 @@ class VisualInterface
             this->drawRobotFootprint();
 
             // draw the scenario title
-            this->drawScenarioTitle();
+            // this->drawScenarioTitle();
 
             // draw the optimal speedbars
             if (this->show_debug_bars)
@@ -831,12 +828,13 @@ class VisualInterface
             
             // ROS_INFO("[width, height]: [%d, %d]", this->fwd_img_ptr->image.size().width, this->fwd_img_ptr->image.size().height);
 
-            if (this->distracted_mode)
-                this->drawSecondaryTask();
+            // if (this->distracted_mode)
+            //     this->drawSecondaryTask();
 
             // Update GUI Window
             cv::imshow(window_name, this->fwd_img_ptr->image);
             cv::waitKey(2); // previously set to 5
+            // cv::waitKey(1);
 
         }
     }
