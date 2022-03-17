@@ -87,6 +87,7 @@ class VisualInterface
     bool start_timer = false;
     bool show_debug_bars = false;
     bool distracted_mode = false;
+    bool risk_enabled = false;
     int proxemics_state_[2];
     std::string trial_category;
     std::string trial_condition;
@@ -96,6 +97,7 @@ class VisualInterface
     std::string behavior_title;
     std::string task_title;
     std::string window_name;
+    std::string risk_condition;
     visual_interface::trajectory user_pred_traj_;
     visual_interface::trajectory optimal_pred_traj_;
     int pred_trajectory_size_;
@@ -154,6 +156,8 @@ class VisualInterface
         nh_.getParam("behavior", this->behavior_title);
         nh_.getParam("task_objective", this->task_title);
         nh_.getParam("distracted_mode", this->distracted_mode);
+        nh_.getParam("risk_condition", this->risk_condition);
+        nh_.getParam("risk_enabled", this->risk_enabled);
 
 
         // Set initial values for secondary task idx
@@ -162,9 +166,11 @@ class VisualInterface
 
 
 
-        // cv::namedWindow(OPENCV_WINDOW);
-        window_name = this->trial_mode + "   |   Category " + this->trial_category + "   |   " + this->trial_condition + "   |   " + this->trial_number;
-        // const cv::String window_name = "Category#1-1/2";
+        if (risk_enabled)
+            window_name = this->trial_mode + "   |   Category " + this->trial_category + "   |   " + this->risk_condition + "   |   " + this->trial_number;
+        else 
+            window_name = this->trial_mode + "   |   Category " + this->trial_category + "   |   " + this->trial_condition + "   |   " + this->trial_number;
+        
         cv::namedWindow(window_name);
 
         ROS_INFO("Initialized Visual Interface Node");
@@ -526,70 +532,79 @@ class VisualInterface
 
     void drawScenarioTitle() {
 
-        // display proximity score
-        cv::String safety_score = "Proximity Score";
-        cv::putText(this->fwd_img_ptr->image, safety_score, cv::Point(80, 30), 
-                            cv::FONT_HERSHEY_DUPLEX, 0.75, 
-                            cv::Scalar( 0, 0, 0 ), 2, false);
-        
-        int RIGHT_BASE_VERTEX_X1 = 60; int RIGHT_BASE_VERTEX_Y1 = 50;
-        int RIGHT_BASE_VERTEX_X2 = 240; int RIGHT_BASE_VERTEX_Y2 = 100;
-        int RIGHT_LEVEL_VERTEX_X1 = 60; int RIGHT_LEVEL_VERTEX_Y1 = 50;
-        int RIGHT_LEVEL_VERTEX_X2; 
-        int RIGHT_LEVEL_VERTEX_Y2 = 100;
-        cv::rectangle(this->fwd_img_ptr->image, 
-                    cv::Point(RIGHT_BASE_VERTEX_X1, RIGHT_BASE_VERTEX_Y1), 
-                    cv::Point(RIGHT_BASE_VERTEX_X2, RIGHT_BASE_VERTEX_Y2), 
-                    cv::Scalar( 0, 0, 0 ),
-                    cv::FILLED, 
-                    cv::LINE_8);
-        
-        float max_score = 100.0f;
-        if (proxemics_score_ < max_score)
-            RIGHT_LEVEL_VERTEX_X2 = RIGHT_LEVEL_VERTEX_X1 + (RIGHT_BASE_VERTEX_X2 - RIGHT_LEVEL_VERTEX_X1) * (proxemics_score_ / max_score);
-        else RIGHT_LEVEL_VERTEX_X2 = RIGHT_BASE_VERTEX_X2;
+        if (!risk_enabled) {
+            // display proximity score
+            cv::String safety_score = "Proximity Score";
+            cv::putText(this->fwd_img_ptr->image, safety_score, cv::Point(80, 30), 
+                                cv::FONT_HERSHEY_DUPLEX, 0.75, 
+                                cv::Scalar( 0, 0, 0 ), 2, false);
+            
+            int RIGHT_BASE_VERTEX_X1 = 60; int RIGHT_BASE_VERTEX_Y1 = 50;
+            int RIGHT_BASE_VERTEX_X2 = 240; int RIGHT_BASE_VERTEX_Y2 = 100;
+            int RIGHT_LEVEL_VERTEX_X1 = 60; int RIGHT_LEVEL_VERTEX_Y1 = 50;
+            int RIGHT_LEVEL_VERTEX_X2; 
+            int RIGHT_LEVEL_VERTEX_Y2 = 100;
+            cv::rectangle(this->fwd_img_ptr->image, 
+                        cv::Point(RIGHT_BASE_VERTEX_X1, RIGHT_BASE_VERTEX_Y1), 
+                        cv::Point(RIGHT_BASE_VERTEX_X2, RIGHT_BASE_VERTEX_Y2), 
+                        cv::Scalar( 0, 0, 0 ),
+                        cv::FILLED, 
+                        cv::LINE_8);
+            
+            float max_score = 100.0f;
+            if (proxemics_score_ < max_score)
+                RIGHT_LEVEL_VERTEX_X2 = RIGHT_LEVEL_VERTEX_X1 + (RIGHT_BASE_VERTEX_X2 - RIGHT_LEVEL_VERTEX_X1) * (proxemics_score_ / max_score);
+            else RIGHT_LEVEL_VERTEX_X2 = RIGHT_BASE_VERTEX_X2;
 
-        cv::rectangle(this->fwd_img_ptr->image, 
-                    cv::Point(RIGHT_LEVEL_VERTEX_X1, RIGHT_LEVEL_VERTEX_Y1), 
-                    cv::Point(RIGHT_LEVEL_VERTEX_X2, RIGHT_LEVEL_VERTEX_Y2), 
-                    cv::Scalar( 90, 120, 8 ),
-                    cv::FILLED, 
-                    cv::LINE_8);
-        cv::putText(this->fwd_img_ptr->image, std::to_string(int(proxemics_score_)), cv::Point(260, 80), 
-                            cv::FONT_HERSHEY_DUPLEX, 1.1, 
-                            cv::Scalar( 0, 0, 0 ), 2, false);
-        // }
+            cv::rectangle(this->fwd_img_ptr->image, 
+                        cv::Point(RIGHT_LEVEL_VERTEX_X1, RIGHT_LEVEL_VERTEX_Y1), 
+                        cv::Point(RIGHT_LEVEL_VERTEX_X2, RIGHT_LEVEL_VERTEX_Y2), 
+                        cv::Scalar( 90, 120, 8 ),
+                        cv::FILLED, 
+                        cv::LINE_8);
+            cv::putText(this->fwd_img_ptr->image, std::to_string(int(proxemics_score_)), cv::Point(260, 80), 
+                                cv::FONT_HERSHEY_DUPLEX, 1.1, 
+                                cv::Scalar( 0, 0, 0 ), 2, false);
+            // }
 
-        // display behavior
-        cv::String scenario_title = "A: ";
-        if (this->behavior_title != "none") {
-            cv::putText(this->fwd_img_ptr->image, scenario_title+this->behavior_title, cv::Point(540, 55), 
-                                cv::FONT_HERSHEY_DUPLEX, 1.3, 
-                                cv::Scalar( 100, 10, 10 ), 2, false);
+            // display behavior
+            cv::String scenario_title = "A: ";
+            if (this->behavior_title != "none") {
+                cv::putText(this->fwd_img_ptr->image, scenario_title+this->behavior_title, cv::Point(500, 55), 
+                                    cv::FONT_HERSHEY_DUPLEX, 1.1, 
+                                    cv::Scalar( 100, 10, 10 ), 2, false);
+            }
+
+            // if (this->behavior_title != "none" && this->trial_mode == "testing") {
+            //     if (this->behavior_title == "goal_aligned") {
+            //         cv::String behavior = "option 1";
+            //         cv::putText(this->fwd_img_ptr->image, scenario_title+behavior, cv::Point(540, 55), 
+            //                             cv::FONT_HERSHEY_DUPLEX, 1.3, 
+            //                             cv::Scalar( 100, 10, 10 ), 2, false);
+            //     }
+            //     else {
+            //         cv::String behavior = "option 2";
+            //         cv::putText(this->fwd_img_ptr->image, scenario_title+behavior, cv::Point(540, 55), 
+            //                             cv::FONT_HERSHEY_DUPLEX, 1.3, 
+            //                             cv::Scalar( 100, 10, 10 ), 2, false);
+            //     }
+            // }
+
+
+            // display task objective
+            if (this->task_title != "none") {
+                cv::String task_title = "T: ";
+                cv::putText(this->fwd_img_ptr->image, task_title+this->task_title, cv::Point(930, 55), 
+                                    cv::FONT_HERSHEY_DUPLEX, 1.1, 
+                                    cv::Scalar( 0, 100, 0 ), 2, false);
+            }
         }
-
-        // if (this->behavior_title != "none" && this->trial_mode == "testing") {
-        //     if (this->behavior_title == "goal_aligned") {
-        //         cv::String behavior = "option 1";
-        //         cv::putText(this->fwd_img_ptr->image, scenario_title+behavior, cv::Point(540, 55), 
-        //                             cv::FONT_HERSHEY_DUPLEX, 1.3, 
-        //                             cv::Scalar( 100, 10, 10 ), 2, false);
-        //     }
-        //     else {
-        //         cv::String behavior = "option 2";
-        //         cv::putText(this->fwd_img_ptr->image, scenario_title+behavior, cv::Point(540, 55), 
-        //                             cv::FONT_HERSHEY_DUPLEX, 1.3, 
-        //                             cv::Scalar( 100, 10, 10 ), 2, false);
-        //     }
-        // }
-
-
-        // display task objective
-        if (this->task_title != "none") {
-            cv::String task_title = "T: ";
-            cv::putText(this->fwd_img_ptr->image, task_title+this->task_title, cv::Point(930, 55), 
-                                cv::FONT_HERSHEY_DUPLEX, 1.3, 
-                                cv::Scalar( 0, 100, 0 ), 2, false);
+        else {
+            // display condition
+            cv::putText(this->fwd_img_ptr->image, this->risk_condition, cv::Point(80, 55), 
+                                cv::FONT_HERSHEY_DUPLEX, 1.4, 
+                                cv::Scalar( 0, 0, 0 ), 2, false);
+            
         }
     }
 
@@ -790,7 +805,7 @@ class VisualInterface
             this->drawRobotFootprint();
 
             // draw the scenario title
-            // this->drawScenarioTitle();
+            this->drawScenarioTitle();
 
             // draw the optimal speedbars
             if (this->show_debug_bars)
@@ -828,8 +843,8 @@ class VisualInterface
             
             // ROS_INFO("[width, height]: [%d, %d]", this->fwd_img_ptr->image.size().width, this->fwd_img_ptr->image.size().height);
 
-            // if (this->distracted_mode)
-            //     this->drawSecondaryTask();
+            if (this->distracted_mode)
+                this->drawSecondaryTask();
 
             // Update GUI Window
             cv::imshow(window_name, this->fwd_img_ptr->image);

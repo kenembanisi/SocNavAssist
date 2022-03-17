@@ -48,6 +48,7 @@ FalconNovintControl::FalconNovintControl(ros::NodeHandle &nh) : nh_(nh){
     nh_.getParam("base_controller/linear/x/max_velocity", max_linear_vel_);
     nh_.getParam("base_controller/angular/z/max_velocity", max_angular_vel_);
     nh_.getParam("risk_enabled", risk_enabled_);
+    nh_.getParam("risk_condition", risk_condition_);
 
     // set force_enabled
     // force_enabled_ = (trial_condition_ == "MC") ? false : true;
@@ -230,36 +231,84 @@ void FalconNovintControl::commandVelocity()
 void FalconNovintControl::commandForce()
     {
         
-        if (force_enabled_){
-            if (risk_enabled_) {
-                if (risk_level_ > 2.0 && cmd_vel_.linear.x > 0.0) {
-                    ROS_INFO("Risk enabled mode!!!!");
-                    this->guidance_force_[0] = -this->Kf_x_ * this->control_delta_[0];
-                    this->guidance_force_[2] = -this->Kf_z_ * this->control_delta_[1];
-                }
-            }
-            else if (cmd_vel_.linear.x > 0.0) { // apply force only when moving forward
-                // compute the guidance forces
+        // if (force_enabled_){
+        //     if (risk_enabled_) {
+        //         if (risk_level_ > 2.0 && cmd_vel_.linear.x > 0.0) {
+        //             ROS_INFO("Risk enabled mode!!!!");
+        //             this->guidance_force_[0] = -this->Kf_x_ * this->control_delta_[0];
+        //             this->guidance_force_[2] = -this->Kf_z_ * this->control_delta_[1];
+        //         }
+        //     }
+        //     else if (cmd_vel_.linear.x > 0.0) { // apply force only when moving forward
+        //         // compute the guidance forces
 
-                this->guidance_force_[0] = this->Kf_ * -this->heading_delta_;
-                ROS_INFO("H-delta: [%0.3f] | Force: [x:%0.3f, y:%0.3f, z:%0.3f]", this->heading_delta_, 
-                        this->guidance_force_[0], this->guidance_force_[1], this->guidance_force_[2]);
+        //         this->guidance_force_[0] = this->Kf_ * -this->heading_delta_;
+        //         // ROS_INFO("H-delta: [%0.3f] | Force: [x:%0.3f, y:%0.3f, z:%0.3f]", this->heading_delta_, 
+        //         //         this->guidance_force_[0], this->guidance_force_[1], this->guidance_force_[2]);
 
+        //         // this->guidance_force_[0] = -this->Kf_x_ * this->control_delta_[0];
+        //         // this->guidance_force_[2] = -this->Kf_z_ * this->control_delta_[1];
+        //         // ROS_INFO("[HAPTIC] Control delta: [ %0.3f, %0.3f ] | Force: [ %0.3f, %0.3f ]", this->control_delta_[0], this->control_delta_[1],
+        //         //     this->guidance_force_[0], this->guidance_force_[2]);
+        //     }
+        //     else {
+        //         this->guidance_force_[0] = 0.0;
+        //     }
+        // }
+        // else {
+        //     // compute centering force using f = K*(distance to center)
+        //     this->centering_force_[0] = this->Ks_ * -(this->raw_x_pos_);
+        //     this->centering_force_[2] = this->Ks_ * -(this->z_mid_ - this->raw_z_pos_);
+        // }
+
+
+
+        if (risk_enabled_) { // risk mode is active
+            if (risk_condition_ == "NA(H+V)" && cmd_vel_.linear.x > 0.0) {
+                // ROS_INFO("Risk enabled mode!!!! -------- NA(H+V)");
                 // this->guidance_force_[0] = -this->Kf_x_ * this->control_delta_[0];
                 // this->guidance_force_[2] = -this->Kf_z_ * this->control_delta_[1];
-                // ROS_INFO("[HAPTIC] Control delta: [ %0.3f, %0.3f ] | Force: [ %0.3f, %0.3f ]", this->control_delta_[0], this->control_delta_[1],
-                //     this->guidance_force_[0], this->guidance_force_[2]);
+                this->guidance_force_[0] = this->Kf_ * -this->heading_delta_;
+            }
+            else if (risk_condition_ == "A(H+V)" && risk_level_ > 2.0 && cmd_vel_.linear.x > 0.0) {
+                // ROS_INFO("Risk enabled mode!!!! --------- A(H+V)");
+                // this->guidance_force_[0] = -this->Kf_x_ * this->control_delta_[0];
+                // this->guidance_force_[2] = -this->Kf_z_ * this->control_delta_[1];
+                this->guidance_force_[0] = this->Kf_ * -this->heading_delta_;
             }
             else {
-                this->guidance_force_[0] = 0.0;
+                // compute centering force using f = K*(distance to center)
+                this->centering_force_[0] = this->Ks_ * -(this->raw_x_pos_);
+                this->centering_force_[2] = this->Ks_ * -(this->z_mid_ - this->raw_z_pos_);
             }
         }
-        else {
-            // compute centering force using f = K*(distance to center)
-            this->centering_force_[0] = this->Ks_ * -(this->raw_x_pos_);
-            this->centering_force_[2] = this->Ks_ * -(this->z_mid_ - this->raw_z_pos_);
+        else { // risk mode is inactive
+            if (force_enabled_){
+                if (cmd_vel_.linear.x > 0.0) { // apply force only when moving forward
+                    // compute the guidance forces
+
+                    this->guidance_force_[0] = this->Kf_ * -this->heading_delta_;
+                    // ROS_INFO("H-delta: [%0.3f] | Force: [x:%0.3f, y:%0.3f, z:%0.3f]", this->heading_delta_, 
+                    //         this->guidance_force_[0], this->guidance_force_[1], this->guidance_force_[2]);
+
+                    // this->guidance_force_[0] = -this->Kf_x_ * this->control_delta_[0];
+                    // this->guidance_force_[2] = -this->Kf_z_ * this->control_delta_[1];
+                    // ROS_INFO("[HAPTIC] Control delta: [ %0.3f, %0.3f ] | Force: [ %0.3f, %0.3f ]", this->control_delta_[0], this->control_delta_[1],
+                    //     this->guidance_force_[0], this->guidance_force_[2]);
+                }
+                else {
+                    this->guidance_force_[0] = 0.0;
+                }
+            }
+            else {
+                // compute centering force using f = K*(distance to center)
+                this->centering_force_[0] = this->Ks_ * -(this->raw_x_pos_);
+                this->centering_force_[2] = this->Ks_ * -(this->z_mid_ - this->raw_z_pos_);
+            }
         }
-        
+
+
+
         // find resultant force
         this->force_fbk_.X = this->centering_force_[0] + this->guidance_force_[0];
         this->force_fbk_.Y = this->centering_force_[1] + this->guidance_force_[1];

@@ -30,6 +30,7 @@
     <arg name="distracted_mode" default="false" />
     <arg name="trial_mode" default="learning" />
     <arg name="risk_enabled" default="false" />
+    <arg name="risk_condition" default="NA(V)" />
     <arg name="save_trial" default="false" />
     <arg name="feature_filename" default="data/learning/demos_features_counts.csv" />
     <!-- <arg name="feature_filename" default="data/learning/demos_features_counts.csv" 
@@ -50,6 +51,7 @@
     <param name="study_phase" value="$(arg phase)" />
     <param name="feature_filename" value="$(arg feature_filename)" />
     <param name="risk_enabled" value="$(arg risk_enabled)" />
+    <param name="risk_condition" value="$(arg risk_condition)" />
     <param name="save_trial" value="$(arg save_trial)" />
 
 
@@ -75,9 +77,9 @@
     <arg name="goal_x" default="-1.80"  if="$(eval arg('case2'))" />
     <arg name="goal_y" default="7.30"  if="$(eval arg('case2'))" />
     <arg name="trial_case" default="2" if="$(eval arg('case2'))" />
-    <param name="amcl/initial_pose_x" value="3.19" if="$(eval arg('case2'))" />
-    <param name="amcl/initial_pose_y" value="6.47" if="$(eval arg('case2'))" />
-    <param name="amcl/initial_pose_a" value="-1.313" if="$(eval arg('case2'))" />
+    <param name="amcl/initial_pose_x" value="3.61" if="$(eval arg('case2'))" />
+    <param name="amcl/initial_pose_y" value="6.32" if="$(eval arg('case2'))" />
+    <param name="amcl/initial_pose_a" value="-1.52" if="$(eval arg('case2'))" />
     <param name="trial_case"          value="2" if="$(eval arg('case2'))" />
 
         <!-- if trial_case is case3 -->
@@ -114,9 +116,9 @@
     <arg name="goal_x" default="-6.48" if="$(eval arg('case4'))" />
     <arg name="goal_y" default="7.22" if="$(eval arg('case4'))" />
     <arg name="trial_case" default="4" if="$(eval arg('case4'))" />
-    <param name="amcl/initial_pose_x" value="13.22" if="$(eval arg('case4'))" />
-    <param name="amcl/initial_pose_y" value="-3.27" if="$(eval arg('case4'))" />
-    <param name="amcl/initial_pose_a" value="2.66" if="$(eval arg('case4'))" />
+    <param name="amcl/initial_pose_x" value="0.33" if="$(eval arg('case4'))" />
+    <param name="amcl/initial_pose_y" value="5.52" if="$(eval arg('case4'))" />
+    <param name="amcl/initial_pose_a" value="-0.5" if="$(eval arg('case4'))" />
     <param name="trial_case"          value="4"    if="$(eval arg('case4'))" />
 
         <!-- if trial_case is case5 -->
@@ -127,9 +129,9 @@
     <arg name="goal_x" default="-1.35" if="$(eval arg('case5'))" />
     <arg name="goal_y" default="-5.49" if="$(eval arg('case5'))" />
     <arg name="trial_case" default="4" if="$(eval arg('case5'))" />
-    <param name="amcl/initial_pose_x" value="13.22" if="$(eval arg('case5'))" />
-    <param name="amcl/initial_pose_y" value="-3.27" if="$(eval arg('case5'))" />
-    <param name="amcl/initial_pose_a" value="2.66" if="$(eval arg('case5'))" />
+    <param name="amcl/initial_pose_x" value="15.39" if="$(eval arg('case5'))" />
+    <param name="amcl/initial_pose_y" value="1.16" if="$(eval arg('case5'))" />
+    <param name="amcl/initial_pose_a" value="3.05" if="$(eval arg('case5'))" />
     <param name="trial_case"          value="5"    if="$(eval arg('case5'))" />
 
 
@@ -215,7 +217,7 @@
         <!-- Launch rviz -->
         <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo_manual.rviz" />
         <!-- <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo.rviz" /> -->
-        <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" />
+        <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" /> -->
     </group>
 
     <!-- Localize the robot -->

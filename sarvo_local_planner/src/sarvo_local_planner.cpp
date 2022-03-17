@@ -73,8 +73,8 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     ROS_INFO("[SARVO_PLANNER]: Scenario Name: [%s], Behavior: [%s], Trial Condition: [%s]", 
         scenario_.c_str(), behavior_.c_str(), trial_condition_.c_str());
 
-    ROS_INFO("[SARVO_PLANNER]: Feature Filename: [%s]", feature_filename_.c_str());
-    ROS_INFO("[SARVO_PLANNER]: Initial weights: [%s]", b_weights_.c_str());
+    // ROS_INFO("[SARVO_PLANNER]: Feature Filename: [%s]", feature_filename_.c_str());
+    // ROS_INFO("[SARVO_PLANNER]: Initial weights: [%s]", b_weights_.c_str());
 
     /* Set the subscribers and publishers */
     std::string people_topic, groups_topic, odom_topic, cmd_topic, laserscan_topic;
@@ -138,6 +138,8 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     // ROS_INFO("[SARVO_PLANNER]: Weight value for Operator Input: [%f]", weights[2]);
     // ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
     //     weights[0], weights[1], weights[2], weights[3], weights[4], weights[5]);
+    ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
+        weights[0], weights[1], weights[2], weights[3], weights[4]);
     traj_critic_ = new TrajectoryCritic(costmap_ros_->getCostmap(), weights, 
         horizon, clearance_threshold, sim_granularity,
         sum_obstacle_scores_, sum_social_disturbance_scores_,

@@ -96,6 +96,7 @@ class FalconNovintControl
         // instantiate control mode
         std::string manual_mode_ = "pos-vel";
         std::string trial_condition_ = "MC";
+        std::string risk_condition_;
         bool force_enabled_ = false;
 
         // custom objects

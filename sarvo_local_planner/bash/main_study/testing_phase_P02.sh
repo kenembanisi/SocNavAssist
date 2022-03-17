@@ -6,7 +6,7 @@ source ~/workspaces/research_ws/devel/setup.bash
 
 echo "Starting the user study, kindly wait!"
 
-PARTICIPANT_ID="P01"
+PARTICIPANT_ID="P02"
 
 PHASE="testing"
 WORLD="crossing_dynamic-02"
@@ -18,9 +18,9 @@ LAYOUT="layout-02"
 # Trial block 1 
 # ****************************************************************************************************
 
-TASK="cautious_driving"
+TASK="assertive_driving"
 
-BEHAVIOR="safety_aligned"
+BEHAVIOR="goal_aligned"
 
 # 1
 roslaunch sarvo_local_planner test.launch scenario:=$WORLD \
@@ -28,7 +28,7 @@ roslaunch sarvo_local_planner test.launch scenario:=$WORLD \
                                           behavior:=$BEHAVIOR \
                                           trial_name:=$PARTICIPANT_ID \
                                           task_objective:=$TASK \
-                                          case5:="1" \
+                                          case4:="1" \
                                           trial_condition:="HV-T" \
                                           display_viz:="true" \
                                           trial_number:="1/8" \
@@ -57,7 +57,7 @@ echo "**********************************************************************"
 sleep 15s
 # --------------------------------------------------------------------------
 
-BEHAVIOR="goal_aligned"
+BEHAVIOR="safety_aligned"
 
 # 1
 roslaunch sarvo_local_planner test.launch scenario:=$WORLD \
@@ -65,7 +65,7 @@ roslaunch sarvo_local_planner test.launch scenario:=$WORLD \
                                           behavior:=$BEHAVIOR \
                                           trial_name:=$PARTICIPANT_ID \
                                           task_objective:=$TASK \
-                                          case2:="1" \
+                                          case5:="1" \
                                           trial_condition:="HV-T" \
                                           display_viz:="true" \
                                           trial_number:="3/8" \
@@ -181,7 +181,7 @@ sleep 15s
 # ****************************************************************************************************
 
 WORLD="random_dynamic-02"
-TASK="assertive_driving"
+TASK="cautious_driving"
 LAYOUT="layout-01"
 
 BEHAVIOR="safety_aligned"
@@ -192,7 +192,7 @@ roslaunch sarvo_local_planner test.launch scenario:=$WORLD \
                                           behavior:=$BEHAVIOR \
                                           trial_name:=$PARTICIPANT_ID \
                                           task_objective:=$TASK \
-                                          case1:="1" \
+                                          case2:="1" \
                                           trial_condition:="HV-T" \
                                           display_viz:="true" \
                                           trial_number:="1/8" \
