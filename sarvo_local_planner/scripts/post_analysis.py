@@ -171,7 +171,7 @@ def main(args):
     # participant_ID = ['S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', \
     #                      'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19']
     # participant_ID = ['S09']
-    participant_ID = ['P06_new']
+    participant_ID = ['PS01']
 
     summary_dir = os.path.dirname(os.path.abspath(__file__))+'/logs/results'
     # log_directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'+participant_ID+'/'
@@ -209,14 +209,14 @@ def main(args):
         #               'assertive_cautious',
         #               'cautious_assertive',
         #               'assertive_assertive']
-        conditions = ['cautious_cautious_False', 
-                      'assertive_cautious_False',
-                      'cautious_assertive_False',
-                      'assertive_assertive_False',
-                      'cautious_cautious_True', 
-                      'assertive_cautious_True',
-                      'cautious_assertive_True',
-                      'assertive_assertive_True']
+        conditions = ['safety_aligned_cautious_driving_False', 
+                      'goal_aligned_cautious_driving_False',
+                      'safety_aligned_assertive_driving_False',
+                      'goal_aligned_assertive_driving_False',
+                      'safety_aligned_cautious_driving_True', 
+                      'goal_aligned_cautious_driving_True',
+                      'safety_aligned_assertive_driving_True',
+                      'goal_aligned_assertive_driving_True']
         
         for condition in conditions:
             
@@ -243,7 +243,7 @@ def main(args):
                     trial_ID = filename.split('_')
                 
                     # if trial_ID[5]+'_'+trial_ID[6] == condition and trial_ID[1] == "testing":
-                    if trial_ID[5]+'_'+trial_ID[6]+'_'+trial_ID[7] == condition and trial_ID[1] == "testing":
+                    if trial_ID[5]+'_'+trial_ID[6]+'_'+trial_ID[7]+'_'+trial_ID[8]+'_'+trial_ID[9] == condition and trial_ID[1] == "testing":
                         ########################################### LOAD DATA ##################################################
                         # data = np.array([self.x,                        # 0
                         #                 self.y,                         # 1
