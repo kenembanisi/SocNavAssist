@@ -6,7 +6,7 @@ source ~/workspaces/research_ws/devel/setup.bash
 
 echo "Starting the user study, kindly wait!"
 
-PARTICIPANT_ID="P02"
+PARTICIPANT_ID="S11"
 
 PHASE="testing"
 WORLD="crossing_dynamic-01"
@@ -41,7 +41,7 @@ roslaunch sarvo_local_planner test.launch scenario:=$WORLD \
                                           behavior:=$BEHAVIOR \
                                           trial_name:=$PARTICIPANT_ID \
                                           task_objective:=$TASK \
-                                          case4:="1" \
+                                          case3:="1" \
                                           trial_condition:="HV-T" \
                                           display_viz:="true" \
                                           trial_number:="2/3" \
@@ -53,7 +53,7 @@ roslaunch sarvo_local_planner test.launch scenario:=$WORLD \
                                           behavior:=$BEHAVIOR \
                                           trial_name:=$PARTICIPANT_ID \
                                           task_objective:=$TASK \
-                                          case3:="1" \
+                                          case5:="1" \
                                           trial_condition:="HV-T" \
                                           display_viz:="true" \
                                           trial_number:="3/3" \
@@ -66,8 +66,8 @@ echo " "
 echo "                 First part of the validation complete!               "
 echo " "
 echo "**********************************************************************"
-sleep 15s
-# --------------------------------------------------------------------------
+sleep 5s
+# # --------------------------------------------------------------------------
 
 WORLD="random_dynamic-01"
 TASK="assertive_driving"

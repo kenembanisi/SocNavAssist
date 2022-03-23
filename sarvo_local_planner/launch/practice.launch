@@ -115,6 +115,7 @@
 
     <!-- Set world -->
     <arg name="world_name" default="$(find socially_aware_rvo)/worlds/$(arg scenario).world" />
+    <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario).world" /> -->
 
     
     <!--%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
