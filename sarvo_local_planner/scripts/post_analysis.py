@@ -170,8 +170,8 @@ def main(args):
     # participant_ID = args.participant_ID
     # participant_ID = ['S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', \
     #                      'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19']
-    # participant_ID = ['S09']
-    participant_ID = ['PS01']
+    # participant_ID = ['ALL_DATA']
+    participant_ID = ['S01']
 
     summary_dir = os.path.dirname(os.path.abspath(__file__))+'/logs/results'
     # log_directory = os.path.dirname(os.path.abspath(__file__))+'/logs/'+participant_ID+'/'
@@ -180,8 +180,10 @@ def main(args):
     ############################################################################################################
     # Write into a CSV file
     ############################################################################################################
-    with open(summary_dir+'/summary_data.csv', mode='w') as output:
-        
+    store_file = participant_ID[0]+'_data.csv'
+    # with open(summary_dir+'/all_data_summary_data.csv', mode='w') as output:
+
+    with open(summary_dir + '/' + store_file, mode='w') as output:
         dw = csv.DictWriter(output, delimiter=',', fieldnames=['Condition', 
                      'Path Length (in meters)', 
                      'CHC', 
@@ -205,10 +207,7 @@ def main(args):
         
         csv_writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
-        # conditions = ['cautious_cautious', 
-        #               'assertive_cautious',
-        #               'cautious_assertive',
-        #               'assertive_assertive']
+
         conditions = ['safety_aligned_cautious_driving_False', 
                       'goal_aligned_cautious_driving_False',
                       'safety_aligned_assertive_driving_False',
@@ -397,8 +396,8 @@ def main(args):
                         # # MEAN DISAGREEMENT (using heading delta)
                         disagreement = [ abs(heading_delta[i]) for i in range(n_frames)]
                         avg_disagreement = sum(disagreement)/len(disagreement)
-                        # avg_avg_disagreement = avg_disagreement
-                        avg_avg_disagreement = 0.00
+                        avg_avg_disagreement.append(avg_disagreement)
+                        # avg_avg_disagreement = 0.00
 
 
                         print(
@@ -427,7 +426,7 @@ def main(args):
             results_per_condition['avg_percentage_social'] = sum(avg_percentage_social)/len(avg_percentage_social)
             # results_per_condition['avg_min_ttc'] = sum(avg_avg_min_ttc)/len(avg_avg_min_ttc)
             # results_per_condition['median_min_ttc'] = sum(avg_median_min_ttc)/len(avg_median_min_ttc)
-            # results_per_condition['avg_avg_disagreement'] = sum(avg_avg_disagreement)/len(avg_avg_disagreement)
+            results_per_condition['avg_avg_disagreement'] = sum(avg_avg_disagreement)/len(avg_avg_disagreement)
 
             #####################################################################################################
 
@@ -452,9 +451,10 @@ def main(args):
                                 round(results_per_condition['avg_ped_clearance'], 2), 
                                 round(results_per_condition['avg_min_ped_clearance'], 2), 
                                 round(results_per_condition['avg_max_ped_clearance'], 2), 
-                                round(results_per_condition['avg_percentage_intimate'], 2), 
-                                round(results_per_condition['avg_percentage_personal'], 2), 
-                                round(results_per_condition['avg_percentage_social'], 2), 0.0, 0.0, 0.0 ])
+                                round(results_per_condition['avg_percentage_intimate'], 3), 
+                                round(results_per_condition['avg_percentage_personal'], 3), 
+                                round(results_per_condition['avg_percentage_social'], 3),
+                                round(results_per_condition['avg_avg_disagreement'], 2), 0.0, 0.0 ])
         
             # comment:
             print('Done with [ ' + condition + ' ]')
