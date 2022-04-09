@@ -307,18 +307,31 @@ void FalconNovintControl::commandForce()
             }
         }
 
-
+        // this->centering_force_[1] = (-this->Ky_ * this->raw_y_pos_) - this->By_ * (this->raw_y_pos_ - this->prev_raw_pos_[1]);
 
         // find resultant force
         this->force_fbk_.X = this->centering_force_[0] + this->guidance_force_[0];
         this->force_fbk_.Y = this->centering_force_[1] + this->guidance_force_[1];
+        // this->force_fbk_.Y = 0.0;
         this->force_fbk_.Z = this->centering_force_[2] + this->guidance_force_[2];
 
         //publish the force
         force_publisher_.publish(this->force_fbk_);
 
 
-        // ROS_INFO("Force applied: [ %f ]", this->force_fbk_.X);
+        // ROS_INFO("Force applied in Y: [ %f ]", this->centering_force_[1]);
+        // ROS_INFO("Force in Y: [ %0.3f ], Stiffness [%0.3f], Damping [%0.3f]", 
+        //         this->centering_force_[1],
+        //         (-this->Ky_ * this->raw_y_pos_),
+        //         -this->By_ * (this->raw_y_pos_ - this->prev_raw_pos_[1]));
+
+            
+        // update prev_raw_pos
+        this->prev_raw_pos_[0] = this->raw_x_pos_;
+        this->prev_raw_pos_[1] = this->raw_y_pos_;
+        this->prev_raw_pos_[2] = this->raw_z_pos_;
+
+        
         
     }
 

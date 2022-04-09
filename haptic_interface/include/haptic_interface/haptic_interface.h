@@ -68,6 +68,8 @@ class FalconNovintControl
 
         // force variable
         float Ks_ = 12.0f; // 20
+        float Ky_ = 18.0f; // 20
+        float By_ = 50.0f; // 20
         // float Ks_ = 20.0f;
         // float Kf_ = 1.0f; // 0.75 or 1.20
         float Kf_ = 0.9f;
@@ -79,6 +81,7 @@ class FalconNovintControl
         float heading_delta_ = 0.0f;
         float risk_level_ = 0.0f;
         std::vector<float> control_delta_ = {0.0f,0.0f} ;
+        std::vector<float> prev_raw_pos_ = {0,0,0} ;
 
         // ros publishers and subscribers
         ros::Subscriber odom_subscriber_;
