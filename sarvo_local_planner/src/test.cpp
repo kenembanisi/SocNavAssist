@@ -5,6 +5,7 @@
 #include <queue>
 #include <limits>
 
+const double PI = 3.14159265358979323846;
 
 struct Node {
     double x;
@@ -129,35 +130,44 @@ std::vector<int> dijkstra(std::vector<double> start,
     else return {};
 }
 
+double gaussian(const std::vector<double>& x,
+                const std::vector<double>& mu,
+                const std::vector<double>& sigma)
+{
+    // const double a = 1.0 / (2 * PI * mu[0] * mu[1]);
+    const double a = 1.0;
+    return a * std::exp(-(((x[0] - mu[0])*(x[0] - mu[0])) / (2.0 * sigma[0] * sigma[0]) +
+                          ((x[1] - mu[1])*(x[1] - mu[1])) / (2.0 * sigma[1] * sigma[1])));
+}
 
 int main() {
 
-    std::vector<double> start = {-5.52, -6.80};
-    std::vector<double> goal = {-6.48, 7.22};
-    std::vector<double> sample_x = {-2.23, -7.05, -10.97, -2.54, -6.21, -10.92, -2.19, -10.19, -5.52, -6.48};
-    std::vector<double> sample_y = {-3.58, -3.12, -3.18, 0.47, 2.70, 1.57, 5.27, 5.89, -6.80, 7.22};
-    std::vector< std::vector<int> > road_map = {
-        {3, 1},
-        {0, 4},
-        {5},
-        {4, 6},
-        {3, 5, 9},
-        {4, 7},
-        {9},
-        {9},
-        {0, 1, 2},
-        {}
-    };
+    // std::vector<double> start = {-5.52, -6.80};
+    // std::vector<double> goal = {-6.48, 7.22};
+    // std::vector<double> sample_x = {-2.23, -7.05, -10.97, -2.54, -6.21, -10.92, -2.19, -10.19, -5.52, -6.48};
+    // std::vector<double> sample_y = {-3.58, -3.12, -3.18, 0.47, 2.70, 1.57, 5.27, 5.89, -6.80, 7.22};
+    // std::vector< std::vector<int> > road_map = {
+    //     {3, 1},
+    //     {0, 4},
+    //     {5},
+    //     {4, 6},
+    //     {3, 5, 9},
+    //     {4, 7},
+    //     {9},
+    //     {9},
+    //     {0, 1, 2},
+    //     {}
+    // };
 
 
-    std::vector< std::vector<Node> > node_road_map =  generate_roadmap(road_map, sample_x, sample_y);
+    // std::vector< std::vector<Node> > node_road_map =  generate_roadmap(road_map, sample_x, sample_y);
 
-    std::vector<int> path = dijkstra(start, goal, node_road_map, sample_x, sample_y);
+    // std::vector<int> path = dijkstra(start, goal, node_road_map, sample_x, sample_y);
 
-    std::cout << "Path is [ ";
-    for (auto v : path) 
-        std::cout << v << " ";
-    std::cout << "]" << std::endl;
+    // std::cout << "Path is [ ";
+    // for (auto v : path) 
+    //     std::cout << v << " ";
+    // std::cout << "]" << std::endl;
 
 
 
@@ -182,4 +192,39 @@ int main() {
     // open.pop();
     // std::cout << ", " << open.top().cost << "]" << std::endl;
     // std::cout << "Output: [" << road_map[1][0] << ", " << road_map[1][1] << "]" << std::endl;
+
+
+    std::vector<double> human = {3, 2};
+    std::vector<double> robot = {5, 4};
+
+    double dist = std::hypot(robot[0]-human[0], robot[1]-human[1]);
+    double theta = std::atan2(robot[1]-human[1], robot[0]-human[0]);
+    double heading = std::atan2(1, 0);
+    double alpha = theta-heading;
+
+    std::cout << "[dist, theta, heading, alpha]: [ " << dist << ", " << theta 
+              << ", " << heading << ", " << alpha << "]" << std::endl;
+
+    // double px = dist*std::cos(alpha);
+    // double py = dist*std::sin(alpha);
+    double px = 0.349; double py = 0.481;
+    double rho_x = 2.0;
+    double rho_y = rho_x/1.5;
+    // double A = 255 * 2 * 3.1417 * rho_x * rho_y;
+    // double A = 255;
+    double C = 0;
+    // double spp = -(px*px*rho_y*rho_y)/(2*py*py*rho_x*rho_x);
+
+    // double spp = -(px*px/(2*rho_x*rho_x) + py*py/(2*rho_y*rho_y));
+
+    if (std::abs(alpha) < 1.57) {
+        // C = A * 1/(2 * 3.1417 * rho_x * rho_y) * std::exp(spp);
+        C = gaussian({px, py}, {0.0, 0.0}, {rho_x, rho_y});
+    }
+
+    std::cout << "[px, py, C]: [ " << px << ", " << py 
+              << ", " << C << "]" << std::endl;
+
+
+    
 }

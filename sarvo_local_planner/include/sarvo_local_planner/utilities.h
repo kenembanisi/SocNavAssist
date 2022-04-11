@@ -175,8 +175,8 @@ namespace sarvo_local_planner {
         double theta1 = std::atan2(vector1.x, -vector1.y);
         double theta2 = std::atan2(vector2.x, -vector2.y);
         // return std::fmod(theta1-theta2, PI);
-        // return std::abs(wrapToPi(theta2-theta1));
-        return wrapToPi(theta1-theta2);
+        return std::abs(wrapToPi(theta2-theta1));
+        // return wrapToPi(theta1-theta2);
     }
 
     double magnitudeDifference(const Point2D& vector1, const Point2D& vector2)
@@ -188,6 +188,16 @@ namespace sarvo_local_planner {
     {
         const double a = 1.0 / (sigma * ROOT_2PI);
         return a * std::exp(-((x - mu)*(x - mu)) / (2.0 * sigma * sigma));
+    }
+
+    double gaussian2D(const std::vector<double>& x,
+                      const std::vector<double>& mu,
+                      const std::vector<double>& sigma)
+    {
+        // const double a = 1.0 / (2 * PI * mu[0] * mu[1]);
+        const double a = 1.0;
+        return a * std::exp(-(((x[0] - mu[0])*(x[0] - mu[0])) / (2.0 * sigma[0] * sigma[0]) +
+                            ((x[1] - mu[1])*(x[1] - mu[1])) / (2.0 * sigma[1] * sigma[1])));
     }
 
     std::vector<double> parseWeightString(const std::string& weight_str)

@@ -116,8 +116,8 @@ double TrajectoryCritic::socialDisturbanceScore(const Candidate& candidate,
     // ROS_INFO("..................................");
     // ROS_INFO("Total Social score is: [%f]", score);
 
-    return score / (double)num_steps;
-    // return score;
+    // return score / (double)num_steps;
+    return score;
 }
 
 
@@ -140,7 +140,75 @@ double TrajectoryCritic::socialDisturbanceScore(const Pose2D& robot_pose,
     // return score / (double)pedestrians.size();
     return score;
 }
+
+
+double TrajectoryCritic::socialIntrusionGaussianScore(const Candidate& candidate, 
+    const std::vector<Person>& ped_groups)
+{
+    std::vector<Person> pedestrians_proj;
+    double score = 0.0;
+    double dt = 0.0;
+    int num_steps = horizon_ / sim_granularity_;
+    for (int i = 0; i < num_steps; i++)
+    {
+        pedestrians_proj.clear();
+        for (const auto& p : ped_groups) {
+            pedestrians_proj.push_back( constantVelocityProjection(p, dt) );
+        }
+
+        double sc = socialIntrusionGaussianScore(candidate.traj.poses[i], pedestrians_proj);
+
+        // 
+        if (decay_social_disturbance_scores_)
+            score += scoreDecay(sc, horizon_, dt);
+            // score += scoreDecay(sc, horizon_, i * sim_granularity_);
+        else
+            score += sc;
         
+        // ROS_INFO("dt is: [%f]", dt);
+        // ROS_INFO("Social score is: [%f]", sc);
+
+        dt += sim_granularity_;
+    }
+
+    // ROS_INFO("..................................");
+    // ROS_INFO("Total Social score is: [%f]", score);
+
+    // return score / (double)num_steps;
+    return score;
+}
+
+
+double TrajectoryCritic::socialIntrusionGaussianScore(const Pose2D& robot_pose,
+    const std::vector<Person>& pedestrians)
+{
+    double score = 0.0;
+    for (const auto& p : pedestrians)
+    {
+        double dist = abs(robot_pose, p.pose);
+        double theta = std::atan2(robot_pose.y-p.pose.y, robot_pose.x-p.pose.x);
+        double heading = std::atan2(p.velocity.y, p.velocity.x) / std::hypot(p.velocity.x, p.velocity.y);
+        // double heading = std::atan2(1.0, 0.0);
+        double alpha = theta-heading;
+        double px = dist*std::cos(alpha);
+        double py = dist*std::sin(alpha);
+
+        // std::cout << "[dist, theta, heading, alpha, px, py]: [ " << dist << ", " << theta 
+        //       << ", " << heading << ", " << alpha 
+        //       <<  ", " << px << ", " << py << "]" << std::endl;
+
+
+        std::vector<double> sigma = {1.2, 1.2/2.0};
+        
+        if (std::abs(alpha) < 1.57)
+            score = gaussian2D({px, py}, {0.0, 0.0}, sigma);
+        
+    }
+    // return score / (double)pedestrians.size();
+    // ROS_INFO("..................................");
+
+    return score;
+}
 
 
 double TrajectoryCritic::baseObstacleScore(const Candidate& candidate)

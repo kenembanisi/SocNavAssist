@@ -57,82 +57,31 @@
 
     <!-- Initial robot pose and goal pose-->
         <!-- if trial_case is case1 -->
-    <arg name="robot_x" default="-5.52" if="$(eval arg('case1'))" />
-    <arg name="robot_y" default="-6.80" if="$(eval arg('case1'))" />
+    <arg name="robot_x" default="-6.68" if="$(eval arg('case1'))" />
+    <arg name="robot_y" default="-4.22" if="$(eval arg('case1'))" />
     <arg name="robot_z" default="0.0" if="$(eval arg('case1'))" />
-    <arg name="robot_yaw" default="1.55" if="$(eval arg('case1'))" />
-    <arg name="goal_x" default="-6.48" if="$(eval arg('case1'))" />
-    <arg name="goal_y" default="7.22" if="$(eval arg('case1'))" />
+    <arg name="robot_yaw" default="1.57" if="$(eval arg('case1'))" />
+    <arg name="goal_x" default="-6.47" if="$(eval arg('case1'))" />
+    <arg name="goal_y" default="6.96" if="$(eval arg('case1'))" />
     <arg name="trial_case" default="1" if="$(eval arg('case1'))" />
-    <param name="amcl/initial_pose_x" value="0.0" if="$(eval arg('case1'))" />
-    <param name="amcl/initial_pose_y" value="0.0" if="$(eval arg('case1'))" />
+    <param name="amcl/initial_pose_x" value="2.58" if="$(eval arg('case1'))" />
+    <param name="amcl/initial_pose_y" value="1.16" if="$(eval arg('case1'))" />
     <param name="amcl/initial_pose_a" value="0.0" if="$(eval arg('case1'))" />
     <param name="trial_case" value="1" if="$(eval arg('case1'))" />
 
         <!-- if trial_case is case2 -->
-    <arg name="robot_x" default="-11.84" if="$(eval arg('case2'))" />
-    <arg name="robot_y" default="-3.19"  if="$(eval arg('case2'))" />
+    <arg name="robot_x" default="8.44" if="$(eval arg('case2'))" />
+    <arg name="robot_y" default="-4.59"  if="$(eval arg('case2'))" />
     <arg name="robot_z" default="0.00"  if="$(eval arg('case2'))" />
-    <arg name="robot_yaw" default="0.05"  if="$(eval arg('case2'))" />
-    <arg name="goal_x" default="-1.80"  if="$(eval arg('case2'))" />
-    <arg name="goal_y" default="7.30"  if="$(eval arg('case2'))" />
+    <arg name="robot_yaw" default="1.57"  if="$(eval arg('case2'))" />
+    <arg name="goal_x" default="8.55"  if="$(eval arg('case2'))" />
+    <arg name="goal_y" default="4.94"  if="$(eval arg('case2'))" />
     <arg name="trial_case" default="2" if="$(eval arg('case2'))" />
-    <param name="amcl/initial_pose_x" value="3.61" if="$(eval arg('case2'))" />
-    <param name="amcl/initial_pose_y" value="6.32" if="$(eval arg('case2'))" />
-    <param name="amcl/initial_pose_a" value="-1.52" if="$(eval arg('case2'))" />
+    <param name="amcl/initial_pose_x" value="2.21" if="$(eval arg('case2'))" />
+    <param name="amcl/initial_pose_y" value="-13.96" if="$(eval arg('case2'))" />
+    <param name="amcl/initial_pose_a" value="0.0" if="$(eval arg('case2'))" />
     <param name="trial_case"          value="2" if="$(eval arg('case2'))" />
 
-        <!-- if trial_case is case3 -->
-    <arg name="robot_x" default="-11.98" if="$(eval arg('case3'))" />
-    <arg name="robot_y" default="4.95" if="$(eval arg('case3'))" />
-    <arg name="robot_z" default="0.0" if="$(eval arg('case3'))" />
-    <arg name="robot_yaw" default="-0.13" if="$(eval arg('case3'))" />
-    <arg name="goal_x" default="-1.35" if="$(eval arg('case3'))" />
-    <arg name="goal_y" default="-5.49" if="$(eval arg('case3'))" />
-    <arg name="trial_case" default="3" if="$(eval arg('case3'))" />
-    <param name="amcl/initial_pose_x" value="11.75" if="$(eval arg('case3'))" />
-    <param name="amcl/initial_pose_y" value="6.46" if="$(eval arg('case3'))" />
-    <param name="amcl/initial_pose_a" value="-1.70" if="$(eval arg('case3'))" />
-    <param name="trial_case"          value="3" if="$(eval arg('case3'))" />
-
-        <!-- if trial_case is case4 (OLD)
-    <arg name="robot_x" default="-2.25" if="$(eval arg('case4'))" />
-    <arg name="robot_y" default="6.42"  if="$(eval arg('case4'))" />
-    <arg name="robot_z" default="0.0"  if="$(eval arg('case4'))" />
-    <arg name="robot_yaw" default="-2.05"  if="$(eval arg('case4'))" />
-    <arg name="goal_x" default="-11.15"  if="$(eval arg('case4'))" />
-    <arg name="goal_y" default="-3.90"  if="$(eval arg('case4'))" />
-    <arg name="trial_case" default="4" if="$(eval arg('case4'))" />
-    <param name="amcl/initial_pose_x" value="13.22" if="$(eval arg('case4'))" />
-    <param name="amcl/initial_pose_y" value="-3.27" if="$(eval arg('case4'))" />
-    <param name="amcl/initial_pose_a" value="2.66" if="$(eval arg('case4'))" />
-    <param name="trial_case"          value="4"    if="$(eval arg('case4'))" /> -->
-
-        <!-- if trial_case is case4 -->
-    <arg name="robot_x" default="-11.04" if="$(eval arg('case4'))" />
-    <arg name="robot_y" default="-6.47"  if="$(eval arg('case4'))" />
-    <arg name="robot_z" default="0.0"  if="$(eval arg('case4'))" />
-    <arg name="robot_yaw" default="1.07"  if="$(eval arg('case4'))" />
-    <arg name="goal_x" default="-6.48" if="$(eval arg('case4'))" />
-    <arg name="goal_y" default="7.22" if="$(eval arg('case4'))" />
-    <arg name="trial_case" default="4" if="$(eval arg('case4'))" />
-    <param name="amcl/initial_pose_x" value="0.33" if="$(eval arg('case4'))" />
-    <param name="amcl/initial_pose_y" value="5.52" if="$(eval arg('case4'))" />
-    <param name="amcl/initial_pose_a" value="-0.5" if="$(eval arg('case4'))" />
-    <param name="trial_case"          value="4"    if="$(eval arg('case4'))" />
-
-        <!-- if trial_case is case5 -->
-    <arg name="robot_x" default="-6.68" if="$(eval arg('case5'))" />
-    <arg name="robot_y" default="8.59"  if="$(eval arg('case5'))" />
-    <arg name="robot_z" default="0.0"  if="$(eval arg('case5'))" />
-    <arg name="robot_yaw" default="-1.66"  if="$(eval arg('case5'))" />
-    <arg name="goal_x" default="-1.35" if="$(eval arg('case5'))" />
-    <arg name="goal_y" default="-5.49" if="$(eval arg('case5'))" />
-    <arg name="trial_case" default="4" if="$(eval arg('case5'))" />
-    <param name="amcl/initial_pose_x" value="15.39" if="$(eval arg('case5'))" />
-    <param name="amcl/initial_pose_y" value="1.16" if="$(eval arg('case5'))" />
-    <param name="amcl/initial_pose_a" value="3.05" if="$(eval arg('case5'))" />
-    <param name="trial_case"          value="5"    if="$(eval arg('case5'))" />
 
 
     <!-- Weights -->
@@ -162,8 +111,8 @@
     <param name="rvo_planning_horizon" value="$(arg rvo_planning_horizon)" />
 
     <!-- Set world -->
-    <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario)_$(arg scenario_layout).world" />
-    <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario).world" /> -->
+    <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario)_$(arg scenario_layout).world" /> -->
+    <arg name="world_name" default="$(find sarvo_local_planner)/worlds/$(arg scenario).world" />
     <!-- <arg name="world_name" default="$(find sarvo_local_planner)/worlds/debug.world" /> -->
 
     
@@ -222,10 +171,7 @@
 
     <!-- Localize the robot -->
     <!-- <arg name="map_file" default="$(find sarvo_local_planner)/maps/hall_map.yaml" /> -->
-    <arg name="map_file" default="$(find sarvo_local_planner)/maps/layout-01.yaml" 
-        if="$(eval scenario_layout=='layout-01')"/>
-    <arg name="map_file" default="$(find sarvo_local_planner)/maps/layout-02.yaml" 
-        if="$(eval scenario_layout=='layout-02')"/>
+    <arg name="map_file" default="$(find sarvo_local_planner)/maps/open-layout.yaml" />
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
     <node name="amcl" pkg="amcl" type="amcl">
@@ -236,8 +182,8 @@
     <!-- Launch main sarvo_local_planner -->
     <node pkg="sarvo_local_planner" type="sarvo_local_planner" name="sarvo_planner" output="screen" required="true" >
         <rosparam file="$(find sarvo_local_planner)/config/costmap_params.yaml" command="load" ns="static_costmap" />
-        <rosparam file="$(find sarvo_local_planner)/config/behaviors.yaml" command="load" />
-        <!-- <rosparam file="$(find sarvo_local_planner)/config/behaviors_2.yaml" command="load" /> -->
+        <!-- <rosparam file="$(find sarvo_local_planner)/config/behaviors.yaml" command="load" /> -->
+        <rosparam file="$(find sarvo_local_planner)/config/behaviors_2.yaml" command="load" />
     </node>
 
     <!-- Launch rosbag to store data -->

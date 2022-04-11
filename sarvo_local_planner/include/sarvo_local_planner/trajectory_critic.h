@@ -56,6 +56,12 @@ class TrajectoryCritic {
         double socialDisturbanceScore(const Pose2D& robot_pose,
             const std::vector<Person>& pedestrians);
 
+        double socialIntrusionGaussianScore(const Pose2D& robot_pose,
+            const std::vector<Person>& pedestrians);
+
+        double socialIntrusionGaussianScore(const Candidate& candidate, 
+            const std::vector<Person>& ped_groups);
+
         double computeDistance();
 
         Person constantVelocityProjection(const Person& person, const double dt);

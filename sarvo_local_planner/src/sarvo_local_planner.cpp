@@ -32,7 +32,7 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     nh_.param("use_planner", use_planner_, true);
     nh_.param("trial_case", trial_case_, 0);
     nh_.param("save_trial", save_trial_, false);
-    nh_.param("feature_filename", feature_filename_, std::string("data/demo_features.csv"));
+    nh_.param("feature_filename", feature_filename_, std::string("data/learning/demos_features_counts.csv"));
     // nh_.param("behavior_weights", b_weights_, std::string("0.1, 0.1, 0.0, 0.1, 0.1, 0.1"));
     nh_.param("behavior_weights", b_weights_, std::string("0.1, 0.1, 0.0, 0.1, 0.1"));
     
@@ -73,7 +73,7 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     ROS_INFO("[SARVO_PLANNER]: Scenario Name: [%s], Behavior: [%s], Trial Condition: [%s]", 
         scenario_.c_str(), behavior_.c_str(), trial_condition_.c_str());
 
-    // ROS_INFO("[SARVO_PLANNER]: Feature Filename: [%s]", feature_filename_.c_str());
+    ROS_INFO("[SARVO_PLANNER]: Feature Filename: [%s]", feature_filename_.c_str());
     // ROS_INFO("[SARVO_PLANNER]: Initial weights: [%s]", b_weights_.c_str());
 
     /* Set the subscribers and publishers */
@@ -136,10 +136,10 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     if (trial_condition_ == "AUTO") weights[2] = 0.0; // set the operator feature weight to zero
     else weights[2] = 2.0;
     // ROS_INFO("[SARVO_PLANNER]: Weight value for Operator Input: [%f]", weights[2]);
-    // ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
-    //     weights[0], weights[1], weights[2], weights[3], weights[4], weights[5]);
-    ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
-        weights[0], weights[1], weights[2], weights[3], weights[4]);
+    ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
+        weights[0], weights[1], weights[2], weights[3], weights[4], weights[5]);
+    // ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
+    //     weights[0], weights[1], weights[2], weights[3], weights[4]);
     traj_critic_ = new TrajectoryCritic(costmap_ros_->getCostmap(), weights, 
         horizon, clearance_threshold, sim_granularity,
         sum_obstacle_scores_, sum_social_disturbance_scores_,
@@ -307,7 +307,8 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
         
         if (save_trial_) {
             /* Save variables to file */
-            std::string directory = "/home/kenembanisi/workspaces/research_ws/src/SocNavAssist/sarvo_local_planner/";
+            // std::string directory = "/home/kenembanisi/workspaces/research_ws/src/SocNavAssist/sarvo_local_planner/";
+            std::string directory = "/home/kenembanisi/research_ws/src/SocNavAssist/sarvo_local_planner/";
             writeCSV(directory+feature_filename_, 
                     {scenario_, trial_condition_, std::to_string(trial_case_), behavior_}, 
                     multiply(traj_critic_->feature_counts_, 1/double(traj_critic_->iteration_count_)));
@@ -360,7 +361,10 @@ void SARVOLocalPlanner::generateAndPublishRobotCommand()
         std::cout << "Save trial is: " << save_trial_ << "\n";
         if (save_trial_) {
             /* Save variables to file */
-            std::string directory = "/home/kenembanisi/workspaces/research_ws/src/SocNavAssist/sarvo_local_planner/";
+            // std::string directory = "/home/kenembanisi/workspaces/research_ws/src/SocNavAssist/sarvo_local_planner/";
+            std::string directory = "/home/kenembanisi/research_ws/src/SocNavAssist/sarvo_local_planner/";
+            // ROS_INFO("[SARVO_PLANNER]: [%s%s]", feature_filename_.c_str(), directory.c_str());
+            
             writeCSV(directory+feature_filename_, 
                     {scenario_, trial_condition_, std::to_string(trial_case_), behavior_}, 
                     multiply(traj_critic_->feature_counts_, 1/double(traj_critic_->iteration_count_)));
@@ -635,7 +639,8 @@ void SARVOLocalPlanner::updatePedestrianList()
         pd.pose.theta = 0.0;
         pd.velocity.x = p.twist.twist.linear.y;
         pd.velocity.y = -p.twist.twist.linear.x;
-        pd.radius = PERSONAL_SPACE; //0.9
+        // pd.radius = PERSONAL_SPACE; //0.9
+        pd.radius = INTIMATE_SPACE;
         pd.person_id = p.track_id;
 
         // pedestrians_map_.insert(std::make_pair(p.track_id, pd));
@@ -1173,8 +1178,10 @@ void SARVOLocalPlanner::pedestrianPosePublisher()
         marker.pose.orientation.y = 0.0;
         marker.pose.orientation.z = 0.0;
         marker.pose.orientation.w = 1.0;
-        marker.scale.x = PERSONAL_SPACE*2;
-        marker.scale.y = PERSONAL_SPACE*2;
+        // marker.scale.x = PERSONAL_SPACE*2;
+        // marker.scale.y = PERSONAL_SPACE*2;
+        marker.scale.x = p.radius*2;
+        marker.scale.y = p.radius*2;
         marker.scale.z = 0.01;
         marker.color.a = 0.5;
         marker.color.r = 0.25;
@@ -1196,8 +1203,8 @@ void SARVOLocalPlanner::pedestrianPosePublisher()
         marker2.pose.orientation.y = 0.0;
         marker2.pose.orientation.z = 0.0;
         marker2.pose.orientation.w = 1.0;
-        marker2.scale.x = PERSONAL_SPACE*2 + robot_.radius*2;
-        marker2.scale.y = PERSONAL_SPACE*2 + robot_.radius*2;
+        marker2.scale.x = p.radius*2 + robot_.radius*2;
+        marker2.scale.y = p.radius*2 + robot_.radius*2;
         marker2.scale.z = 0.01;
         marker2.color.a = 0.3;
         marker2.color.r = 0.2;
@@ -1298,7 +1305,7 @@ void SARVOLocalPlanner::simulationStatesPublisher(const Candidate& candidate_opt
 
 std::vector<double> SARVOLocalPlanner::selectWeights()
 {
-    std::vector<double> weights = {0.1, 0.1, 0.1, 0.1, 0.1};
+    std::vector<double> weights = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
 
     if (behavior_ == "safety_aligned") 
         weights = safety_aligned_;
@@ -1391,14 +1398,16 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
             // Feature 3: Deviation from operator's input
             candidate.score.raw_scores[2] = abs(candidate.velocity, operator_vel_);
             // Feature 4: Deviation from goal heading
-            candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
-            // candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
-            // candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
+            // candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
             // Feature 5: Social obstruction score
-            candidate.score.raw_scores[4] = 
-                traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
-            // candidate.score.raw_scores[5] = 
+            // candidate.score.raw_scores[4] = 
             //     traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+            candidate.score.raw_scores[5] = 
+                traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+            candidate.score.raw_scores[6] = 
+                traj_critic_->socialIntrusionGaussianScore(candidate, ped_groups_);
 
             // ROS_INFO("prev v_optimal is [%0.3f, %0.3f]", prev_v_optimal_.x, prev_v_optimal_.y);
 
@@ -1426,6 +1435,12 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
                 // }
             }
             
+            // ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,{%0.3f}]",
+            //     candidate.score.raw_scores[0],
+            //     candidate.score.raw_scores[1],
+            //     candidate.score.raw_scores[3],
+            //     candidate.score.raw_scores[4],
+            //     candidate.score.total);
   
             // ROS_INFO("Vel:[%0.2f,%0.2f], Tw:[%0.2f,%0.2f], score[%0.3f]", 
             //     candidate.velocity.x, candidate.velocity.y,
@@ -1694,6 +1709,21 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
     //     // }
     //     ROS_INFO("******************************************************");
     // }
+    // ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f,{%0.3f}]",
+    //     optimal_candidate.score.raw_scores[0],
+    //     optimal_candidate.score.raw_scores[1],
+    //     optimal_candidate.score.raw_scores[3],
+    //     optimal_candidate.score.raw_scores[4],
+    //     optimal_candidate.score.raw_scores[5],
+    //     optimal_candidate.score.total);
+    // ROS_INFO("******************************************************");
+    
+
+    // double score =  traj_critic_->socialIntrusionGaussianScore(robot_gndtruth_, ped_groups_);
+
+    // ROS_INFO("Score value: %0.3f", score);
+
+
 
     return optimal_candidate;
     
