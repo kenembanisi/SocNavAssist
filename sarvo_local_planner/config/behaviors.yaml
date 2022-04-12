@@ -1,11 +1,23 @@
 sarvo_local_planner:
   # behavior settings
   objective_name: 'safety_aligned'
-  # objective_weights_safety_aligned: [0.5, 1.0, 0.0, 1.5, 0.2]
-  objective_weights_safety_aligned: [0.025, 0.25, 0.0, 1.5, 2.0]
+  # New weight values:
+  # objective_weights_safety_aligned: [0.04, 0.25, 0.0, 1.5, 2.5]
+  # objective_weights_neutral: [0.15, 0.60, 0.0, 1.2, 0.1]
+  # objective_weights_goal_aligned: [0.02, 0.50, 0.0, 2.5, 0.04]
+
+  objective_weights_safety_aligned: [0.04, 0.25, 0.0, 1.5, 4.5]
   objective_weights_neutral: [0.15, 0.60, 0.0, 1.2, 0.1]
+  objective_weights_goal_aligned: [0.02, 0.50, 0.0, 2.5, 0.15]
+
+  # Old weight values:
+  # objective_weights_safety_aligned: [0.5, 1.0, 0.0, 1.5, 0.2]
   # objective_weights_goal_aligned: [0.01, 0.75, 0.0, 1.5, 0.01]
-  objective_weights_goal_aligned: [0.01, 0.75, 0.0, 2.5, 0.01]
+
+  # New weight values (for normed scores):
+  # objective_weights_safety_aligned: [0.75, 0.1, 0.0, 0.15, 1.0]
+  # objective_weights_neutral: [0.15, 0.60, 0.0, 1.2, 0.1]
+  # objective_weights_goal_aligned: [0.3, 0.1, 0.0, 0.6, 0.15]
 
   # path planner parameters
   # prm_samples_x: [-2.23, -7.05, -10.97, -2.54, -6.21, -10.92, -2.19, -10.19, -5.52, -6.48]

@@ -70,6 +70,9 @@ class TrajectoryCritic {
 
         void computeTotalScore(Candidate& candidate);
 
+        void normalizeRawScores(Candidate& candidate, Point2D& prev_vel,
+            Point2D& goal_vel, Point2D& operator_vel);
+
         void calculateFeatureCounts(Candidate optimal_candidate);
 
     private:

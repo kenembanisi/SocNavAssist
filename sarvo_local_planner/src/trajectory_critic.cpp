@@ -121,7 +121,6 @@ double TrajectoryCritic::socialDisturbanceScore(const Candidate& candidate,
 }
 
 
-
 double TrajectoryCritic::socialDisturbanceScore(const Pose2D& robot_pose,
     const std::vector<Person>& pedestrians)
 {
@@ -256,6 +255,44 @@ void TrajectoryCritic::computeTotalScore(Candidate& candidate)
 {
     // std::cout << "Size of raw_scores: " << candidate.score.raw_scores.size() << std::endl;
     candidate.score.total = vdot(candidate.score.raw_scores, weights_);
+}
+
+
+void TrajectoryCritic::normalizeRawScores(Candidate& candidate, Point2D& prev_vel,
+    Point2D& goal_vel, Point2D& operator_vel)
+{
+    ROS_INFO("Scores: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f]",
+        candidate.score.raw_scores[0],
+        candidate.score.raw_scores[1],
+        candidate.score.raw_scores[2],
+        candidate.score.raw_scores[3],
+        candidate.score.raw_scores[4]);
+    
+    // static cost
+    candidate.score.raw_scores[0] = candidate.score.raw_scores[0] / (255 * candidate.traj.poses.size());
+
+    // motion smoothness cost
+    // candidate.score.raw_scores[1] = candidate.score.raw_scores[1] / (2 * abs(prev_vel));
+    candidate.score.raw_scores[1] = candidate.score.raw_scores[1] / (2 * 2.0);
+
+    // operator alignment cost
+    // candidate.score.raw_scores[2] = candidate.score.raw_scores[2] / (2 * abs(operator_vel));
+    candidate.score.raw_scores[2] = candidate.score.raw_scores[2] / (2 * 2.0);
+
+    // goal-directed cost
+    candidate.score.raw_scores[3] = candidate.score.raw_scores[3] / (2 * abs(goal_vel));
+    // candidate.score.raw_scores[3] = candidate.score.raw_scores[3] / (2 * 2.0);
+
+    // goal-directed cost
+    candidate.score.raw_scores[4] = candidate.score.raw_scores[4] / (clearance_threshold_ * (horizon_ / sim_granularity_));
+
+    ROS_INFO("Normed Scores: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f]",
+        candidate.score.raw_scores[0],
+        candidate.score.raw_scores[1],
+        candidate.score.raw_scores[2],
+        candidate.score.raw_scores[3],
+        candidate.score.raw_scores[4]);
+    ROS_INFO("....................................................................");
 }
 
 

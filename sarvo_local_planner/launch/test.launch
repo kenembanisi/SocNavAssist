@@ -236,8 +236,8 @@
     <!-- Launch main sarvo_local_planner -->
     <node pkg="sarvo_local_planner" type="sarvo_local_planner" name="sarvo_planner" output="screen" required="true" >
         <rosparam file="$(find sarvo_local_planner)/config/costmap_params.yaml" command="load" ns="static_costmap" />
-        <rosparam file="$(find sarvo_local_planner)/config/behaviors.yaml" command="load" />
-        <!-- <rosparam file="$(find sarvo_local_planner)/config/behaviors_2.yaml" command="load" /> -->
+        <!-- <rosparam file="$(find sarvo_local_planner)/config/behaviors.yaml" command="load" /> -->
+        <rosparam file="$(find sarvo_local_planner)/config/behaviors_2.yaml" command="load" />
     </node>
 
     <!-- Launch rosbag to store data -->

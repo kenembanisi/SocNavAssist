@@ -136,10 +136,10 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     if (trial_condition_ == "AUTO") weights[2] = 0.0; // set the operator feature weight to zero
     else weights[2] = 2.0;
     // ROS_INFO("[SARVO_PLANNER]: Weight value for Operator Input: [%f]", weights[2]);
-    ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
-        weights[0], weights[1], weights[2], weights[3], weights[4], weights[5]);
-    // ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
-    //     weights[0], weights[1], weights[2], weights[3], weights[4]);
+    // ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
+    //     weights[0], weights[1], weights[2], weights[3], weights[4], weights[5]);
+    ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
+        weights[0], weights[1], weights[2], weights[3], weights[4]);
     traj_critic_ = new TrajectoryCritic(costmap_ros_->getCostmap(), weights, 
         horizon, clearance_threshold, sim_granularity,
         sum_obstacle_scores_, sum_social_disturbance_scores_,
@@ -636,9 +636,10 @@ void SARVOLocalPlanner::updatePedestrianList()
         pd.type = "single";
         pd.pose.x = p.pose.pose.position.y + 6.80;
         pd.pose.y = -p.pose.pose.position.x - 5.52;
-        pd.pose.theta = 0.0;
+        // pd.pose.theta = 0.0;
         pd.velocity.x = p.twist.twist.linear.y;
         pd.velocity.y = -p.twist.twist.linear.x;
+        
         // pd.radius = PERSONAL_SPACE; //0.9
         pd.radius = INTIMATE_SPACE;
         pd.person_id = p.track_id;
@@ -1406,10 +1407,11 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
             //     traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
             candidate.score.raw_scores[5] = 
                 traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
-            candidate.score.raw_scores[6] = 
-                traj_critic_->socialIntrusionGaussianScore(candidate, ped_groups_);
+            // candidate.score.raw_scores[6] = 
+            //     traj_critic_->socialIntrusionGaussianScore(candidate, ped_groups_);
 
-            // ROS_INFO("prev v_optimal is [%0.3f, %0.3f]", prev_v_optimal_.x, prev_v_optimal_.y);
+            // normalize costs
+            // traj_critic_->normalizeRawScores(candidate, prev_v_optimal_, goal_vel_, operator_vel_);
 
             // compute weighted cost
             traj_critic_->computeTotalScore(candidate);
@@ -1709,14 +1711,14 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
     //     // }
     //     ROS_INFO("******************************************************");
     // }
-    // ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f,{%0.3f}]",
-    //     optimal_candidate.score.raw_scores[0],
-    //     optimal_candidate.score.raw_scores[1],
-    //     optimal_candidate.score.raw_scores[3],
-    //     optimal_candidate.score.raw_scores[4],
-    //     optimal_candidate.score.raw_scores[5],
-    //     optimal_candidate.score.total);
-    // ROS_INFO("******************************************************");
+    ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f,{%0.3f}]",
+        optimal_candidate.score.raw_scores[0],
+        optimal_candidate.score.raw_scores[1],
+        optimal_candidate.score.raw_scores[3],
+        optimal_candidate.score.raw_scores[4],
+        optimal_candidate.score.raw_scores[5],
+        optimal_candidate.score.total);
+    ROS_INFO("******************************************************");
     
 
     // double score =  traj_critic_->socialIntrusionGaussianScore(robot_gndtruth_, ped_groups_);

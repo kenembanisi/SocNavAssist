@@ -6,6 +6,7 @@ import csv
 import os
 import argparse
 import matplotlib.pyplot as plt
+import scipy.stats
 # import statistics
 
 
@@ -160,6 +161,14 @@ def pose_transform(x_list, y_list):
     transformed_y_list = [ (x - 6.80) for x in x_list]
     return transformed_x_list, transformed_y_list
 
+def ttest(means, stds, n1, n2):
+    pooled_std = np.sqrt(((n1-1)*stds[0]**2 + (n2-1)*stds[1]**2)/(n1+n2-2))
+    t_statistic = (means[0] - means[1]) / (pooled_std * (np.sqrt((1./n1) + (1./n2))))
+    # print(t_statistic)
+    df = n1-1
+    p_value = scipy.stats.t.sf(abs(t_statistic), df=df)*2
+    return p_value, t_statistic
+
 ############################################################################################################
 # MAIN FUNCTION
 ############################################################################################################
@@ -198,6 +207,31 @@ def main(args):
         dw.writeheader()
             
         results_per_condition = {}
+        #-
+        path_length_mean = []
+        path_length_std = []
+        #-
+        time_to_complete_mean = []
+        time_to_complete_std = []
+        #-
+        avg_ped_clearance_mean = []
+        avg_ped_clearance_std = []
+        #-
+        min_ped_clearance_mean = []
+        min_ped_clearance_std = []
+        #-
+        max_ped_clearance_mean = []
+        max_ped_clearance_std = []
+        #-
+        percentage_intimate_mean = []
+        percentage_intimate_std = []
+        #-
+        percentage_personal_mean = []
+        percentage_personal_std = []
+        #
+        # avg_percentage_social = []
+        disagreement_mean = []
+        disagreement_std = []
         
         csv_writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
@@ -403,49 +437,147 @@ def main(args):
             #####################################################################################################
 
             results_per_condition['avg_path_length'] = sum(avg_path_length)/len(avg_path_length)
+            results_per_condition['std_avg_path_length'] = np.std(avg_path_length)
+            path_length_mean.append(results_per_condition['avg_path_length'])
+            path_length_std.append(results_per_condition['std_avg_path_length'])
+            #-
             results_per_condition['avg_CHC'] = sum(avg_CHC)/len(avg_CHC)
+            results_per_condition['std_avg_CHC'] = np.std(avg_CHC)
+            #-
             results_per_condition['avg_completion_time'] = sum(avg_time_to_complete)/len(avg_time_to_complete)
+            results_per_condition['std_avg_completion_time'] = np.std(avg_time_to_complete)
+            time_to_complete_mean.append(results_per_condition['avg_completion_time'])
+            time_to_complete_std.append(results_per_condition['std_avg_completion_time'])
+            #-
             results_per_condition['avg_ped_clearance'] = sum(avg_ped_clearance)/len(avg_ped_clearance)
+            results_per_condition['std_avg_ped_clearance'] = np.std(avg_ped_clearance)
+            avg_ped_clearance_mean.append(results_per_condition['avg_ped_clearance'])
+            avg_ped_clearance_std.append(results_per_condition['std_avg_ped_clearance'])
+            #-
             results_per_condition['avg_min_ped_clearance'] = sum(min_ped_clearance)/len(min_ped_clearance)
+            results_per_condition['std_avg_min_ped_clearance'] = np.std(min_ped_clearance)
+            min_ped_clearance_mean.append(results_per_condition['avg_min_ped_clearance'])
+            min_ped_clearance_std.append(results_per_condition['std_avg_min_ped_clearance'])
+            #-
             results_per_condition['avg_max_ped_clearance'] = sum(max_ped_clearance)/len(max_ped_clearance)
+            results_per_condition['std_avg_max_ped_clearance'] = np.std(max_ped_clearance)
+            #-
             results_per_condition['avg_percentage_intimate'] = sum(avg_percentage_intimate)/len(avg_percentage_intimate)
+            results_per_condition['std_avg_percentage_intimate'] = np.std(avg_percentage_intimate)
+            percentage_intimate_mean.append(results_per_condition['avg_percentage_intimate'])
+            percentage_intimate_std.append(results_per_condition['std_avg_percentage_intimate'])
+            #-
             results_per_condition['avg_percentage_personal'] = sum(avg_percentage_personal)/len(avg_percentage_personal)
+            results_per_condition['std_avg_percentage_personal'] = np.std(avg_percentage_personal)
+            percentage_personal_mean.append(results_per_condition['avg_percentage_personal'])
+            percentage_personal_std.append(results_per_condition['std_avg_percentage_personal'])
+            #-
             results_per_condition['avg_percentage_social'] = sum(avg_percentage_social)/len(avg_percentage_social)
+            results_per_condition['std_avg_percentage_social'] = np.std(avg_percentage_social)
+            #-
             # results_per_condition['avg_min_ttc'] = sum(avg_avg_min_ttc)/len(avg_avg_min_ttc)
             # results_per_condition['median_min_ttc'] = sum(avg_median_min_ttc)/len(avg_median_min_ttc)
             results_per_condition['avg_avg_disagreement'] = sum(avg_avg_disagreement)/len(avg_avg_disagreement)
+            results_per_condition['std_avg_avg_disagreement'] = np.std(avg_avg_disagreement)
 
             #####################################################################################################
 
         
             ######################################## WRITE IN CSV FILE ##########################################
 
-            # csv_writer.writerow([ condition, round(results_per_condition['avg_path_length'], 2), 
-            #                     round(results_per_condition['avg_CHC'], 4),
-            #                     round(results_per_condition['avg_completion_time'], 2),
-            #                     round(results_per_condition['avg_ped_clearance'], 2), 
-            #                     round(results_per_condition['avg_min_ped_clearance'], 2), 
-            #                     round(results_per_condition['avg_max_ped_clearance'], 2), 
-            #                     round(results_per_condition['avg_percentage_intimate'], 2), 
-            #                     round(results_per_condition['avg_percentage_personal'], 2), 
-            #                     round(results_per_condition['avg_percentage_social'], 2),
-            #                     round(results_per_condition['avg_min_ttc'], 2), 
-            #                     round(results_per_condition['median_min_ttc'], 2 ),
-            #                     round(results_per_condition['avg_avg_disagreement'], 2) ])
-            csv_writer.writerow([ condition, round(results_per_condition['avg_path_length'], 2), 
+            csv_writer.writerow([ condition, round(results_per_condition['avg_path_length'], 2),
+                                round(results_per_condition['std_avg_path_length'], 2), 
                                 round(results_per_condition['avg_CHC'], 4),
+                                round(results_per_condition['std_avg_CHC'], 4),
                                 round(results_per_condition['avg_completion_time'], 2),
+                                round(results_per_condition['std_avg_completion_time'], 2),
                                 round(results_per_condition['avg_ped_clearance'], 2), 
+                                round(results_per_condition['std_avg_ped_clearance'], 2),
                                 round(results_per_condition['avg_min_ped_clearance'], 2), 
+                                round(results_per_condition['std_avg_min_ped_clearance'], 2),
                                 round(results_per_condition['avg_max_ped_clearance'], 2), 
+                                round(results_per_condition['std_avg_max_ped_clearance'], 2), 
                                 round(results_per_condition['avg_percentage_intimate'], 3), 
+                                round(results_per_condition['std_avg_percentage_intimate'], 3), 
                                 round(results_per_condition['avg_percentage_personal'], 3), 
+                                round(results_per_condition['std_avg_percentage_personal'], 3), 
                                 round(results_per_condition['avg_percentage_social'], 3),
-                                round(results_per_condition['avg_avg_disagreement'], 2), 0.0, 0.0 ])
+                                round(results_per_condition['std_avg_percentage_social'], 3),
+                                round(results_per_condition['avg_avg_disagreement'], 2),
+                                round(results_per_condition['std_avg_avg_disagreement'], 2), 0.0, 0.0 ])
         
             # comment:
             print('Done with [ ' + condition + ' ]')
         
+
+    ###################################################################################################################
+    # PLOTTER
+    ###################################################################################################################
+
+    m = conditions
+    x = np.arange(len(m))
+
+    fig, ax = plt.subplots(3, 2)
+
+    # Path length
+    p_val = ttest(path_length_mean, path_length_std, 6, 6)
+    print("Path length", p_val)
+    ax[0,0].bar(x, path_length_mean, yerr=path_length_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax[0,0].set_ylabel('Avg Path Length')
+    ax[0,0].set_xticks(x)
+    ax[0,0].set_xticklabels(m)
+    ax[0,0].yaxis.grid(True)
+
+    # Completion time
+    p_val = ttest(time_to_complete_mean, time_to_complete_std, 6, 6)
+    print("Avg Completion Time", p_val)
+    ax[1,0].bar(x, time_to_complete_mean, yerr=time_to_complete_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax[1,0].set_ylabel('Avg Completion Time')
+    ax[1,0].set_xticks(x)
+    ax[1,0].set_xticklabels(m)
+    ax[1,0].yaxis.grid(True)
+
+    # Avg pedestrian clearance
+    p_val = ttest(avg_ped_clearance_mean, avg_ped_clearance_std, 6, 6)
+    print("Avg pedestrian clearance", p_val)
+    ax[0,1].bar(x, avg_ped_clearance_mean, yerr=avg_ped_clearance_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax[0,1].set_ylabel('Avg pedestrian clearance')
+    ax[0,1].set_xticks(x)
+    ax[0,1].set_xticklabels(m)
+    ax[0,1].yaxis.grid(True)
+
+    # Avg min pedestrian clearance
+    p_val = ttest(min_ped_clearance_mean, min_ped_clearance_std, 6, 6)
+    print("Avg min pedestrian clearance", p_val)
+    ax[1,1].bar(x, min_ped_clearance_mean, yerr=min_ped_clearance_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax[1,1].set_ylabel('Avg min pedestrian clearance')
+    ax[1,1].set_xticks(x)
+    ax[1,1].set_xticklabels(m)
+    ax[1,1].yaxis.grid(True)
+
+    # Percentage Intimate
+    p_val = ttest(percentage_intimate_mean, percentage_intimate_std, 6, 6)
+    print("Percentage Intimate", p_val)
+    ax[2,0].bar(x, percentage_intimate_mean, yerr=percentage_intimate_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax[2,0].set_ylabel('Percentage Intimate')
+    ax[2,0].set_xticks(x)
+    ax[2,0].set_xticklabels(m)
+    ax[2,0].yaxis.grid(True)
+
+    # Percentage Personal
+    p_val = ttest(percentage_personal_mean, percentage_personal_std, 6, 6)
+    print("Percentage Personal", p_val)
+    ax[2,1].bar(x, percentage_personal_mean, yerr=percentage_personal_std, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax[2,1].set_ylabel('Percentage Personal')
+    ax[2,1].set_xticks(x)
+    ax[2,1].set_xticklabels(m)
+    ax[2,1].yaxis.grid(True)
+
+    # Save the figure and show
+    plt.tight_layout()
+    # plt.savefig('bar_plot_with_error_bars.png')
+    plt.show()
+
 
         
 
