@@ -3,14 +3,19 @@
 sarvo_local_planner:
   # behavior settings
   objective_name: 'safety_aligned'
-  objective_weights_safety_aligned: [0.04, 0.25, 0.0, 3.0, 0.5, 4.5]
-  objective_weights_neutral: [0.0, 0.0, 0.0, 1.0, 1.0, 0.0]
-  objective_weights_goal_aligned: [0.02, 0.50, 0.0, 10.0, 3.0, 0.15]
+  # objective_weights_safety_aligned: [0.04, 0.25, 0.0, 3.0, 0.5, 4.5]
+  # objective_weights_neutral: [0.0, 0.0, 0.0, 1.0, 1.0, 0.0]
+  # objective_weights_goal_aligned: [0.02, 0.50, 0.0, 10.0, 3.0, 0.15]
 
+  
+  objective_weights_safety_aligned: [0.04, 0.50, 0.0, 2.0, 5.5, 12.0]
+  objective_weights_neutral: [0.02, 0.25, 0.0, 2.5, 1.0, 6.0]
+  objective_weights_goal_aligned: [0.02, 0.20, 0.0, 7.0, 0.15, 4.0]
 
-  # objective_weights_safety_aligned: [0.04, 0.25, 0.0, 1.5, 4.5]
-  # objective_weights_neutral: [0.15, 0.60, 0.0, 1.2, 0.1]
-  # objective_weights_goal_aligned: [0.02, 0.50, 0.0, 2.5, 0.15]
+  # using frontal cost function... n = 7
+  # objective_weights_safety_aligned: [0.1, 0.40, 0.0, 2.0, 0.5, 5.5, 12.0]
+  # objective_weights_neutral: [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0]
+  # objective_weights_goal_aligned: [0.02, 0.20, 0.0, 7.0, 3.0, 0.15, 4.0]
 
   # path planner parameters
   # prm_samples_x: [-2.23, -7.05, -10.97, -2.54, -6.21, -10.92, -2.19, -10.19, -5.52, -6.48]
