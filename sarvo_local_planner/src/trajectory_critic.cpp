@@ -65,6 +65,7 @@ bool TrajectoryCritic::freeOfStaticObstacles(const Candidate& candidate)
     return true;
 }
 
+
 bool TrajectoryCritic::forwardHeadingFree(const Candidate& candidate)
 {
     unsigned int mx, my;
@@ -132,8 +133,8 @@ double TrajectoryCritic::socialDisturbanceScore(const Pose2D& robot_pose,
         if (dist < clearance_threshold_) {
             double ped_score = (clearance_threshold_ - dist);     // include a decay here to account for position uncertainty?
             // double ped_score += gaussianPDF(dist, 0.0, sigma);
-            // score = std::max(score, ped_score);
-            score += ped_score;
+            score = std::max(score, ped_score);
+            // score += ped_score;
         }
     }
     // return score / (double)pedestrians.size();
@@ -184,24 +185,23 @@ double TrajectoryCritic::socialIntrusionGaussianScore(const Pose2D& robot_pose,
     double score = 0.0;
     for (const auto& p : pedestrians)
     {
-        double dist = abs(robot_pose, p.pose);
-        double theta = std::atan2(robot_pose.y-p.pose.y, robot_pose.x-p.pose.x);
-        double heading = std::atan2(p.velocity.y, p.velocity.x) / std::hypot(p.velocity.x, p.velocity.y);
-        // double heading = std::atan2(1.0, 0.0);
-        double alpha = theta-heading;
-        double px = dist*std::cos(alpha);
-        double py = dist*std::sin(alpha);
-
-        // std::cout << "[dist, theta, heading, alpha, px, py]: [ " << dist << ", " << theta 
-        //       << ", " << heading << ", " << alpha 
-        //       <<  ", " << px << ", " << py << "]" << std::endl;
-
+        double theta = p.pose.theta;
+        double px = robot_pose.x * std::cos(theta) + robot_pose.y * std::sin(theta) -
+                    p.pose.x * std::cos(theta) - p.pose.y * std::sin(theta);
+        double py = -robot_pose.x * std::sin(theta) + robot_pose.y * std::cos(theta) +
+                    p.pose.x * std::sin(theta) - p.pose.y * std::cos(theta);
 
         std::vector<double> sigma = {1.2, 1.2/2.0};
         
-        if (std::abs(alpha) < 1.57)
-            score = gaussian2D({px, py}, {0.0, 0.0}, sigma);
-        
+        if (px > 0.0) { // considers only frontal gaussian
+            double ped_score = gaussian2D({px, py}, {0.0, 0.0}, sigma);
+            // score += gaussian2D({px, py}, {0.0, 0.0}, sigma);
+            score = std::max(score, ped_score);        
+        }
+
+        // std::cout << "[dist, theta, px, py, score]: [ " << dist << ", " << theta 
+        //       <<  ", " << px << ", " << py << ", " << score << "]" << std::endl;
+
     }
     // return score / (double)pedestrians.size();
     // ROS_INFO("..................................");
@@ -247,6 +247,7 @@ Person TrajectoryCritic::constantVelocityProjection(const Person& person,
     Person ped;
     ped.pose.x = person.pose.x + person.velocity.x * dt;
     ped.pose.y = person.pose.y + person.velocity.y * dt;
+    ped.pose.theta = person.pose.theta;
     return ped;
 }
 
@@ -261,37 +262,62 @@ void TrajectoryCritic::computeTotalScore(Candidate& candidate)
 void TrajectoryCritic::normalizeRawScores(Candidate& candidate, Point2D& prev_vel,
     Point2D& goal_vel, Point2D& operator_vel)
 {
-    ROS_INFO("Scores: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f]",
+    ROS_INFO("Scores: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f,%0.3f,%0.3f]",
         candidate.score.raw_scores[0],
         candidate.score.raw_scores[1],
         candidate.score.raw_scores[2],
         candidate.score.raw_scores[3],
-        candidate.score.raw_scores[4]);
+        candidate.score.raw_scores[4],
+        candidate.score.raw_scores[5],
+        candidate.score.raw_scores[6]);
     
     // static cost
     candidate.score.raw_scores[0] = candidate.score.raw_scores[0] / (255 * candidate.traj.poses.size());
 
     // motion smoothness cost
-    // candidate.score.raw_scores[1] = candidate.score.raw_scores[1] / (2 * abs(prev_vel));
-    candidate.score.raw_scores[1] = candidate.score.raw_scores[1] / (2 * 2.0);
+    double max_smoothness_cost = std::hypot(2*prev_vel.x, 2*prev_vel.y);
+    if (max_smoothness_cost == 0)
+        max_smoothness_cost = 2 * 2.0;
+    candidate.score.raw_scores[1] = candidate.score.raw_scores[1] / max_smoothness_cost;
 
     // operator alignment cost
     // candidate.score.raw_scores[2] = candidate.score.raw_scores[2] / (2 * abs(operator_vel));
-    candidate.score.raw_scores[2] = candidate.score.raw_scores[2] / (2 * 2.0);
+    double max_operator_alignment_cost = std::hypot(2*operator_vel.x, 2*operator_vel.y);
+    if (max_operator_alignment_cost == 0)
+        max_operator_alignment_cost = 2 * 2.0;
+    candidate.score.raw_scores[2] = candidate.score.raw_scores[2] / max_operator_alignment_cost;
 
     // goal-directed cost
-    candidate.score.raw_scores[3] = candidate.score.raw_scores[3] / (2 * abs(goal_vel));
+    // double max_goal_directed_cost = std::hypot(2*goal_vel.x, 2*goal_vel.y);
+    // candidate.score.raw_scores[3] = candidate.score.raw_scores[3] / max_goal_directed_cost;
     // candidate.score.raw_scores[3] = candidate.score.raw_scores[3] / (2 * 2.0);
 
-    // goal-directed cost
-    candidate.score.raw_scores[4] = candidate.score.raw_scores[4] / (clearance_threshold_ * (horizon_ / sim_granularity_));
 
-    ROS_INFO("Normed Scores: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f]",
+    // goal deviation cost
+    // double theta_goal = std::atan2(goal_vel.y, goal_vel.x);
+    // double theta_candidate = std::atan2(candidate.velocity.y, candidate.velocity.x);
+    candidate.score.raw_scores[3] = candidate.score.raw_scores[3] / PI;
+
+    // speed deviation cost
+    double goal_vel_magnitude = std::hypot(goal_vel.x, goal_vel.y);
+    if (goal_vel_magnitude == 0)
+        goal_vel_magnitude = 2.0;
+    candidate.score.raw_scores[4] = candidate.score.raw_scores[4] / goal_vel_magnitude;
+
+    // personal space cost
+    candidate.score.raw_scores[5] = candidate.score.raw_scores[5] / (clearance_threshold_ * (horizon_ / sim_granularity_));
+
+    // frontal intrusion cost
+    candidate.score.raw_scores[6] = candidate.score.raw_scores[6] / (1.0 * (horizon_ / sim_granularity_));
+
+    ROS_INFO("Normed Scores: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f,%0.3f,%0.3f]",
         candidate.score.raw_scores[0],
         candidate.score.raw_scores[1],
         candidate.score.raw_scores[2],
         candidate.score.raw_scores[3],
-        candidate.score.raw_scores[4]);
+        candidate.score.raw_scores[4],
+        candidate.score.raw_scores[5],
+        candidate.score.raw_scores[6]);
     ROS_INFO("....................................................................");
 }
 

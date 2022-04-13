@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
+from mpl_toolkits.mplot3d import Axes3D
 
 # define normalized 2D gaussian
 def gaus2d(x=0, y=0, mx=0, my=0, sx=1, sy=1, A=1):
@@ -23,7 +24,9 @@ def circular(x=0, y=0, thr=1):
     return z
 
 
-fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+# fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+fig = plt.figure()
+ax = fig.gca(projection='3d')
 
 x = np.linspace(-5, 5)
 y = np.linspace(-5, 5)
@@ -40,9 +43,8 @@ surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False)
 # Customize the z axis.
 ax.set_zlim(0.0, 1.0)
-ax.zaxis.set_major_locator(LinearLocator(10))
-# A StrMethodFormatter is used automatically
-ax.zaxis.set_major_formatter('{x:.02f}')
+# ax.zaxis.set_major_locator(LinearLocator(10))
+# ax.zaxis.set_major_formatter('{x:.02f}')
 
 # Add a color bar which maps values to colors.
 fig.colorbar(surf, shrink=0.5, aspect=5)

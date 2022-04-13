@@ -6,10 +6,10 @@ source ~/workspaces/research_ws/devel/setup.bash
 
 echo "Starting the user study, kindly wait!"
 
-PARTICIPANT_ID="P02"
+PARTICIPANT_ID="NS01"
 
 PHASE="testing"
-WORLD="crossing_dynamic-01"
+WORLD="crossing_dynamic-02"
 LAYOUT="layout-01"
 
 ########################################## validation phase #############################################

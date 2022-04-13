@@ -71,7 +71,7 @@
 
     <!-- actor 1 -->
     <actor name="actor1">
-      <pose>-11.42 0.30 0.0 0 0 0</pose>
+      <pose>-11.42 -1.30 0.0 0 0 0</pose>
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -100,8 +100,8 @@
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-11.42 0.30 0.0</waypoint>
-          <waypoint>-1.75 0.30 0.0</waypoint>
+          <waypoint>-11.42 -1.30 0.0</waypoint>
+          <waypoint>-1.75 -1.30 0.0</waypoint>
         </trajectory>
       </plugin>
 
@@ -110,7 +110,7 @@
 
     <!-- actor 2 -->
     <actor name="actor2">
-      <pose>-1.19 4.10 0.0 0 0 -3.14</pose>
+      <pose>-1.19 3.10 0.0 0 0 -3.14</pose>
       <skin>
         <filename>walk.dae</filename>
       </skin>
@@ -139,8 +139,8 @@
         </ignore_obstacles>
         <trajectory>
           <cyclic>true</cyclic>
-          <waypoint>-1.19 4.10 0.0</waypoint>
-          <waypoint>-11.50 4.10 0.0</waypoint>
+          <waypoint>-1.19 3.10 0.0</waypoint>
+          <waypoint>-11.50 3.10 0.0</waypoint>
         </trajectory>
       </plugin>
 

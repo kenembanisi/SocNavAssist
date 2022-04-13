@@ -106,11 +106,12 @@ class VisualInterface
     float proxemics_score_ = 0.0f;
     float operator_vel_[2] = { 0.0f, 0.0f };
     float optimal_velocity_[2] = { 0.0f, 0.0f };
-    std::vector<int> first_number_ = { 23, 19, 26, 46, 22, 47, 6, 63, 35, 28,
-                                       35, 20, 45, 41, 15};
-    std::vector<int> second_number_ = { 5, 13, 17, 38, 76, 12, 61, 57, 36, 17,
-                                        28, 75, 29, 32, 57};
-    int idx1 = 0, idx2 = 0;
+    std::vector<int> first_number_ = { 153, 79, 147, 328, 76, 92, 169, 157, 86, 67,
+                                        228, 105, 94, 132, 59};
+    std::vector<int> second_number_ = { 125, 39, 86, 116, 72, 47, 69, 53, 135, 68,
+                                       35, 125, 65, 44, 65};
+    std::vector<std::string> operator_ = {"+", "-"};
+    int idx1 = 0, idx2 = 0, idx_operator = 0;
 
   public:
     // CONSTRUCTOR
@@ -163,6 +164,7 @@ class VisualInterface
         // Set initial values for secondary task idx
         idx1 = (std::rand() % 10);
         idx2 = (std::rand() % 10);
+        // idx_operator = (std::rand() % 2);
 
 
 
@@ -726,7 +728,7 @@ class VisualInterface
     void drawSecondaryTask(){
 
         // temp:
-        cv::Point p1(60, 600), p2(280, 600), p3(280, 700), p4(60, 700);
+        cv::Point p1(60, 600), p2(360, 600), p3(360, 700), p4(60, 700);
         int thickness = 3;
         cv::Scalar font_color = cv::Scalar(0, 160, 0);
 
@@ -751,11 +753,14 @@ class VisualInterface
                 cv::FONT_HERSHEY_DUPLEX, 1.75, 
                 font_color, thickness, false);
 
-        cv::putText(this->fwd_img_ptr->image, "+", cv::Point(150, 670), 
+        // cv::putText(this->fwd_img_ptr->image, "+", cv::Point(150, 670), 
+        //         cv::FONT_HERSHEY_DUPLEX, 1.75, 
+        //         font_color, thickness, false);
+        cv::putText(this->fwd_img_ptr->image, operator_[idx_operator], cv::Point(180, 670), 
                 cv::FONT_HERSHEY_DUPLEX, 1.75, 
                 font_color, thickness, false);
         
-        cv::putText(this->fwd_img_ptr->image, std::to_string(second_number_[idx2]), cv::Point(200, 670), 
+        cv::putText(this->fwd_img_ptr->image, std::to_string(second_number_[idx2]), cv::Point(225, 670), 
                 cv::FONT_HERSHEY_DUPLEX, 1.75, 
                 font_color, thickness, false);
 
@@ -767,6 +772,7 @@ class VisualInterface
             // ROS_INFO("***************Pressed***************");
             idx1 = (std::rand() % (int(first_number_.size())));
             idx2 = (std::rand() % (int(second_number_.size())));
+            idx_operator = (std::rand() % 2);
         }
     }
 

@@ -217,7 +217,7 @@
         <!-- Launch rviz -->
         <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo_manual.rviz" />
         <!-- <arg name="rviz_file" default="$(find sarvo_local_planner)/rviz/demo.rviz" /> -->
-        <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" />
+        <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_file)" /> -->
     </group>
 
     <!-- Localize the robot -->

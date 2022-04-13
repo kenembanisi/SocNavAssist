@@ -134,7 +134,7 @@ SARVOLocalPlanner::SARVOLocalPlanner(tf2_ros::Buffer& tf) : tf_(tf)
     // ********************************************************
     
     if (trial_condition_ == "AUTO") weights[2] = 0.0; // set the operator feature weight to zero
-    else weights[2] = 2.0;
+    else weights[2] = 10.0;
     // ROS_INFO("[SARVO_PLANNER]: Weight value for Operator Input: [%f]", weights[2]);
     // ROS_INFO("[SARVO_PLANNER]: Weights applied are [%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f]", 
     //     weights[0], weights[1], weights[2], weights[3], weights[4], weights[5]);
@@ -639,6 +639,8 @@ void SARVOLocalPlanner::updatePedestrianList()
         // pd.pose.theta = 0.0;
         pd.velocity.x = p.twist.twist.linear.y;
         pd.velocity.y = -p.twist.twist.linear.x;
+        double velocity_mag = std::hypot(pd.velocity.x, pd.velocity.y);
+        pd.pose.theta = std::atan2(pd.velocity.y / velocity_mag, pd.velocity.x / velocity_mag );
         
         // pd.radius = PERSONAL_SPACE; //0.9
         pd.radius = INTIMATE_SPACE;
@@ -1137,6 +1139,67 @@ void SARVOLocalPlanner::goalAndOptimalPointVelocityPublisher(const Point2D& opti
 
     velocity_arrows.markers.push_back(marker3);
     
+
+    // for vector to pedestrians -----------------------------------
+
+    // visualization_msgs::Marker marker4;
+    // marker4.header.frame_id = "map";
+    // // ros::Time time = ros::Time();
+    // marker4.id = ++idx;
+    // marker4.type = visualization_msgs::Marker::ARROW;
+    // marker4.scale.x = 0.04;
+    // marker4.scale.y = 0.08;
+    // marker4.scale.z = 0;
+    // marker4.color.a = 0.8;
+    // marker4.color.r = 0.65;
+    // marker4.color.g = 0.75;
+    // marker4.color.b = 0.35;
+
+    // ROS_INFO("Pedgroups size is %d", (int)ped_groups_.size());
+
+    // if (ped_groups_.size() != 0){
+    //     start_point.x = ped_groups_[0].pose.x;
+    //     start_point.y = ped_groups_[0].pose.y;
+
+    //     double dist = abs(robot_gndtruth_, ped_groups_[0].pose);
+    //     // ROS_INFO("dist %0.3f", dist);
+
+    //     // double theta = std::atan2(robot_gndtruth_.y-ped_groups_[0].pose.y, robot_gndtruth_.x-ped_groups_[0].pose.x);
+    //     // double theta = atan(robot_gndtruth_, ped_groups_[0].pose);
+    //     // double alpha = theta-ped_groups_[0].pose.theta;
+
+    //     double theta = ped_groups_[0].pose.theta;
+        
+    //     // if (theta > 0)
+    //     //     theta -= 2*PI;
+
+    //     ROS_INFO("Theta: %0.2f", theta);
+
+    //     double px = robot_gndtruth_.x * std::cos(theta) + robot_gndtruth_.y * std::sin(theta) -
+    //                 ped_groups_[0].pose.x * std::cos(theta) - ped_groups_[0].pose.y * std::sin(theta);
+    //     double py = -robot_gndtruth_.x * std::sin(theta) + robot_gndtruth_.y * std::cos(theta) +
+    //                 ped_groups_[0].pose.x * std::sin(theta) - ped_groups_[0].pose.y * std::cos(theta);
+
+    //     ROS_INFO("px, py, human_x, human_y: [%0.2f, %0.2f], [%0.2f, %0.2f]", px, py, ped_groups_[0].pose.x, ped_groups_[0].pose.y);
+    //     ROS_INFO("r_x, r_y: %0.2f, %0.2f", robot_gndtruth_.x, robot_gndtruth_.y);
+
+    //     // double px = dist*std::cos(alpha);
+    //     // double py = dist*std::sin(alpha);
+
+    //     end_point.x = px;
+    //     end_point.y = py;
+
+    //     marker4.points.push_back(start_point);
+    //     marker4.points.push_back(end_point);
+
+    //     velocity_arrows.markers.push_back(marker4);
+    // }
+    
+
+
+
+
+
     // ---------------------------------------------------------
     goal_and_optimal_velocity_pub_.publish(velocity_arrows);
 
@@ -1157,7 +1220,8 @@ void SARVOLocalPlanner::pedestrianPosePublisher()
         pose.position.x = p.pose.x;
         pose.position.y = p.pose.y;
         pose.position.z = 1.0;
-        tf::Quaternion q = tf::createQuaternionFromYaw(0.0);
+        // tf::Quaternion q = tf::createQuaternionFromYaw(0.0);
+        tf::Quaternion q = tf::createQuaternionFromYaw(p.pose.theta);
         pose.orientation.x = q.getX();
         pose.orientation.y = q.getY();
         pose.orientation.z = q.getZ();
@@ -1399,14 +1463,16 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
             // Feature 3: Deviation from operator's input
             candidate.score.raw_scores[2] = abs(candidate.velocity, operator_vel_);
             // Feature 4: Deviation from goal heading
-            // candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
-            candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
-            candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
+            // candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
+            // candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
             // Feature 5: Social obstruction score
-            // candidate.score.raw_scores[4] = 
-            //     traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
-            candidate.score.raw_scores[5] = 
+            candidate.score.raw_scores[4] = 
                 traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+            candidate.score.raw_scores[5] = 
+                traj_critic_->socialIntrusionGaussianScore(candidate, ped_groups_);
+            // candidate.score.raw_scores[5] = 
+            //     traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
             // candidate.score.raw_scores[6] = 
             //     traj_critic_->socialIntrusionGaussianScore(candidate, ped_groups_);
 
@@ -1437,11 +1503,13 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
                 // }
             }
             
-            // ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,{%0.3f}]",
+            // ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f,%0.3f,{%0.3f}]",
             //     candidate.score.raw_scores[0],
             //     candidate.score.raw_scores[1],
             //     candidate.score.raw_scores[3],
             //     candidate.score.raw_scores[4],
+            //     candidate.score.raw_scores[5],
+            //     candidate.score.raw_scores[6],
             //     candidate.score.total);
   
             // ROS_INFO("Vel:[%0.2f,%0.2f], Tw:[%0.2f,%0.2f], score[%0.3f]", 
@@ -1560,14 +1628,16 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
             // Feature 3: Deviation from operator's input
             candidate.score.raw_scores[2] = abs(candidate.velocity, operator_vel_);
             // Feature 4: Deviation from goal heading
-            candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
-            // candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
-            // candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
+            // candidate.score.raw_scores[3] = abs(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[3] = angleBetween(candidate.velocity, goal_vel_);
+            candidate.score.raw_scores[4] = magnitudeDifference(candidate.velocity, goal_vel_);
             // Feature 5: Social obstruction score
-            candidate.score.raw_scores[4] = 
-                traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
-            // candidate.score.raw_scores[5] = 
+            // candidate.score.raw_scores[4] = 
             //     traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+            candidate.score.raw_scores[5] = 
+                traj_critic_->socialDisturbanceScore(candidate, ped_groups_);
+            candidate.score.raw_scores[6] = 
+                traj_critic_->socialIntrusionGaussianScore(candidate, ped_groups_);
 
             // compute weighted cost
             traj_critic_->computeTotalScore(candidate);
@@ -1711,14 +1781,16 @@ Candidate SARVOLocalPlanner::chooseOptimalVelocity(std::vector<Candidate>& v_sui
     //     // }
     //     ROS_INFO("******************************************************");
     // }
-    ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f,{%0.3f}]",
-        optimal_candidate.score.raw_scores[0],
-        optimal_candidate.score.raw_scores[1],
-        optimal_candidate.score.raw_scores[3],
-        optimal_candidate.score.raw_scores[4],
-        optimal_candidate.score.raw_scores[5],
-        optimal_candidate.score.total);
-    ROS_INFO("******************************************************");
+    // ROS_INFO("******************************************************");
+    // ROS_INFO("Scores-[Obst, PrevV, GoalDev, SocObs, Total]: [%0.3f, %0.3f, %0.3f, %0.3f,%0.3f,%0.3f,{%0.3f}]",
+    //     optimal_candidate.score.raw_scores[0],
+    //     optimal_candidate.score.raw_scores[1],
+    //     optimal_candidate.score.raw_scores[3],
+    //     optimal_candidate.score.raw_scores[4],
+    //     optimal_candidate.score.raw_scores[5],
+    //     optimal_candidate.score.raw_scores[6],
+    //     optimal_candidate.score.total);
+    // ROS_INFO("******************************************************");
     
 
     // double score =  traj_critic_->socialIntrusionGaussianScore(robot_gndtruth_, ped_groups_);
