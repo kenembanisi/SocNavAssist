@@ -7,7 +7,10 @@ Last updated: May 29th 2021
 
 SocNavAssist is a haptic shared autonomy framework for enabling socially-aware navigation assistance for mobile telepresence robots.
 
+<!---
 ![demo](media/manual_demo.gif)
+-->
+
 
 ***
 <br>
